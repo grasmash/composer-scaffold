@@ -1,0 +1,32 @@
+{
+  "name": "my/project",
+  "description": "Test for Composer Scaffold.",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "drupal/composer-scaffold": "*",
+    "drupal/core": "^8.8",
+    "pantheon/scaffold-files": "*"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "extra": {
+    "composer-scaffold": {
+      "allowed-packages": {
+        "drupal/core": "*",
+        "pantheon/scaffold-template": "*"
+      },
+      "locations": {
+        "web-root": "./docroot"
+      },
+      "symlink": true,
+      "file-mapping": {
+        "drupal/core": {
+          "assets/.htaccess": false,
+          "assets/robots.txt": "[web-root]/robots-default.txt"
+        }
+      }
+    }
+  }
+}

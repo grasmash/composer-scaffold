@@ -1,0 +1,262 @@
+<?php
+
+namespace DrupalComposer\DrupalScaffold;
+
+use Composer\Script\Event;
+use Composer\Installer\PackageEvent;
+use Composer\Plugin\CommandEvent;
+use Composer\Composer;
+use Composer\DependencyResolver\Operation\InstallOperation;
+use Composer\DependencyResolver\Operation\UpdateOperation;
+use Composer\EventDispatcher\EventDispatcher;
+use Composer\IO\IOInterface;
+use Composer\Package\PackageInterface;
+use Composer\Semver\Semver;
+use Composer\Util\Filesystem;
+use Composer\Util\RemoteFilesystem;
+use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+
+/**
+ * Core class of the plugin, contains all logic which files should be fetched.
+ */
+class Handler {
+
+  const PRE_DRUPAL_SCAFFOLD_CMD = 'pre-drupal-scaffold-cmd';
+  const POST_DRUPAL_SCAFFOLD_CMD = 'post-drupal-scaffold-cmd';
+
+  /**
+   * @var \Composer\Composer
+   */
+  protected $composer;
+
+  /**
+   * @var \Composer\IO\IOInterface
+   */
+  protected $io;
+
+  /**
+   * @var bool
+   *
+   * A boolean indicating if progress should be displayed.
+   */
+  protected $progress;
+
+  /**
+   * @var \Composer\Package\PackageInterface
+   */
+  protected $drupalCorePackage;
+
+  /**
+   * Handler constructor.
+   *
+   * @param \Composer\Composer $composer
+   * @param \Composer\IO\IOInterface $io
+   */
+  public function __construct(Composer $composer, IOInterface $io) {
+    $this->composer = $composer;
+    $this->io = $io;
+    $this->progress = TRUE;
+
+    // Pre-load all of our sources so that we do not run up
+    // against problems in `composer update` operations.
+    $this->manualLoad();
+  }
+
+  protected function manualLoad() {
+    $src_dir = __DIR__;
+
+    $classes = [
+      'CommandProvider',
+      'DrupalScaffoldCommand',
+      'FileFetcher',
+      'PrestissimoFileFetcher',
+    ];
+
+    foreach ($classes as $src) {
+      if (!class_exists('\\DrupalComposer\\DrupalScaffold\\' . $src)) {
+        include "{$src_dir}/{$src}.php";
+      }
+    }
+  }
+
+  /**
+   * @param $operation
+   * @return mixed
+   */
+  protected function getCorePackage($operation) {
+    if ($operation instanceof InstallOperation) {
+      $package = $operation->getPackage();
+    }
+    elseif ($operation instanceof UpdateOperation) {
+      $package = $operation->getTargetPackage();
+    }
+    if (isset($package) && $package instanceof PackageInterface && $package->getName() == 'drupal/core') {
+      return $package;
+    }
+    return NULL;
+  }
+
+  /**
+   * Get the command options.
+   *
+   * @param \Composer\Plugin\CommandEvent $event
+   */
+  public function onCmdBeginsEvent(CommandEvent $event) {
+    if ($event->getInput()->hasOption('no-progress')) {
+      $this->progress = !($event->getInput()->getOption('no-progress'));
+    }
+    else {
+      $this->progress = TRUE;
+    }
+  }
+
+  /**
+   * Marks scaffolding to be processed after an install or update command.
+   *
+   * @param \Composer\Installer\PackageEvent $event
+   */
+  public function onPostPackageEvent(PackageEvent $event) {
+    $package = $this->getCorePackage($event->getOperation());
+    if ($package) {
+      // By explicitly setting the core package, the onPostCmdEvent() will
+      // process the scaffolding automatically.
+      $this->drupalCorePackage = $package;
+    }
+  }
+
+  /**
+   * Post install command event to execute the scaffolding.
+   *
+   * @param \Composer\Script\Event $event
+   */
+  public function onPostCmdEvent(Event $event) {
+    // Only install the scaffolding if drupal/core was installed,
+    // AND there are no scaffolding files present.
+    if (isset($this->drupalCorePackage)) {
+      $this->downloadScaffold();
+      // Generate the autoload.php file after generating the scaffold files.
+      $this->generateAutoload();
+    }
+  }
+
+  /**
+   * Downloads drupal scaffold files for the current process.
+   */
+  public function copyPackageFiles($package) {
+    $webroot = realpath($this->getWebRoot());
+
+    // Collect options, excludes and settings files.
+    // @todo Gather all mapping settings for this package, merge into single array.
+
+    // Call any pre-scaffold scripts that may be defined.
+    $dispatcher = new EventDispatcher($this->composer, $this->io);
+    $dispatcher->dispatch(self::PRE_DRUPAL_SCAFFOLD_CMD);
+
+    // @todo Copy the actual files.
+
+    // Call post-scaffold scripts.
+    $dispatcher->dispatch(self::POST_DRUPAL_SCAFFOLD_CMD);
+  }
+
+  /**
+   * Generate the autoload file at the project root.  Include the
+   * autoload file that Composer generated.
+   */
+  public function generateAutoload() {
+    $vendorPath = $this->getVendorPath();
+    $webroot = $this->getWebRoot();
+
+    // Calculate the relative path from the webroot (location of the
+    // project autoload.php) to the vendor directory.
+    $fs = new SymfonyFilesystem();
+    $relativeVendorPath = $fs->makePathRelative($vendorPath, realpath($webroot));
+
+    $fs->dumpFile($webroot . "/autoload.php", $this->autoLoadContents($relativeVendorPath));
+  }
+
+  /**
+   * Build the contents of the autoload file.
+   *
+   * @return string
+   */
+  protected function autoLoadContents($relativeVendorPath) {
+    $relativeVendorPath = rtrim($relativeVendorPath, '/');
+
+    $autoloadContents = <<<EOF
+<?php
+
+/**
+ * @file
+ * Includes the autoloader created by Composer.
+ *
+ * This file was generated by drupal-composer/drupal-scaffold.
+ * https://github.com/drupal-composer/drupal-scaffold
+ *
+ * @see composer.json
+ * @see index.php
+ * @see core/install.php
+ * @see core/rebuild.php
+ * @see core/modules/statistics/statistics.php
+ */
+
+return require __DIR__ . '/$relativeVendorPath/autoload.php';
+
+EOF;
+    return $autoloadContents;
+  }
+
+  /**
+   * Get the path to the 'vendor' directory.
+   *
+   * @return string
+   */
+  public function getVendorPath() {
+    $config = $this->composer->getConfig();
+    $filesystem = new Filesystem();
+    $filesystem->ensureDirectoryExists($config->get('vendor-dir'));
+    $vendorPath = $filesystem->normalizePath(realpath($config->get('vendor-dir')));
+
+    return $vendorPath;
+  }
+
+  /**
+   * Retrieve the path to the web root.
+   *
+   * @return string
+   */
+  public function getWebRoot() {
+    $options = $this->getOptions();
+    $webroot = $options['locations']['webroot'];
+
+    return $webroot;
+  }
+
+  /**
+   * Retrieve a package from the current composer process.
+   *
+   * @param string $name
+   *   Name of the package to get from the current composer installation.
+   *
+   * @return \Composer\Package\PackageInterface
+   */
+  protected function getPackage($name) {
+    return $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
+  }
+
+  /**
+   * Retrieve options from optional "extra" configuration.
+   *
+   * @return array
+   */
+  protected function getOptions() {
+    $extra = $this->composer->getPackage()->getExtra() + ['composer-scaffold' => []];
+    $options = $extra['composer-scaffold'] + [
+      "allowed-packages" => [],
+      "locations" => [],
+      "symlink" => false,
+      "file-mapping" => [],
+    ];
+    return $options;
+  }
+
+}
