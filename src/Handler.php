@@ -11,9 +11,7 @@ use Composer\DependencyResolver\Operation\UpdateOperation;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
-use Composer\Semver\Semver;
 use Composer\Util\Filesystem;
-use Composer\Util\RemoteFilesystem;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
 /**
@@ -21,8 +19,8 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
  */
 class Handler {
 
-  const PRE_DRUPAL_SCAFFOLD_CMD = 'pre-drupal-scaffold-cmd';
-  const POST_DRUPAL_SCAFFOLD_CMD = 'post-drupal-scaffold-cmd';
+  const PRE_COMPOSER_SCAFFOLD_CMD = 'pre-composer-scaffold-cmd';
+  const POST_COMPOSER_SCAFFOLD_CMD = 'post-composer-scaffold-cmd';
 
   /**
    * @var \Composer\Composer
@@ -56,27 +54,6 @@ class Handler {
     $this->composer = $composer;
     $this->io = $io;
     $this->progress = TRUE;
-
-    // Pre-load all of our sources so that we do not run up
-    // against problems in `composer update` operations.
-    $this->manualLoad();
-  }
-
-  protected function manualLoad() {
-    $src_dir = __DIR__;
-
-    $classes = [
-      'CommandProvider',
-      'DrupalScaffoldCommand',
-      'FileFetcher',
-      'PrestissimoFileFetcher',
-    ];
-
-    foreach ($classes as $src) {
-      if (!class_exists('\\DrupalComposer\\DrupalScaffold\\' . $src)) {
-        include "{$src_dir}/{$src}.php";
-      }
-    }
   }
 
   /**
@@ -150,12 +127,12 @@ class Handler {
 
     // Call any pre-scaffold scripts that may be defined.
     $dispatcher = new EventDispatcher($this->composer, $this->io);
-    $dispatcher->dispatch(self::PRE_DRUPAL_SCAFFOLD_CMD);
+    $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
 
     // @todo Copy the actual files.
 
     // Call post-scaffold scripts.
-    $dispatcher->dispatch(self::POST_DRUPAL_SCAFFOLD_CMD);
+    $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
   }
 
   /**
