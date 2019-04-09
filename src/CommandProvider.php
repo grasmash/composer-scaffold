@@ -1,6 +1,6 @@
 <?php
 
-namespace DrupalComposer\DrupalScaffold;
+namespace Grasmash\ComposerScaffold;
 
 use Composer\Plugin\Capability\CommandProvider as CommandProviderCapability;
 
@@ -14,7 +14,7 @@ class CommandProvider implements CommandProviderCapability {
    */
   public function getCommands() {
     return [
-      new DrupalScaffoldCommand(),
+      new ComposerScaffoldCommand(),
     ];
   }
 

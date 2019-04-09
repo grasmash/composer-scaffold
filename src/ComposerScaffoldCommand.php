@@ -1,6 +1,6 @@
 <?php
 
-namespace DrupalComposer\DrupalScaffold;
+namespace Grasmash\ComposerScaffold;
 
 use Composer\Command\BaseCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -32,5 +32,5 @@ class ComposerScaffoldCommand extends BaseCommand {
     // Generate the autoload.php file after generating the scaffold files.
     $handler->generateAutoload();
   }
-  
+
 }

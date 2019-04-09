@@ -1,6 +1,6 @@
 <?php
 
-namespace DrupalComposer\DrupalScaffold;
+namespace Grasmash\ComposerScaffold;
 
 use Composer\Script\Event;
 use Composer\Installer\PackageEvent;
