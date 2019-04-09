@@ -2,6 +2,7 @@
 
 namespace Grasmash\ComposerScaffold;
 
+use Composer\Package\Package;
 use Composer\Script\Event;
 use Composer\Plugin\CommandEvent;
 use Composer\Composer;
@@ -34,6 +35,8 @@ class Handler {
    * A boolean indicating if progress should be displayed.
    */
   protected $progress;
+
+  protected $allowedPackages;
 
   /**
    * Handler constructor.
@@ -68,26 +71,31 @@ class Handler {
    */
   public function onPostCmdEvent(Event $event) {
     if (isset($this->drupalCorePackage)) {
-      $this->downloadScaffold();
+      $this->copyAllFiles();
       // Generate the autoload.php file after generating the scaffold files.
       $this->generateAutoload();
     }
   }
 
+  public function getPackageFileMappings(Package $package) {
+    $package_extra = $package->getExtra();
+    $package_file_mappings = $package_extra['composer-scaffold']['file-mapping'];
+
+    return $package_file_mappings;
+  }
+
   /**
    * Downloads drupal scaffold files for the current process.
    */
-  public function copyPackageFiles($package) {
-    $webroot = realpath($this->getWebRoot());
-
-    // Collect options, excludes and settings files.
-    // @todo Gather all mapping settings for this package, merge into single array.
-
+  public function copyAllFiles() {
     // Call any pre-scaffold scripts that may be defined.
     $dispatcher = new EventDispatcher($this->composer, $this->io);
     $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
 
-    // @todo Copy the actual files.
+    $this->allowedPackages = $this->getAllowedPackages();
+    $file_mappings = $this->getFileMappingsFromPackages($this->allowedPackages);
+    $file_mappings = $this->replaceWebRootToken($file_mappings);
+    $this->copyFiles($file_mappings);
 
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
@@ -161,7 +169,8 @@ EOF;
    */
   public function getWebRoot() {
     $options = $this->getOptions();
-    $webroot = $options['locations']['webroot'];
+    // @todo Throw exception if this array key is missing.
+    $webroot = $options['locations']['web-root'];
 
     return $webroot;
   }
@@ -175,7 +184,12 @@ EOF;
    * @return \Composer\Package\PackageInterface
    */
   protected function getPackage($name) {
-    return $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
+    $package =  $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
+    if (is_null($package)) {
+      $this->io->write("<comment>Composer Scaffold could not find installed package with name $name. No files were copied.</comment>");
+    }
+
+    return $package;
   }
 
   /**
@@ -192,6 +206,115 @@ EOF;
       "file-mapping" => [],
     ];
     return $options;
+  }
+
+  /**
+   * Merges arrays recursively while preserving.
+   *
+   * @param array $array1
+   *   The first array.
+   * @param array $array2
+   *   The second array.
+   *
+   * @return array
+   *   The merged array.
+   *
+   * @see http://php.net/manual/en/function.array-merge-recursive.php#92195
+   */
+  public static function arrayMergeRecursiveDistinct(
+    array &$array1,
+    array &$array2
+  ) {
+    $merged = $array1;
+    foreach ($array2 as $key => &$value) {
+      if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
+        $merged[$key] = self::arrayMergeRecursiveDistinct($merged[$key],
+          $value);
+      }
+      else {
+        $merged[$key] = $value;
+      }
+    }
+    return $merged;
+  }
+
+  /**
+   * @param $file_mappings
+   *
+   * @return array
+   */
+  protected function replaceWebRootToken($file_mappings) {
+    $webroot = realpath($this->getWebRoot());
+    foreach ($file_mappings as $package_name => $files) {
+      foreach ($files as $source => $target) {
+        if (is_string($target)) {
+          $file_mappings[$package_name][$source] = str_replace('[web-root]', $webroot, $target);
+        }
+      }
+    }
+    return $file_mappings;
+  }
+
+  /**
+   * @param $file_mappings
+   */
+  protected function copyFiles($file_mappings): void {
+    foreach ($file_mappings as $package_name => $files) {
+      foreach ($files as $source => $target) {
+        if ($target && $this->getAllowedPackage($package_name)) {
+          $source_path = $this->getVendorPath() . '/' . $package_name . '/' . $source;
+          if (!file_exists($source)) {
+            $this->io->writeError("Could not find source file $source for package $package_name");
+          }
+          copy($source_path, $target);
+        }
+      }
+    }
+  }
+
+  public function getAllowedPackage($package_name) {
+    if (array_key_exists($package_name, $this->allowedPackages)) {
+      return $this->allowedPackages[$package_name];
+    }
+
+    return null;
+  }
+
+  /**
+   * @param $allowed_packages
+   *
+   * @return array
+   */
+  protected function getFileMappingsFromPackages($allowed_packages): array {
+    $file_mappings = [];
+    foreach ($allowed_packages as $name => $package) {
+      $package_file_mappings = $this->getPackageFileMappings($package);
+      $file_mappings = self::arrayMergeRecursiveDistinct($file_mappings,
+        $package_file_mappings);
+    }
+    return $file_mappings;
+  }
+
+  /**
+   * @return array
+   */
+  protected function getAllowedPackages(): array {
+    $options = $this->getOptions();
+    $allowed_packages_list = $options['allowed-packages'];
+
+    $allowed_packages = [];
+    foreach ($allowed_packages_list as $name) {
+      $package = $this->getPackage($name);
+      if (!is_null($package)) {
+        $allowed_packages[$name] = $package;
+      }
+    }
+
+    // Add root package at end.
+    $allowed_packages[$this->composer->getPackage()
+      ->getName()] = $this->composer->getPackage();
+
+    return $allowed_packages;
   }
 
 }

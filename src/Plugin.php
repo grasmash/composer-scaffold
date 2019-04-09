@@ -6,8 +6,6 @@ use Composer\Script\Event;
 use Composer\Plugin\CommandEvent;
 use Composer\Composer;
 use Composer\EventDispatcher\EventSubscriberInterface;
-use Composer\Installer\PackageEvent;
-use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
 use Composer\Plugin\Capable;
 use Composer\Plugin\PluginEvents;
@@ -49,8 +47,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
    */
   public static function getSubscribedEvents() {
     return [
-      PackageEvents::POST_PACKAGE_INSTALL => 'postPackage',
-      PackageEvents::POST_PACKAGE_UPDATE => 'postPackage',
       ScriptEvents::POST_UPDATE_CMD => 'postCmd',
       PluginEvents::COMMAND => 'cmdBegins',
     ];
@@ -63,15 +59,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
    */
   public function cmdBegins(CommandEvent $event) {
     $this->handler->onCmdBeginsEvent($event);
-  }
-
-  /**
-   * Post package event behaviour.
-   *
-   * @param \Composer\Installer\PackageEvent $event
-   */
-  public function postPackage(PackageEvent $event) {
-    $this->handler->onPostPackageEvent($event);
   }
 
   /**

@@ -13,10 +13,10 @@
   },
   "extra": {
     "composer-scaffold": {
-      "allowed-packages": {
-        "drupal/core": "*",
-        "pantheon/scaffold-template": "*"
-      },
+      "allowed-packages": [
+        "drupal/core",
+        "pantheon/scaffold-template"
+      ],
       "locations": {
         "web-root": "./docroot"
       },
