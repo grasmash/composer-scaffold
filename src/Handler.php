@@ -3,14 +3,10 @@
 namespace Grasmash\ComposerScaffold;
 
 use Composer\Script\Event;
-use Composer\Installer\PackageEvent;
 use Composer\Plugin\CommandEvent;
 use Composer\Composer;
-use Composer\DependencyResolver\Operation\InstallOperation;
-use Composer\DependencyResolver\Operation\UpdateOperation;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
-use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
@@ -40,11 +36,6 @@ class Handler {
   protected $progress;
 
   /**
-   * @var \Composer\Package\PackageInterface
-   */
-  protected $drupalCorePackage;
-
-  /**
    * Handler constructor.
    *
    * @param \Composer\Composer $composer
@@ -54,23 +45,6 @@ class Handler {
     $this->composer = $composer;
     $this->io = $io;
     $this->progress = TRUE;
-  }
-
-  /**
-   * @param $operation
-   * @return mixed
-   */
-  protected function getCorePackage($operation) {
-    if ($operation instanceof InstallOperation) {
-      $package = $operation->getPackage();
-    }
-    elseif ($operation instanceof UpdateOperation) {
-      $package = $operation->getTargetPackage();
-    }
-    if (isset($package) && $package instanceof PackageInterface && $package->getName() == 'drupal/core') {
-      return $package;
-    }
-    return NULL;
   }
 
   /**
@@ -84,20 +58,6 @@ class Handler {
     }
     else {
       $this->progress = TRUE;
-    }
-  }
-
-  /**
-   * Marks scaffolding to be processed after an install or update command.
-   *
-   * @param \Composer\Installer\PackageEvent $event
-   */
-  public function onPostPackageEvent(PackageEvent $event) {
-    $package = $this->getCorePackage($event->getOperation());
-    if ($package) {
-      // By explicitly setting the core package, the onPostCmdEvent() will
-      // process the scaffolding automatically.
-      $this->drupalCorePackage = $package;
     }
   }
 
