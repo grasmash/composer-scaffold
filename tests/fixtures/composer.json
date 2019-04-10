@@ -1,15 +1,24 @@
 {
   "name": "my/project",
-  "description": "Test for Composer Scaffold.",
-  "license": "GPL-2.0-or-later",
-  "require": {
-    "drupal/composer-scaffold": "*",
-    "drupal/core": "^8.8",
-    "pantheon/scaffold-files": "*"
+  "type": "project",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "repositories": {
+    "composer-scaffold": {
+      "type": "path",
+      "url": "../composer-scaffold",
+      "options": {
+        "symlink": true
+      }
+    },
+    "drupal": {
+      "type": "composer",
+      "url": "https://packages.drupal.org/8"
+    }
   },
-  "config": {
-    "optimize-autoloader": true,
-    "sort-packages": true
+  "require": {
+    "grasmash/composer-scaffold": "*",
+    "drupal/core": "^8.6"
   },
   "extra": {
     "composer-scaffold": {
@@ -27,6 +36,17 @@
           "assets/robots.txt": "[web-root]/robots-default.txt"
         }
       }
+    },
+    "installer-paths": {
+      "docroot/core": ["type:drupal-core"],
+      "docroot/modules/contrib/{$name}": ["type:drupal-module"],
+      "docroot/modules/custom/{$name}": ["type:drupal-custom-module"],
+      "docroot/profiles/contrib/{$name}": ["type:drupal-profile"],
+      "docroot/profiles/custom/{$name}": ["type:drupal-custom-profile"],
+      "docroot/themes/contrib/{$name}": ["type:drupal-theme"],
+      "docroot/themes/custom/{$name}": ["type:drupal-custom-theme"],
+      "docroot/libraries/{$name}": ["type:drupal-library"],
+      "drush/Commands/{$name}": ["type:drupal-drush"]
     }
   }
 }

@@ -214,7 +214,7 @@ EOF;
   protected function getPackage($name) {
     $package =  $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
     if (is_null($package)) {
-      $this->io->write("<comment>Composer Scaffold could not find installed package with name $name. No files were copied.</comment>");
+      $this->io->write("<comment>Composer Scaffold could not find installed package `$name`.</comment>");
     }
 
     return $package;
@@ -302,6 +302,7 @@ EOF;
     foreach ($file_mappings as $package_name => $files) {
       foreach ($files as $source => $target) {
         if ($target && $this->getAllowedPackage($package_name)) {
+          // @todo Fix this! Drupal core actually isn't in vendor.
           $source_path = $this->getVendorPath() . '/' . $package_name . '/' . $source;
           if (!file_exists($source)) {
             $this->io->writeError("Could not find source file $source for package $package_name");
