@@ -30,13 +30,6 @@ class Handler {
   protected $io;
 
   /**
-   * @var bool
-   *
-   * A boolean indicating if progress should be displayed.
-   */
-  protected $progress;
-
-  /**
    * @var Package[]
    *
    * An array of allowed packages keyed by package name.
@@ -52,21 +45,6 @@ class Handler {
   public function __construct(Composer $composer, IOInterface $io) {
     $this->composer = $composer;
     $this->io = $io;
-    $this->progress = TRUE;
-  }
-
-  /**
-   * Get the command options.
-   *
-   * @param \Composer\Plugin\CommandEvent $event
-   */
-  public function onCmdBeginsEvent(CommandEvent $event) {
-    if ($event->getInput()->hasOption('no-progress')) {
-      $this->progress = !($event->getInput()->getOption('no-progress'));
-    }
-    else {
-      $this->progress = TRUE;
-    }
   }
 
   /**
@@ -75,11 +53,9 @@ class Handler {
    * @param \Composer\Script\Event $event
    */
   public function onPostCmdEvent(Event $event) {
-    if (isset($this->drupalCorePackage)) {
-      $this->copyAllFiles();
-      // Generate the autoload.php file after generating the scaffold files.
-      $this->generateAutoload();
-    }
+    $this->copyAllFiles();
+    // Generate the autoload.php file after generating the scaffold files.
+    $this->generateAutoload();
   }
 
   /**
@@ -365,6 +341,7 @@ EOF;
     $file_mappings = [];
     foreach ($allowed_packages as $name => $package) {
       $package_file_mappings = $this->getPackageFileMappings($package);
+      // @todo Write test to ensure overriding occurs as indended.
       $file_mappings = self::arrayMergeRecursiveDistinct($file_mappings,
         $package_file_mappings);
     }
