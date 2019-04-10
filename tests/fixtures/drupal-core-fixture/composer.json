@@ -1,0 +1,16 @@
+{
+  "name": "fixtures/drupal-core-fixture",
+  "extra": {
+    "composer-scaffold": {
+      "file-mapping": {
+        "drupal-core-fixture": {
+          "assets/htaccess": "[web-root]/.htaccess",
+          "assets/index.php": "[web-root]/index.php",
+          "assets/robots.txt": "[web-root]/robots.txt",
+          "assets/sites-default-services.yml": "[web-root]/sites/default/default.services.yml",
+          "assets/sites-default-settings.php": "[web-root]/sites/default/settings.php"
+        }
+      }
+    }
+  }
+}
