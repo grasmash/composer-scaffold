@@ -13,10 +13,10 @@ Sample composer.json for a project that relies on packages that use composer-sca
   },
   "extra": {
     "composer-scaffold": {
-      "allowed-packages": {
-        "drupal/core": "*",
-        "pantheon/scaffold-template": "*"
-      },
+      "allowed-packages": [
+        "drupal/core",
+        "pantheon/scaffold-template"
+      ],
       "locations": {
         "web-root": "./docroot"
       },
