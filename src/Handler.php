@@ -279,23 +279,33 @@ EOF;
     $composer_root = dirname($this->getVendorPath());
 
     foreach ($file_mappings as $package_name => $files) {
-      foreach ($files as $source => $target) {
-        if ($target && $this->getAllowedPackage($package_name)) {
+      foreach ($files as $source => $destination) {
+        if ($destination && $this->getAllowedPackage($package_name)) {
           $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
-          $source_path = $composer_root . '/' . $package_path . '/' . $source;
+          $source_path = $package_path . '/' . $source;
           if (!file_exists($source_path)) {
-            $this->io->writeError("Could not find source file $source_path for package $package_name");
+            $this->io->writeError("Could not find source file $source_path for package $package_name\n");
             continue;
           }
+          if (file_exists($destination)) {
+            unlink($destination);
+          }
+          $success = FALSE;
           if ($symlink) {
-            $success = symlink($target, $source_path);
+            // @todo If the target directory does not exist, this fails!
+            try {
+              $success = symlink($source_path, $destination);
+            }
+            catch (\Exception $e) {
+
+            }
           }
           else {
-            $success = copy($source_path, $target);
+            $success = copy($source_path, $destination);
           }
           if (!$success) {
             $verb = $symlink ? 'symlink' : 'copy';
-            $this->io->writeError("Could not $verb source file $source to $target");
+            $this->io->writeError("Could not $verb source file $source_path to $destination");
           }
         }
       }
