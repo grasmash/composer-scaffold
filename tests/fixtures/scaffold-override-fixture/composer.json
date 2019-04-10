@@ -1,0 +1,12 @@
+{
+  "name": "fixtures/scaffold-override-fixture",
+  "extra": {
+    "composer-scaffold": {
+      "file-mapping": {
+        "fixtures/scaffold-override-fixture": {
+          "assets/override-settings.php": "[web-root]/sites/default/default.settings.php"
+        }
+      }
+    }
+  }
+}

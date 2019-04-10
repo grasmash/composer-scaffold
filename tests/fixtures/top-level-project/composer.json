@@ -6,7 +6,21 @@
   "repositories": {
     "composer-scaffold": {
       "type": "path",
-      "url": "../composer-scaffold",
+      "url": "../../composer-scaffold",
+      "options": {
+        "symlink": true
+      }
+    },
+    "drupal-core-fixture": {
+      "type": "path",
+      "url": "../drupal-core-fixture",
+      "options": {
+        "symlink": true
+      }
+    },
+    "scaffold-override-fixture": {
+      "type": "path",
+      "url": "../scaffold-override-fixture",
       "options": {
         "symlink": true
       }
@@ -18,13 +32,16 @@
   },
   "require": {
     "grasmash/composer-scaffold": "*",
-    "drupal/core": "^8.6"
+    "composer/installers": "^1.2",
+    "cweagans/composer-patches": "^1.6.5",
+    "fixtures/drupal-core-fixture": "*",
+    "fixtures/scaffold-override-fixture": "*"
   },
   "extra": {
     "composer-scaffold": {
       "allowed-packages": [
-        "drupal/core",
-        "pantheon/scaffold-template"
+        "fixtures/drupal-core-fixture",
+        "fixtures/scaffold-override-fixture"
       ],
       "locations": {
         "web-root": "./docroot"
@@ -46,7 +63,7 @@
       "docroot/themes/contrib/{$name}": ["type:drupal-theme"],
       "docroot/themes/custom/{$name}": ["type:drupal-custom-theme"],
       "docroot/libraries/{$name}": ["type:drupal-library"],
-      "drush/Commands/{$name}": ["type:drupal-drush"]
+      "drush/Commands/contrib/{$name}": ["type:drupal-drush"]
     }
   }
 }

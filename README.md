@@ -4,8 +4,10 @@ Sample composer.json for a project that relies on packages that use composer-sca
   "name": "my/project",
   "require": {
     "drupal/composer-scaffold": "*",
-    "drupal/core": "^8.8",
-    "pantheon/scaffold-files": "*"
+    "composer/installers": "^1.2",
+    "cweagans/composer-patches": "^1.6.5",
+    "drupal/core": "^8.8.x-dev",
+    "pantheon-systems/d8-scaffold-files": "^1"
   },
   "config": {
     "optimize-autoloader": true,
@@ -13,10 +15,10 @@ Sample composer.json for a project that relies on packages that use composer-sca
   },
   "extra": {
     "composer-scaffold": {
-      "allowed-packages": {
-        "drupal/core": "*",
-        "pantheon/scaffold-template": "*"
-      },
+      "allowed-packages": [
+        "drupal/core",
+        "pantheon-systems/d8-scaffold-files"
+      ],
       "locations": {
         "web-root": "./docroot"
       },
@@ -32,23 +34,46 @@ Sample composer.json for a project that relies on packages that use composer-sca
 }
 ```
 
-Sample composer.json for a library that implements composer-scaffold:
+Sample composer.json for composer-scaffold files in drupal/core:
 
 ```
-"name": "drupal/core",
-"extra": {
-    "composer-scaffold": {
-      "file-mapping": {
-        "drupal/core": {
-          "assets/.htaccess": "[web-root]/.htaccess",
-          "assets/index.php": "[web-root]/index.php",
-          "assets/robots.txt": "[web-root]/robots.txt"
+{
+  "name": "drupal/core",
+  "extra": {
+      "composer-scaffold": {
+        "file-mapping": {
+          "drupal/core": {
+            "assets/.htaccess": "[web-root]/.htaccess",
+            "assets/index.php": "[web-root]/index.php",
+            "assets/robots.txt": "[web-root]/robots.txt",
+            "assets/sites/default/default.services.yml": "[web-root]/sites/default/default.services.yml"
+            "assets/sites/default/settings.php": "[web-root]/sites/default/settings.php"
+          }
         }
       }
     }
   }
 }
 ```
+
+Sample composer.json for a library that implements composer-scaffold:
+
+```
+{
+  "name": "pantheon-systems/d8-scaffold-files",
+  "extra": {
+      "composer-scaffold": {
+        "file-mapping": {
+          "pantheon-systems/d8-scaffold-files": {
+            "assets/sites/default/settings.php": "[web-root]/sites/default/settings.php"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 
 Patch a file after it's copied:
 
