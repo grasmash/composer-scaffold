@@ -299,13 +299,17 @@ EOF;
   protected function copyFiles($file_mappings) {
     $options = $this->getOptions();
     $symlink = $options['symlink'];
+    $installationManager = $this->composer->getInstallationManager();
+    $composer_root = dirname($this->getVendorPath());
+
     foreach ($file_mappings as $package_name => $files) {
       foreach ($files as $source => $target) {
         if ($target && $this->getAllowedPackage($package_name)) {
-          // @todo Fix this! Drupal core actually isn't in vendor.
-          $source_path = $this->getVendorPath() . '/' . $package_name . '/' . $source;
-          if (!file_exists($source)) {
-            $this->io->writeError("Could not find source file $source for package $package_name");
+          $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
+          $source_path = $composer_root . '/' . $package_path . '/' . $source;
+          if (!file_exists($source_path)) {
+            $this->io->writeError("Could not find source file $source_path for package $package_name");
+            continue;
           }
           if ($symlink) {
             $success = symlink($target, $source_path);
@@ -375,7 +379,7 @@ EOF;
    * package has the highest priority. The root package will always be returned
    * at the end of the list.
    *
-   * @return array
+   * @return Package[]
    */
   protected function getAllowedPackages(): array {
     $options = $this->getOptions();
