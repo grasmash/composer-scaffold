@@ -88,12 +88,22 @@ class Handler {
    * @param \Composer\Package\Package $package
    *
    * @return array
+   *   An associative array of file mappings, keyed by relative source file
+   *   path. For example:
+   *   [
+   *     'path/to/source/file' => 'path/to/destination',
+   *     'path/to/source/file' => false,
+   *   ]
    */
   public function getPackageFileMappings(Package $package) {
     $package_extra = $package->getExtra();
-    // @todo Ensure that if extra does not contain these array keys, an
-    // empty array is returned.
-    $package_file_mappings = $package_extra['composer-scaffold']['file-mapping'];
+    if (!array_key_exists('composer-scaffold', $package_extra) || !array_key_exists('file-mapping', $package_extra['composer-scaffold'])) {
+      $this->io->writeError("The allowed package {$package->getName()} does not provide a file mapping for Composer Scaffold.");
+      $package_file_mappings = [];
+    }
+    else {
+      $package_file_mappings = $package_extra['composer-scaffold']['file-mapping'];
+    }
 
     return $package_file_mappings;
   }
@@ -180,10 +190,14 @@ EOF;
    * Retrieve the path to the web root.
    *
    * @return string
+   * @throws \Exception
    */
   public function getWebRoot() {
     $options = $this->getOptions();
-    // @todo Throw exception if this array key is missing.
+    // @todo Allow packages to set web root location?
+    if (!array_key_exists('web-root', $options['locations'])) {
+      throw new \Exception("The extra.composer-scaffold.location.web-root is not set in composer.json.");
+    }
     $webroot = $options['locations']['web-root'];
 
     return $webroot;
@@ -283,6 +297,8 @@ EOF;
    *   self::getFileMappingsFromPackages().
    */
   protected function copyFiles($file_mappings) {
+    $options = $this->getOptions();
+    $symlink = $options['symlink'];
     foreach ($file_mappings as $package_name => $files) {
       foreach ($files as $source => $target) {
         if ($target && $this->getAllowedPackage($package_name)) {
@@ -290,10 +306,15 @@ EOF;
           if (!file_exists($source)) {
             $this->io->writeError("Could not find source file $source for package $package_name");
           }
-          // @todo If 'symlink' is true, create symlink instead of copy.
-          $success = copy($source_path, $target);
+          if ($symlink) {
+            $success = symlink($target, $source_path);
+          }
+          else {
+            $success = copy($source_path, $target);
+          }
           if (!$success) {
-            $this->io->writeError("Could not copy source file $source to $target");
+            $verb = $symlink ? 'symlink' : 'copy';
+            $this->io->writeError("Could not $verb source file $source to $target");
           }
         }
       }
