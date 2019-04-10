@@ -36,6 +36,11 @@ class Handler {
    */
   protected $progress;
 
+  /**
+   * @var Package[]
+   *
+   * An array of allowed packages keyed by package name.
+   */
   protected $allowedPackages;
 
   /**
@@ -77,15 +82,24 @@ class Handler {
     }
   }
 
+  /**
+   * Gets the array of file mappings provided by a given package.
+   *
+   * @param \Composer\Package\Package $package
+   *
+   * @return array
+   */
   public function getPackageFileMappings(Package $package) {
     $package_extra = $package->getExtra();
+    // @todo Ensure that if extra does not contain these array keys, an
+    // empty array is returned.
     $package_file_mappings = $package_extra['composer-scaffold']['file-mapping'];
 
     return $package_file_mappings;
   }
 
   /**
-   * Downloads drupal scaffold files for the current process.
+   * Copies all scaffold files from source to destination.
    */
   public function copyAllFiles() {
     // Call any pre-scaffold scripts that may be defined.
@@ -205,6 +219,7 @@ EOF;
       "symlink" => false,
       "file-mapping" => [],
     ];
+
     return $options;
   }
 
@@ -239,9 +254,14 @@ EOF;
   }
 
   /**
-   * @param $file_mappings
+   * Replaces '[web-root]' token in file mappings.
+   *
+   * @param array $file_mappings
+   *   An multidimensional array of file mappings, as returned by
+   *   self::getFileMappingsFromPackages().
    *
    * @return array
+   *   An multidimensional array of file mappings with tokens replaced.
    */
   protected function replaceWebRootToken($file_mappings) {
     $webroot = realpath($this->getWebRoot());
@@ -256,9 +276,13 @@ EOF;
   }
 
   /**
-   * @param $file_mappings
+   * Copy all files, as defined by $file_mappings.
+   *
+   * @param array $file_mappings
+   *   An multidimensional array of file mappings, as returned by
+   *   self::getFileMappingsFromPackages().
    */
-  protected function copyFiles($file_mappings): void {
+  protected function copyFiles($file_mappings) {
     foreach ($file_mappings as $package_name => $files) {
       foreach ($files as $source => $target) {
         if ($target && $this->getAllowedPackage($package_name)) {
@@ -266,12 +290,24 @@ EOF;
           if (!file_exists($source)) {
             $this->io->writeError("Could not find source file $source for package $package_name");
           }
-          copy($source_path, $target);
+          // @todo If 'symlink' is true, create symlink instead of copy.
+          $success = copy($source_path, $target);
+          if (!$success) {
+            $this->io->writeError("Could not copy source file $source to $target");
+          }
         }
       }
     }
   }
 
+  /**
+   * Gets an allowed package from $this->allowedPackages array.
+   *
+   * @param string $package_name
+   *   The Composer package name. E.g., drupal/core.
+   *
+   * @return \Composer\Package\Package|null
+   */
   public function getAllowedPackage($package_name) {
     if (array_key_exists($package_name, $this->allowedPackages)) {
       return $this->allowedPackages[$package_name];
@@ -281,9 +317,23 @@ EOF;
   }
 
   /**
-   * @param $allowed_packages
+   * Gets a consolidated list of file mappings from all allowed packages.
+   *
+   * @param Package[] $allowed_packages
+   *   A multidimensional array of file mappings, as returned by
+   *   self::getAllowedPackages().
    *
    * @return array
+   *   An multidimensional array of file mappings, which looks like this:
+   *   [
+   *     'drupal/core' => [
+   *       'path/to/source/file' => 'path/to/destination',
+   *       'path/to/source/file' => false,
+   *     ],
+   *     'some/package' => [
+   *       'path/to/source/file' => 'path/to/destination',
+   *     ],
+   *   ]
    */
   protected function getFileMappingsFromPackages($allowed_packages): array {
     $file_mappings = [];
@@ -296,6 +346,13 @@ EOF;
   }
 
   /**
+   * Gets a list of all packages that are allowed to copy scaffold files.
+   *
+   * Configuration for packages specified later will override configuration
+   * specified by packages listed earlier. In other words, the last listed
+   * package has the highest priority. The root package will always be returned
+   * at the end of the list.
+   *
    * @return array
    */
   protected function getAllowedPackages(): array {
