@@ -297,9 +297,6 @@ EOF;
   protected function moveFiles($file_mappings) {
     $options = $this->getOptions();
     $symlink = $options['symlink'];
-    $installationManager = $this->composer->getInstallationManager();
-    $root_package = $this->composer->getPackage();
-    $composer_root = $installationManager->getInstallPath($root_package);
     $fs = new Filesystem();
 
     foreach ($file_mappings as $package_name => $files) {
@@ -311,15 +308,9 @@ EOF;
       $this->io->write("Scaffold <info>$package_name</info>:");
       foreach ($files as $source => $destination) {
         if ($destination) {
-          if ($package_name == $root_package->getName()) {
-            $package_path = $composer_root;
-          }
-          else {
-            $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
-          }
+          $package_path = $this->getPackagePath($package_name);
           $source_path = $package_path . '/' . $source;
           if (!file_exists($source_path)) {
-            // TODO: Maybe this should cause the whole operation to abort?
             $this->io->writeError("Could not find source file $source_path for package $package_name\n");
             continue;
           }
@@ -334,7 +325,7 @@ EOF;
           $success = FALSE;
           if ($symlink) {
             try {
-              $success = symlink($source_path, $destination);
+              $success = $fs->relativeSymlink($source_path, $destination);
             }
             catch (\Exception $e) {
             }
@@ -434,6 +425,30 @@ EOF;
       ->getName()] = $this->composer->getPackage();
 
     return $allowed_packages;
+  }
+
+  /**
+   * Gets the file path of a package.
+   *
+   * @param string $package_name
+   *   The package name.
+   *
+   * @return string
+   *   The file path.
+   */
+  protected function getPackagePath(
+    $package_name
+  ) {
+    $installationManager = $this->composer->getInstallationManager();
+    $root_package = $this->composer->getPackage();
+    $composer_root = $installationManager->getInstallPath($root_package);
+    if ($package_name == $root_package->getName()) {
+      $package_path = $composer_root;
+    }
+    else {
+      $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
+    }
+    return $package_path;
   }
 
 }
