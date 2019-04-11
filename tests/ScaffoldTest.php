@@ -118,7 +118,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Asserts that scaffold files were correctly moved.
    */
   protected function assertSutWasScaffolded() {
     // TODO: Test to see if the contents of these files is as expected.
@@ -132,7 +132,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Asserts that a given file exists and is/is not a symlink.
    */
   protected function assertScaffoldedFile($file, $is_link = NULL) {
     $path = $this->sut . '/' . $file;
@@ -144,7 +144,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Provide default Composer Scaffold configuration for testing.
    */
   protected function getDefaultComposerScaffoldConfig() {
     return [
