@@ -167,8 +167,10 @@ class ScaffoldTest extends TestCase {
       ],
       "symlink" => TRUE,
       "file-mapping" => [
-        "self" => [
+        "drupal/core" => [
           "assets/.htaccess" => FALSE,
+        ],
+        "my/project" => [
           "assets/robots-default.txt" => "[web-root]/robots.txt",
         ],
       ],
@@ -188,7 +190,6 @@ class ScaffoldTest extends TestCase {
     $this->assertEquals(Handler::arrayMergeRecursiveDistinct($array1,
       $array2), $expected_array);
   }
-
   /**
    * Provides values to testArrayMergeRecursiveDistinct().
    *
@@ -199,20 +200,20 @@ class ScaffoldTest extends TestCase {
     return [
       [
         [
-          "self" => [
+          "drupal/core" => [
             "assets/.htaccess" => "[web-root]/.htaccess",
             "assets/robots-default.txt" => "[web-root]/robots.txt",
             "assets/index.php" => "[web-root]/index.php",
           ],
         ],
         [
-          "self" => [
+          "drupal/core" => [
             "assets/.htaccess" => FALSE,
             "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
           ],
         ],
         [
-          "self" => [
+          "drupal/core" => [
             "assets/.htaccess" => FALSE,
             "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
             "assets/index.php" => "[web-root]/index.php",

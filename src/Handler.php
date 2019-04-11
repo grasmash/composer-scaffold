@@ -311,7 +311,12 @@ EOF;
       $this->io->write("Scaffold <info>$package_name</info>:");
       foreach ($files as $source => $destination) {
         if ($destination) {
-          $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
+          if ($package_name == $root_package->getName()) {
+            $package_path = $composer_root;
+          }
+          else {
+            $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
+          }
           $source_path = $package_path . '/' . $source;
           if (!file_exists($source_path)) {
             // TODO: Maybe this should cause the whole operation to abort?
