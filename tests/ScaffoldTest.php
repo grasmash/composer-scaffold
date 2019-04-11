@@ -4,99 +4,78 @@ namespace Consolidation\SiteProcess;
 
 use PHPUnit\Framework\TestCase;
 use Composer\Util\Filesystem;
-use SebastianBergmann\CodeCoverage\Node\File;
+use Symfony\Component\Process\Process;
 
-class ScaffoldTest extends TestCase
-{
+class ScaffoldTest extends TestCase {
+
   protected $fixtures;
+
   protected $sut;
-  /** @var  \Symfony\Component\Filesystem\Filesystem */
-  protected $fs;
+
+  protected $fileSystem;
 
   /**
-   * Set up our System Under Test
+   * {@inheritdoc}
    */
-  public function setUp()
-  {
-    $this->fixtures = dirname($this->projectRoot()) . '/composer-scaffold-test';
+  protected function setUp() {
+    $this->fileSystem = new Filesystem();
+
+    $projectRoot = dirname(__DIR__);
+    $this->fixtures = dirname($projectRoot) . '/composer-scaffold-test';
     $this->sut = $this->fixtures . '/top-level-project';
-    $this->createSut();
-    $this->fs = new \Symfony\Component\Filesystem\Filesystem();
+
+    $this->removeSut();
+    $this->fileSystem->copy($projectRoot . '/tests/fixtures', $this->fixtures);
   }
 
   /**
-   * Remove our System Under Test
+   * {@inheritdoc}
    */
-  public function tearDown()
-  {
+  protected function tearDown() {
     // For now, leave the SUT in place so that we can inspect it.
     // $this->removeSut();
   }
 
-  protected function projectRoot()
-  {
-    return dirname(__DIR__);
+  protected function removeSut() {
+    $this->fileSystem->remove($this->fixtures);
   }
 
-  protected function sourceFixtures()
-  {
-    return $this->projectRoot() . '/tests/fixtures';
+  protected function removeScaffoldFiles() {
+    $this->fileSystem->remove($this->sut . '/docroot');
   }
 
-  protected function createSut()
-  {
-    $this->removeSut();
-    $fs = new Filesystem();
-    $fs->copy($this->sourceFixtures(), $this->fixtures);
-  }
-
-  protected function removeSut()
-  {
-    $fs = new Filesystem();
-    $fs->remove($this->fixtures);
-  }
-
-  protected function removeScaffoldFiles()
-  {
-    $fs = new Filesystem();
-    $fs->remove($this->sut . '/docroot');
-  }
-
-  public function testScaffold()
-  {
+  public function testScaffold() {
     $default_config = $this->getDefaultComposerScaffoldConfig();
     $this->setSutConfig($default_config);
 
     // Test composer install
-    $this->passthru("composer --working-dir={$this->sut} install");
+    $this->runComposer("install");
     $this->assertSutWasScaffolded();
 
     // Clean up our scaffold files so that we can try it again
     $this->removeScaffoldFiles();
 
     // Test composer:scaffold
-    $this->passthru("composer --working-dir={$this->sut} composer:scaffold");
+    $this->runComposer("composer:scaffold");
     $this->assertSutWasScaffolded();
   }
 
   public function testSymlink() {
     $config = $this->getDefaultComposerScaffoldConfig();
-    $config['symlink'] = true;
+    $config['symlink'] = TRUE;
     $this->setSutConfig($config);
-    $this->passthru("composer --working-dir={$this->sut} install");
+    $this->runComposer('install');
     $this->assertSutWasScaffolded();
-    $file_to_test = $this->sut . '/docroot/robots.txt';
-    $this->assertTrue(is_link($file_to_test), "$file_to_test is not a symlink");
+    $this->assertScaffoldedFile('docroot/robots.txt', TRUE);
   }
 
   public function testNoSymlink() {
     $config = $this->getDefaultComposerScaffoldConfig();
-    $config['symlink'] = false;
+    $config['symlink'] = FALSE;
     $this->setSutConfig($config);
-    $this->passthru("composer --working-dir={$this->sut} install");
+    $this->runComposer('install');
     $this->assertSutWasScaffolded();
-    $file_to_test = $this->sut . '/docroot/robots.txt';
-    $this->assertFalse(is_link($file_to_test), "$file_to_test is a symlink");
+    $this->assertScaffoldedFile('docroot/robots.txt', FALSE);
   }
 
   public function setSutConfig($config) {
@@ -107,22 +86,30 @@ class ScaffoldTest extends TestCase
     return (bool) $bytes;
   }
 
-  protected function passthru($cmd)
-  {
-    passthru($cmd, $status);
-    $this->assertEquals(0, $status);
+  protected function runComposer($cmd) {
+    $process = new Process("composer $cmd", $this->sut);
+    $process->setTimeout(300)->setIdleTimeout(300)->mustRun();
+    $this->assertSame(0, $process->getExitCode());
   }
 
-  protected function assertSutWasScaffolded()
-  {
+  protected function assertSutWasScaffolded() {
     // TODO: Test to see if the contents of these files is as expected.
     $this->assertFileNotExists($this->sut . '/docroot/.htaccess.txt');
-    // $this->assertFileExists($this->sut . '/docroot/autoload.php');
-    $this->assertFileExists($this->sut . '/docroot/index.php');
-    $this->assertFileExists($this->sut . '/docroot/robots.txt');
-    $this->assertFileExists($this->sut . '/docroot/sites/default/default.services.yml');
-    $this->assertFileExists($this->sut . '/docroot/sites/default/default.settings.php');
-    $this->assertFileExists($this->sut . '/docroot/sites/default/settings.php');
+    // $this->assertFileExists('docroot/autoload.php');
+    $this->assertScaffoldedFile('docroot/index.php');
+    $this->assertScaffoldedFile('docroot/robots.txt');
+    $this->assertScaffoldedFile('docroot/sites/default/default.services.yml');
+    $this->assertScaffoldedFile('docroot/sites/default/default.settings.php');
+    $this->assertScaffoldedFile('docroot/sites/default/settings.php');
+  }
+
+  protected function assertScaffoldedFile($file, $is_link = NULL) {
+    $path = $this->sut . '/' . $file;
+    $this->assertFileExists($path);
+
+    if (is_bool($is_link)) {
+      $this->assertSame($is_link, is_link($path));
+    }
   }
 
   protected function getDefaultComposerScaffoldConfig() {
@@ -134,13 +121,13 @@ class ScaffoldTest extends TestCase
       "locations" => [
         "web-root" => "./docroot",
       ],
-      "symlink" => true,
+      "symlink" => TRUE,
       "file-mapping" => [
         "self" => [
-          "assets/.htaccess" => false,
+          "assets/.htaccess" => FALSE,
           "assets/robots-default.txt" => "[web-root]/robots.txt",
-        ]
-      ]
+        ],
+      ],
     ];
   }
 }
