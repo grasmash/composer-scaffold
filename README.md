@@ -16,17 +16,17 @@ Sample composer.json for a project that relies on packages that use composer-sca
   "extra": {
     "composer-scaffold": {
       "allowed-packages": [
-        "drupal/core",
-        "pantheon-systems/d8-scaffold-files"
+        "fixtures/drupal-core-fixture",
+        "fixtures/scaffold-override-fixture"
       ],
       "locations": {
         "web-root": "./docroot"
       },
       "symlink": true,
       "file-mapping": {
-        "drupal/core": {
+        "self": {
           "assets/.htaccess": false,
-          "assets/robots.txt": "[web-root]/robots-default.txt"
+          "assets/robots-default.txt": "[web-root]/robots.txt"
         }
       }
     }
@@ -73,7 +73,6 @@ Sample composer.json for a library that implements composer-scaffold:
   }
 }
 ```
-
 
 Patch a file after it's copied:
 

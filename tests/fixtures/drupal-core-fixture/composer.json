@@ -3,7 +3,7 @@
   "extra": {
     "composer-scaffold": {
       "file-mapping": {
-        "drupal-core-fixture": {
+        "fixtures/drupal-core-fixture": {
           "assets/htaccess": "[web-root]/.htaccess",
           "assets/index.php": "[web-root]/index.php",
           "assets/robots.txt": "[web-root]/robots.txt",
