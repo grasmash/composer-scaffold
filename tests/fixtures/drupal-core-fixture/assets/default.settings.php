@@ -1,2 +1,6 @@
 <?php
-// Test version of default.settings.php from drupal/core.
+
+/**
+ * @file
+ * Test version of default.settings.php from drupal/core.
+ */

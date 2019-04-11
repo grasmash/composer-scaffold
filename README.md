@@ -24,9 +24,11 @@ Sample composer.json for a project that relies on packages that use composer-sca
       },
       "symlink": true,
       "file-mapping": {
-        "self": {
-          "assets/.htaccess": false,
-          "assets/robots-default.txt": "[web-root]/robots.txt"
+        "drupal/core": {
+           "assets/.htaccess": false
+        }
+        "my/project": {
+           "my-assets/robots.txt": "[web-root]/robots.txt"
         }
       }
     }

@@ -74,7 +74,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Tests that scaffolded files are symlinked when symlink is true.
    */
   public function testSymlink() {
     $config = $this->getDefaultComposerScaffoldConfig();
@@ -86,7 +86,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Tests that scaffolded files are not symlinked when symlink is false.
    */
   public function testNoSymlink() {
     $config = $this->getDefaultComposerScaffoldConfig();
@@ -98,7 +98,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Sets extra.composer-scaffold config in the sut's composer.json.
    */
   public function setSutConfig($config) {
     $composer_json = json_decode(file_get_contents($this->sut . '/composer.json'), TRUE);
@@ -109,7 +109,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Runs a `composer` command.
    */
   protected function runComposer($cmd) {
     $process = new Process("composer $cmd", $this->sut);
@@ -188,6 +188,7 @@ class ScaffoldTest extends TestCase {
     $this->assertEquals(Handler::arrayMergeRecursiveDistinct($array1,
       $array2), $expected_array);
   }
+
   /**
    * Provides values to testArrayMergeRecursiveDistinct().
    *

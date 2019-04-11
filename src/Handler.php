@@ -43,7 +43,9 @@ class Handler {
    * Handler constructor.
    *
    * @param \Composer\Composer $composer
+   *   The Composer service.
    * @param \Composer\IO\IOInterface $io
+   *   The Composer io service.
    */
   public function __construct(Composer $composer, IOInterface $io) {
     $this->composer = $composer;
@@ -54,6 +56,7 @@ class Handler {
    * Post install command event to execute the scaffolding.
    *
    * @param \Composer\Script\Event $event
+   *   The Composer event.
    */
   public function onPostCmdEvent(Event $event) {
     $this->moveAllFiles();
@@ -68,6 +71,7 @@ class Handler {
    * Gets the array of file mappings provided by a given package.
    *
    * @param \Composer\Package\Package $package
+   *   The Composer package from which to get the file mappings.
    *
    * @return array
    *   An associative array of file mappings, keyed by relative source file
@@ -108,8 +112,9 @@ class Handler {
   }
 
   /**
-   * Generate the autoload file at the project root.  Include the
-   * autoload file that Composer generated.
+   * Generate the autoload file at the project root.
+   *
+   * Include the autoload file that Composer generated.
    */
   public function generateAutoload() {
     $vendorPath = $this->getVendorPath();
@@ -127,6 +132,7 @@ class Handler {
    * Build the contents of the autoload file.
    *
    * @return string
+   *   Return the contents for the autoload.php.
    */
   protected function autoLoadContents($relativeVendorPath) {
     $relativeVendorPath = rtrim($relativeVendorPath, '/');
@@ -158,6 +164,7 @@ EOF;
    * Get the path to the 'vendor' directory.
    *
    * @return string
+   *   The file path of the vendor directory.
    */
   public function getVendorPath() {
     $config = $this->composer->getConfig();
@@ -172,6 +179,7 @@ EOF;
    * Retrieve the path to the web root.
    *
    * @return string
+   *   The file path of the web root.
    *
    * @throws \Exception
    */
@@ -193,6 +201,7 @@ EOF;
    *   Name of the package to get from the current composer installation.
    *
    * @return \Composer\Package\PackageInterface
+   *   The Composer package.
    */
   protected function getPackage($name) {
     $package = $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
@@ -207,6 +216,7 @@ EOF;
    * Retrieve options from optional "extra" configuration.
    *
    * @return array
+   *
    */
   protected function getOptions() {
     $extra = $this->composer->getPackage()->getExtra() + ['composer-scaffold' => []];
@@ -301,10 +311,7 @@ EOF;
       $this->io->write("Scaffold <info>$package_name</info>:");
       foreach ($files as $source => $destination) {
         if ($destination) {
-          $package_path = $composer_root;
-          if ($package_name != 'self') {
-            $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
-          }
+          $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
           $source_path = $package_path . '/' . $source;
           if (!file_exists($source_path)) {
             // TODO: Maybe this should cause the whole operation to abort?
@@ -353,11 +360,9 @@ EOF;
    *   The Composer package name. E.g., drupal/core.
    *
    * @return \Composer\Package\Package|null
+   *   The allowed Composer package, if it exists.
    */
   public function getAllowedPackage($package_name) {
-    if ($package_name == 'self') {
-      return TRUE;
-    }
     if (array_key_exists($package_name, $this->allowedPackages)) {
       return $this->allowedPackages[$package_name];
     }
