@@ -56,7 +56,7 @@ class Handler {
    * @param \Composer\Script\Event $event
    */
   public function onPostCmdEvent(Event $event) {
-    $this->copyAllFiles();
+    $this->moveAllFiles();
     // Generate the autoload.php file after generating the scaffold files.
     // TODO: This should only happen if drupal/core is scaffolded.
     // Maybe this should be done in response to some metadata in the
@@ -93,7 +93,7 @@ class Handler {
   /**
    * Copies all scaffold files from source to destination.
    */
-  public function copyAllFiles() {
+  public function moveAllFiles() {
     // Call any pre-scaffold scripts that may be defined.
     $dispatcher = new EventDispatcher($this->composer, $this->io);
     $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
@@ -101,7 +101,7 @@ class Handler {
     $this->allowedPackages = $this->getAllowedPackages();
     $file_mappings = $this->getFileMappingsFromPackages($this->allowedPackages);
     $file_mappings = $this->replaceWebRootToken($file_mappings);
-    $this->copyFiles($file_mappings);
+    $this->moveFiles($file_mappings);
 
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
@@ -284,18 +284,18 @@ EOF;
    *   An multidimensional array of file mappings, as returned by
    *   self::getFileMappingsFromPackages().
    */
-  protected function copyFiles($file_mappings) {
+  protected function moveFiles($file_mappings) {
     $options = $this->getOptions();
     $symlink = $options['symlink'];
     $installationManager = $this->composer->getInstallationManager();
-    // TODO: vendor might be relocated. Maybe there's a better way to get the composer root?
-    $composer_root = dirname($this->getVendorPath());
+    $root_package = $this->composer->getPackage();
+    $composer_root = $installationManager->getInstallPath($root_package);
     $fs = new Filesystem();
 
     foreach ($file_mappings as $package_name => $files) {
       if (!$this->getAllowedPackage($package_name)) {
-        // TODO: We probably don't want to emit an errorr here. For early development debugging.
-        $this->io->writeError("FYIO <info>$package_name</info> is not allowed so we are going to skip it.");
+        // TODO: We probably don't want to emit an error here. For early development debugging.
+        $this->io->writeError("FYI <info>$package_name</info> is not allowed so we are going to skip it.");
         continue;
       }
       $this->io->write("Scaffold <info>$package_name</info>:");
