@@ -4,11 +4,21 @@
     "composer-scaffold": {
       "file-mapping": {
         "fixtures/drupal-core-fixture": {
-          "assets/htaccess": "[web-root]/.htaccess",
+          "assets/.csslintrc": "[web-root]/.csslintrc",
+          "assets/.editorconfig": "[web-root]/.editorconfig",
+          "assets/.eslintignore": "[web-root]/.eslintignore",
+          "assets/.eslintrc.json": "[web-root]/.eslintrc.json",
+          "assets/.gitattributes": "[web-root]/.gitattributes",
+          "assets/.ht.router.php": "[web-root]/.ht.router.php",
+          "assets/.htaccess": "[web-root]/.htaccess",
+          "assets/default.services.yml": "[web-root]/sites/default/default.services.yml",
+          "assets/default.settings.php": "[web-root]/sites/default/default.settings.php",
+          "assets/example.settings.local.php": "[web-root]/sites/example.settings.local.php",
+          "assets/example.sites.php":  "[web-root]/sites/example.sites.php",
           "assets/index.php": "[web-root]/index.php",
           "assets/robots.txt": "[web-root]/robots.txt",
-          "assets/sites-default-services.yml": "[web-root]/sites/default/default.services.yml",
-          "assets/sites-default-settings.php": "[web-root]/sites/default/settings.php"
+          "assets/update.php": "[web-root]/update.php",
+          "assets/web.config": "[web-root]/web.config"
         }
       }
     }
