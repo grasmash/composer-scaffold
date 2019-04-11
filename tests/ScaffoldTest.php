@@ -85,7 +85,8 @@ class ScaffoldTest extends TestCase
     $this->setSutConfig($config);
     $this->passthru("composer --working-dir={$this->sut} install");
     $this->assertSutWasScaffolded();
-    // @todo Assert that files are actually symlinks.
+    $file_to_test = $this->sut . '/docroot/robots.txt';
+    $this->assertTrue(is_link($file_to_test), "$file_to_test is not a symlink");
   }
 
   public function testNoSymlink() {
@@ -94,7 +95,8 @@ class ScaffoldTest extends TestCase
     $this->setSutConfig($config);
     $this->passthru("composer --working-dir={$this->sut} install");
     $this->assertSutWasScaffolded();
-    // @todo Assert that files are actually NOT symlinks.
+    $file_to_test = $this->sut . '/docroot/robots.txt';
+    $this->assertFalse(is_link($file_to_test), "$file_to_test is a symlink");
   }
 
   public function setSutConfig($config) {
