@@ -19,8 +19,8 @@
     }
   },
   "scripts": {
-    "cs": "phpcs --standard=Drupal -n src",
-    "cbf": "phpcbf --standard=Drupal -n src",
+    "cs": "phpcs --standard=Drupal -n src tests",
+    "cbf": "phpcbf --standard=Drupal -n src tests",
     "unit": "phpunit --colors=always",
     "lint": [
       "find src -name '*.php' -print0 | xargs -0 -n1 php -l"

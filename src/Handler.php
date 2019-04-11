@@ -4,7 +4,6 @@ namespace Grasmash\ComposerScaffold;
 
 use Composer\Package\Package;
 use Composer\Script\Event;
-use Composer\Plugin\CommandEvent;
 use Composer\Composer;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
@@ -20,19 +19,23 @@ class Handler {
   const POST_COMPOSER_SCAFFOLD_CMD = 'post-composer-scaffold-cmd';
 
   /**
+   * The Composer service.
+   *
    * @var \Composer\Composer
    */
   protected $composer;
 
   /**
+   * Composer's IO service.
+   *
    * @var \Composer\IO\IOInterface
    */
   protected $io;
 
   /**
-   * @var \Composer\Package\Package[]
-   *
    * An array of allowed packages keyed by package name.
+   *
+   * @var \Composer\Package\Package[]
    */
   protected $allowedPackages;
 

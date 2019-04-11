@@ -1,3 +1,6 @@
 <?php
 
-// sites-default-settings.php from drupal-core-fixture
+/**
+ * @file
+ * Sites-default-settings.php from drupal-core-fixture.
+ */

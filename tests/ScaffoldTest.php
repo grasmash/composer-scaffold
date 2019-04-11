@@ -6,6 +6,9 @@ use PHPUnit\Framework\TestCase;
 use Composer\Util\Filesystem;
 use Symfony\Component\Process\Process;
 
+/**
+ *
+ */
 class ScaffoldTest extends TestCase {
 
   protected $fixtures;
@@ -36,30 +39,42 @@ class ScaffoldTest extends TestCase {
     // $this->removeSut();
   }
 
+  /**
+   *
+   */
   protected function removeSut() {
     $this->fileSystem->remove($this->fixtures);
   }
 
+  /**
+   *
+   */
   protected function removeScaffoldFiles() {
     $this->fileSystem->remove($this->sut . '/docroot');
   }
 
+  /**
+   *
+   */
   public function testScaffold() {
     $default_config = $this->getDefaultComposerScaffoldConfig();
     $this->setSutConfig($default_config);
 
-    // Test composer install
+    // Test composer install.
     $this->runComposer("install");
     $this->assertSutWasScaffolded();
 
-    // Clean up our scaffold files so that we can try it again
+    // Clean up our scaffold files so that we can try it again.
     $this->removeScaffoldFiles();
 
-    // Test composer:scaffold
+    // Test composer:scaffold.
     $this->runComposer("composer:scaffold");
     $this->assertSutWasScaffolded();
   }
 
+  /**
+   *
+   */
   public function testSymlink() {
     $config = $this->getDefaultComposerScaffoldConfig();
     $config['symlink'] = TRUE;
@@ -69,6 +84,9 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile('docroot/robots.txt', TRUE);
   }
 
+  /**
+   *
+   */
   public function testNoSymlink() {
     $config = $this->getDefaultComposerScaffoldConfig();
     $config['symlink'] = FALSE;
@@ -78,6 +96,9 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile('docroot/robots.txt', FALSE);
   }
 
+  /**
+   *
+   */
   public function setSutConfig($config) {
     $composer_json = json_decode(file_get_contents($this->sut . '/composer.json'), TRUE);
     $composer_json['extra']['composer-scaffold'] = array_merge($composer_json['extra']['composer-scaffold'], $config);
@@ -86,16 +107,22 @@ class ScaffoldTest extends TestCase {
     return (bool) $bytes;
   }
 
+  /**
+   *
+   */
   protected function runComposer($cmd) {
     $process = new Process("composer $cmd", $this->sut);
     $process->setTimeout(300)->setIdleTimeout(300)->mustRun();
     $this->assertSame(0, $process->getExitCode());
   }
 
+  /**
+   *
+   */
   protected function assertSutWasScaffolded() {
     // TODO: Test to see if the contents of these files is as expected.
     $this->assertFileNotExists($this->sut . '/docroot/.htaccess.txt');
-    // $this->assertFileExists('docroot/autoload.php');
+    // $this->assertFileExists('docroot/autoload.php');.
     $this->assertScaffoldedFile('docroot/index.php');
     $this->assertScaffoldedFile('docroot/robots.txt');
     $this->assertScaffoldedFile('docroot/sites/default/default.services.yml');
@@ -103,6 +130,9 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile('docroot/sites/default/settings.php');
   }
 
+  /**
+   *
+   */
   protected function assertScaffoldedFile($file, $is_link = NULL) {
     $path = $this->sut . '/' . $file;
     $this->assertFileExists($path);
@@ -112,6 +142,9 @@ class ScaffoldTest extends TestCase {
     }
   }
 
+  /**
+   *
+   */
   protected function getDefaultComposerScaffoldConfig() {
     return [
       "allowed-packages" => [
@@ -130,4 +163,5 @@ class ScaffoldTest extends TestCase {
       ],
     ];
   }
+
 }
