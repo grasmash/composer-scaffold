@@ -30,7 +30,7 @@ class Handler {
   protected $io;
 
   /**
-   * @var Package[]
+   * @var \Composer\Package\Package[]
    *
    * An array of allowed packages keyed by package name.
    */
@@ -169,6 +169,7 @@ EOF;
    * Retrieve the path to the web root.
    *
    * @return string
+   *
    * @throws \Exception
    */
   public function getWebRoot() {
@@ -191,7 +192,7 @@ EOF;
    * @return \Composer\Package\PackageInterface
    */
   protected function getPackage($name) {
-    $package =  $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
+    $package = $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
     if (is_null($package)) {
       $this->io->write("<comment>Composer Scaffold could not find installed package `$name`.</comment>");
     }
@@ -209,7 +210,7 @@ EOF;
     $options = $extra['composer-scaffold'] + [
       "allowed-packages" => [],
       "locations" => [],
-      "symlink" => false,
+      "symlink" => FALSE,
       "file-mapping" => [],
     ];
 
@@ -230,14 +231,16 @@ EOF;
    * @see http://php.net/manual/en/function.array-merge-recursive.php#92195
    */
   public static function arrayMergeRecursiveDistinct(
-    array &$array1,
-    array &$array2
-  ) {
+        array &$array1,
+        array &$array2
+    ) {
     $merged = $array1;
     foreach ($array2 as $key => &$value) {
       if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
-        $merged[$key] = self::arrayMergeRecursiveDistinct($merged[$key],
-          $value);
+        $merged[$key] = self::arrayMergeRecursiveDistinct(
+        $merged[$key],
+        $value
+        );
       }
       else {
         $merged[$key] = $value;
@@ -327,7 +330,8 @@ EOF;
           $verb = $symlink ? 'symlink' : 'copy';
           if (!$success) {
             $this->io->writeError("Could not $verb source file $source_path to $destination");
-          } else {
+          }
+          else {
             // TODO: Composer status messages look like this:
             //   - Installing fixtures/scaffold-override-fixture (dev-master): Symlinking from ../scaffold-override-fixture
             // We should unify and perhaps use a relative filepath instead of $destination,
@@ -349,19 +353,19 @@ EOF;
    */
   public function getAllowedPackage($package_name) {
     if ($package_name == 'self') {
-      return true;
+      return TRUE;
     }
     if (array_key_exists($package_name, $this->allowedPackages)) {
       return $this->allowedPackages[$package_name];
     }
 
-    return null;
+    return NULL;
   }
 
   /**
    * Gets a consolidated list of file mappings from all allowed packages.
    *
-   * @param Package[] $allowed_packages
+   * @param \Composer\Package\Package[] $allowed_packages
    *   A multidimensional array of file mappings, as returned by
    *   self::getAllowedPackages().
    *
@@ -382,8 +386,10 @@ EOF;
     foreach ($allowed_packages as $name => $package) {
       $package_file_mappings = $this->getPackageFileMappings($package);
       // @todo Write test to ensure overriding occurs as indended.
-      $file_mappings = self::arrayMergeRecursiveDistinct($file_mappings,
-        $package_file_mappings);
+      $file_mappings = self::arrayMergeRecursiveDistinct(
+        $file_mappings,
+        $package_file_mappings
+      );
     }
     return $file_mappings;
   }
@@ -396,7 +402,7 @@ EOF;
    * package has the highest priority. The root package will always be returned
    * at the end of the list.
    *
-   * @return Package[]
+   * @return \Composer\Package\Package[]
    */
   protected function getAllowedPackages(): array {
     $options = $this->getOptions();

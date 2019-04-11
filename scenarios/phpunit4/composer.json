@@ -5,7 +5,8 @@
   "license": "GPL-2.0-or-later",
   "require": {
     "php": "^5.5.9|>=7.0.8",
-    "composer-plugin-api": "^1.0.0"
+    "composer-plugin-api": "^1.0.0",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0"
   },
   "autoload": {
     "psr-4": {
@@ -28,20 +29,24 @@
     "test": [
       "@lint",
       "@unit"
+    ],
+    "scenario": ".scenarios.lock/install",
+    "post-update-cmd": [
+      "create-scenario phpunit4 'phpunit/phpunit:^4.8.36' --platform-php '5.5.27'"
     ]
   },
   "config": {
     "optimize-autoloader": true,
     "sort-packages": true,
     "platform": {
-      "php": "7.0.8"
-    }
+      "php": "5.5.27"
+    },
+    "vendor-dir": "../../vendor"
   },
   "require-dev": {
     "composer/composer": "dev-master",
-    "phpunit/phpunit": "^6",
-    "squizlabs/php_codesniffer": "^3",
-    "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0",
-    "drupal/coder": "^8.3.1"
-  }
+    "phpunit/phpunit": "^4.8.36",
+    "squizlabs/php_codesniffer": "^2.8"
+  },
+  "minimum-stability": "stable"
 }

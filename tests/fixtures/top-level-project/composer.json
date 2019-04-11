@@ -39,20 +39,6 @@
   },
   "extra": {
     "composer-scaffold": {
-      "allowed-packages": [
-        "fixtures/drupal-core-fixture",
-        "fixtures/scaffold-override-fixture"
-      ],
-      "locations": {
-        "web-root": "./docroot"
-      },
-      "symlink": true,
-      "file-mapping": {
-        "self": {
-          "assets/.htaccess": false,
-          "assets/robots-default.txt": "[web-root]/robots.txt"
-        }
-      }
     },
     "installer-paths": {
       "docroot/core": ["type:drupal-core"],
