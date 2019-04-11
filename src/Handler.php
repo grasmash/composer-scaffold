@@ -55,7 +55,10 @@ class Handler {
   public function onPostCmdEvent(Event $event) {
     $this->copyAllFiles();
     // Generate the autoload.php file after generating the scaffold files.
-    $this->generateAutoload();
+    // TODO: This should only happen if drupal/core is scaffolded.
+    // Maybe this should be done in response to some metadata in the
+    // scaffold extra data rather than auto-magicly.
+    // $this->generateAutoload();
   }
 
   /**
@@ -254,11 +257,14 @@ EOF;
    *   An multidimensional array of file mappings with tokens replaced.
    */
   protected function replaceWebRootToken($file_mappings) {
-    $webroot = realpath($this->getWebRoot());
+    $webroot = $this->getWebRoot();
+    $fs = new Filesystem();
+    $fs->ensureDirectoryExists($webroot);
+    $webroot = realpath($webroot);
     foreach ($file_mappings as $package_name => $files) {
-      foreach ($files as $source => $target) {
-        if (is_string($target)) {
-          $file_mappings[$package_name][$source] = str_replace('[web-root]', $webroot, $target);
+      foreach ($files as $source => $destination) {
+        if (is_string($destination)) {
+          $file_mappings[$package_name][$source] = str_replace('[web-root]', $webroot, $destination);
         }
       }
     }
@@ -276,36 +282,57 @@ EOF;
     $options = $this->getOptions();
     $symlink = $options['symlink'];
     $installationManager = $this->composer->getInstallationManager();
+    // TODO: vendor might be relocated. Maybe there's a better way to get the composer root?
     $composer_root = dirname($this->getVendorPath());
+    $fs = new Filesystem();
 
     foreach ($file_mappings as $package_name => $files) {
+      if (!$this->getAllowedPackage($package_name)) {
+        // TODO: We probably don't want to emit an errorr here. For early development debugging.
+        $this->io->writeError("FYIO <info>$package_name</info> is not allowed so we are going to skip it.");
+        continue;
+      }
+      $this->io->write("Scaffold <info>$package_name</info>:");
       foreach ($files as $source => $destination) {
-        if ($destination && $this->getAllowedPackage($package_name)) {
-          $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
+        if ($destination) {
+          $package_path = $composer_root;
+          if ($package_name != 'self') {
+            $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
+          }
           $source_path = $package_path . '/' . $source;
           if (!file_exists($source_path)) {
+            // TODO: Maybe this should cause the whole operation to abort?
             $this->io->writeError("Could not find source file $source_path for package $package_name\n");
             continue;
           }
-          if (file_exists($destination)) {
-            unlink($destination);
+          if (is_dir($source_path)) {
+            $this->io->writeError("$source_path in $package_name is a directory; only files may be scaffolded.");
+            continue;
           }
+          // Get rid of the destination if it exists, and make sure that
+          // the directory where it's going to be placed exists.
+          @unlink($destination);
+          $fs->ensureDirectoryExists(dirname($destination));
           $success = FALSE;
           if ($symlink) {
-            // @todo If the target directory does not exist, this fails!
             try {
               $success = symlink($source_path, $destination);
             }
             catch (\Exception $e) {
-
             }
           }
           else {
             $success = copy($source_path, $destination);
           }
+          $verb = $symlink ? 'symlink' : 'copy';
           if (!$success) {
-            $verb = $symlink ? 'symlink' : 'copy';
             $this->io->writeError("Could not $verb source file $source_path to $destination");
+          } else {
+            // TODO: Composer status messages look like this:
+            //   - Installing fixtures/scaffold-override-fixture (dev-master): Symlinking from ../scaffold-override-fixture
+            // We should unify and perhaps use a relative filepath instead of $destination,
+            // which is a full path.
+            $this->io->write("  - $verb source file <info>$source</info> to $destination");
           }
         }
       }
@@ -321,6 +348,9 @@ EOF;
    * @return \Composer\Package\Package|null
    */
   public function getAllowedPackage($package_name) {
+    if ($package_name == 'self') {
+      return true;
+    }
     if (array_key_exists($package_name, $this->allowedPackages)) {
       return $this->allowedPackages[$package_name];
     }

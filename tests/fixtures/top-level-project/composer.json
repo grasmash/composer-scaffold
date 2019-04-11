@@ -48,9 +48,9 @@
       },
       "symlink": true,
       "file-mapping": {
-        "drupal/core": {
+        "self": {
           "assets/.htaccess": false,
-          "assets/robots.txt": "[web-root]/robots-default.txt"
+          "assets/robots-default.txt": "[web-root]/robots.txt"
         }
       }
     },
