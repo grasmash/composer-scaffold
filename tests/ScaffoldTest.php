@@ -1,13 +1,14 @@
 <?php
 
-namespace Consolidation\SiteProcess;
+namespace Grasmash\ComposerScaffold\tests;
 
+use Grasmash\ComposerScaffold\Handler;
 use PHPUnit\Framework\TestCase;
 use Composer\Util\Filesystem;
 use Symfony\Component\Process\Process;
 
 /**
- *
+ * Tests Composer Scaffold.
  */
 class ScaffoldTest extends TestCase {
 
@@ -40,21 +41,21 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Removes the system under test.
    */
   protected function removeSut() {
     $this->fileSystem->remove($this->fixtures);
   }
 
   /**
-   *
+   * Removes scaffold files from the system under test.
    */
   protected function removeScaffoldFiles() {
     $this->fileSystem->remove($this->sut . '/docroot');
   }
 
   /**
-   *
+   * Tests that scaffold files are correctly moved.
    */
   public function testScaffold() {
     $default_config = $this->getDefaultComposerScaffoldConfig();
@@ -169,6 +170,52 @@ class ScaffoldTest extends TestCase {
         "self" => [
           "assets/.htaccess" => FALSE,
           "assets/robots-default.txt" => "[web-root]/robots.txt",
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Tests ArrayManipulator::arrayMergeRecursiveExceptEmpty().
+   *
+   * @dataProvider providerTestArrayMergeRecursiveDistinct
+   */
+  public function testArrayMergeRecursiveDistinct(
+    $array1,
+    $array2,
+    $expected_array
+  ) {
+    $this->assertEquals(Handler::arrayMergeRecursiveDistinct($array1,
+      $array2), $expected_array);
+  }
+  /**
+   * Provides values to testArrayMergeRecursiveDistinct().
+   *
+   * @return array
+   *   An array of values to test.
+   */
+  public function providerTestArrayMergeRecursiveDistinct() {
+    return [
+      [
+        [
+          "self" => [
+            "assets/.htaccess" => "[web-root]/.htaccess",
+            "assets/robots-default.txt" => "[web-root]/robots.txt",
+            "assets/index.php" => "[web-root]/index.php",
+          ],
+        ],
+        [
+          "self" => [
+            "assets/.htaccess" => FALSE,
+            "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
+          ],
+        ],
+        [
+          "self" => [
+            "assets/.htaccess" => FALSE,
+            "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
+            "assets/index.php" => "[web-root]/index.php",
+          ],
         ],
       ],
     ];

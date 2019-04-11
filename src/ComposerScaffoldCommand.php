@@ -28,7 +28,7 @@ class ComposerScaffoldCommand extends BaseCommand {
    */
   protected function execute(InputInterface $input, OutputInterface $output) {
     $handler = new Handler($this->getComposer(), $this->getIO());
-    $handler->copyAllFiles();
+    $handler->moveAllFiles();
     // Generate the autoload.php file after generating the scaffold files.
     $handler->generateAutoload();
   }
