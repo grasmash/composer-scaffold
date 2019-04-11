@@ -2,7 +2,7 @@
 
 namespace Grasmash\ComposerScaffold;
 
-use Composer\Package\Package;
+use Composer\Package\PackageInterface;
 use Composer\Script\Event;
 use Composer\Composer;
 use Composer\EventDispatcher\EventDispatcher;
@@ -81,7 +81,7 @@ class Handler {
    *     'path/to/source/file' => false,
    *   ]
    */
-  public function getPackageFileMappings(Package $package) {
+  public function getPackageFileMappings(PackageInterface $package) {
     $package_extra = $package->getExtra();
     if (!array_key_exists('composer-scaffold', $package_extra) || !array_key_exists('file-mapping', $package_extra['composer-scaffold'])) {
       $this->io->writeError("The allowed package {$package->getName()} does not provide a file mapping for Composer Scaffold.");
@@ -246,7 +246,7 @@ EOF;
   public static function arrayMergeRecursiveDistinct(
         array &$array1,
         array &$array2
-    ) {
+    ) :array {
     $merged = $array1;
     foreach ($array2 as $key => &$value) {
       if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
@@ -367,7 +367,7 @@ EOF;
    * @return \Composer\Package\Package|null
    *   The allowed Composer package, if it exists.
    */
-  public function getAllowedPackage($package_name) {
+  protected function getAllowedPackage($package_name) {
     if (array_key_exists($package_name, $this->allowedPackages)) {
       return $this->allowedPackages[$package_name];
     }
