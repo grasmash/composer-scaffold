@@ -124,11 +124,21 @@ class ScaffoldTest extends TestCase {
     // TODO: Test to see if the contents of these files is as expected.
     $this->assertFileNotExists($this->sut . '/docroot/.htaccess.txt');
     // $this->assertFileExists('docroot/autoload.php');.
-    $this->assertScaffoldedFile('docroot/index.php');
-    $this->assertScaffoldedFile('docroot/robots.txt');
+    $this->assertScaffoldedFile('docroot/.csslintrc');
+    $this->assertScaffoldedFile('docroot/.editorconfig');
+    $this->assertScaffoldedFile('docroot/.eslintignore');
+    $this->assertScaffoldedFile('docroot/.eslintrc.json');
+    $this->assertScaffoldedFile('docroot/.gitattributes');
+    $this->assertScaffoldedFile('docroot/.ht.router.php');
+    $this->assertScaffoldedFile('docroot/.htaccess');
     $this->assertScaffoldedFile('docroot/sites/default/default.services.yml');
     $this->assertScaffoldedFile('docroot/sites/default/default.settings.php');
-    $this->assertScaffoldedFile('docroot/sites/default/settings.php');
+    $this->assertScaffoldedFile('docroot/sites/example.settings.local.php');
+    $this->assertScaffoldedFile('docroot/sites/example.sites.php');
+    $this->assertScaffoldedFile('docroot/index.php');
+    $this->assertScaffoldedFile('docroot/robots.txt');
+    $this->assertScaffoldedFile('docroot/update.php');
+    $this->assertScaffoldedFile('docroot/web.config');
   }
 
   /**

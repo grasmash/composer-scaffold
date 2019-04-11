@@ -1,1 +1,1 @@
-# This is the fixture robots.txt from drupal-core-fixture
+# Test version of robots.txt from drupal/core.
