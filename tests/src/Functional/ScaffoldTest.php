@@ -63,14 +63,15 @@ class ScaffoldTest extends TestCase {
     $this->removeSut();
     $this->fileSystem->copy($this->projectRoot . '/tests/fixtures', $this->fixtures);
 
-    foreach (['drupal-composer-drupal-project', 'drupal-drupal'] as $dir) {
+    $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl")
+    foreach ($composer_json_templates as $composer_json_tmpl) {
       // Inject replacements into composer.json.
-      if (file_exists($this->fixtures . "/$dir/composer.json.tmpl")) {
+      if (file_exists($composer_json_tmpl)) {
         $interpolator = new Interpolator('__', '__', TRUE);
-        $composer_json_contents = file_get_contents($this->fixtures . "/$dir/composer.json.tmpl");
+        $composer_json_contents = file_get_contents($composer_json_tmpl);
         $composer_json_contents = $interpolator->interpolate($replacements, $composer_json_contents, FALSE);
-        file_put_contents($this->fixtures . "/$dir/composer.json", $composer_json_contents);
-        @unlink($this->fixtures . "/$dir/composer.json.tmpl");
+        file_put_contents(dirname($composer_json_tmpl) . "/composer.json", $composer_json_contents);
+        @unlink($composer_json_tmpl);
       }
     }
 
