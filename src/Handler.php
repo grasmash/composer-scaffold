@@ -4,7 +4,6 @@ namespace Grasmash\ComposerScaffold;
 
 use Composer\Package\PackageInterface;
 use Composer\Script\Event;
-use Composer\Plugin\CommandEvent;
 use Composer\Composer;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
@@ -51,16 +50,6 @@ class Handler {
   public function __construct(Composer $composer, IOInterface $io) {
     $this->composer = $composer;
     $this->io = $io;
-  }
-
-  /**
-   * Command begins event.
-   *
-   * @param \Composer\Plugin\CommandEvent $commandEvent
-   *   The Composer command event.
-   */
-  public function onCmdBeginsEvent(CommandEvent $commandEvent) {
-    // No function yet.
   }
 
   /**
