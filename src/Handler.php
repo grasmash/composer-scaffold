@@ -4,7 +4,6 @@ namespace Grasmash\ComposerScaffold;
 
 use Composer\Package\PackageInterface;
 use Composer\Script\Event;
-use Composer\Plugin\CommandEvent;
 use Composer\Composer;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
@@ -51,16 +50,6 @@ class Handler {
   public function __construct(Composer $composer, IOInterface $io) {
     $this->composer = $composer;
     $this->io = $io;
-  }
-
-  /**
-   * Command begins event.
-   *
-   * @param \Composer\Plugin\CommandEvent $commandEvent
-   *   The Composer command event.
-   */
-  public function onCmdBeginsEvent(CommandEvent $commandEvent) {
-    // No function yet.
   }
 
   /**
@@ -437,7 +426,7 @@ EOF;
     $source,
     $symlink,
     $source_path
-  ): void {
+  ) {
     $fs = new Filesystem();
     $destination_path = str_replace('[web-root]', $this->getWebRoot(), $destination);
 
@@ -479,7 +468,7 @@ EOF;
     $package_name,
     array $package_file_mappings,
     $symlink
-  ): void {
+  ) {
     $this->io->write("Scaffolding files for <comment>$package_name</comment> package");
     foreach ($package_file_mappings as $source => $destination) {
       if ($destination && is_string($destination)) {
