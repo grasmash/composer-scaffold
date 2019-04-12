@@ -35,10 +35,19 @@ class ScaffoldTest extends TestCase {
 
     $projectRoot = dirname(__DIR__);
     $this->fixtures = dirname($projectRoot) . '/composer-scaffold-test';
+  }
+
+  /**
+   *
+   */
+  protected function createSut($topLevelProjectDir) {
+    $projectRoot = dirname(__DIR__);
     $this->sut = $this->fixtures . '/top-level-project';
 
     $this->removeSut();
     $this->fileSystem->copy($projectRoot . '/tests/fixtures', $this->fixtures);
+
+    return $this->sut;
   }
 
   /**
@@ -57,64 +66,33 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   * Removes scaffold files from the system under test.
+   * Data provider for testComposerInstallScaffold and testScaffoldCommand.
    */
-  protected function removeScaffoldFiles() {
-    $this->fileSystem->remove($this->sut . '/docroot');
+  public function scaffoldTestValues() {
+    return [
+      [
+        'top-level-project',
+        'assertDrupalProjectSutWasScaffolded',
+        TRUE,
+      ],
+    ];
   }
 
   /**
    * Tests that scaffold files are correctly moved.
+   *
+   * @dataProvider scaffoldTestValues
    */
-  public function testScaffold() {
-    $default_config = $this->getDefaultComposerScaffoldConfig();
-    $this->setSutConfig($default_config);
+  public function testScaffold($topLevelProjectDir, $scaffoldAssertions, $is_link) {
+    $sut = $this->createSut($topLevelProjectDir);
 
     // Test composer install.
     $this->runComposer("install");
-    $this->assertSutWasScaffolded();
-
-    // Clean up our scaffold files so that we can try it again.
-    $this->removeScaffoldFiles();
+    call_user_func([$this, $scaffoldAssertions], $sut, $is_link);
 
     // Test composer:scaffold.
     $this->runComposer("composer:scaffold");
-    $this->assertSutWasScaffolded();
-  }
-
-  /**
-   * Tests that scaffolded files are symlinked when symlink is true.
-   */
-  public function testSymlink() {
-    $config = $this->getDefaultComposerScaffoldConfig();
-    $config['symlink'] = TRUE;
-    $this->setSutConfig($config);
-    $this->runComposer('install');
-    $this->assertSutWasScaffolded();
-    $this->assertScaffoldedFile('docroot/robots.txt', TRUE);
-  }
-
-  /**
-   * Tests that scaffolded files are not symlinked when symlink is false.
-   */
-  public function testNoSymlink() {
-    $config = $this->getDefaultComposerScaffoldConfig();
-    $config['symlink'] = FALSE;
-    $this->setSutConfig($config);
-    $this->runComposer('install');
-    $this->assertSutWasScaffolded();
-    $this->assertScaffoldedFile('docroot/robots.txt', FALSE);
-  }
-
-  /**
-   * Sets extra.composer-scaffold config in the sut's composer.json.
-   */
-  public function setSutConfig($config) {
-    $composer_json = json_decode(file_get_contents($this->sut . '/composer.json'), TRUE);
-    $composer_json['extra']['composer-scaffold'] = array_merge($composer_json['extra']['composer-scaffold'], $config);
-    $bytes = file_put_contents($this->sut . '/composer.json', json_encode($composer_json, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
-
-    return (bool) $bytes;
+    call_user_func([$this, $scaffoldAssertions], $sut, $is_link);
   }
 
   /**
@@ -129,61 +107,50 @@ class ScaffoldTest extends TestCase {
   /**
    * Asserts that scaffold files were correctly moved.
    */
-  protected function assertSutWasScaffolded() {
-    // TODO: Test to see if the contents of these files is as expected.
-    $this->assertFileNotExists($this->sut . '/docroot/.htaccess.txt');
-    // $this->assertFileExists('docroot/autoload.php');.
-    $this->assertScaffoldedFile('docroot/.csslintrc');
-    $this->assertScaffoldedFile('docroot/.editorconfig');
-    $this->assertScaffoldedFile('docroot/.eslintignore');
-    $this->assertScaffoldedFile('docroot/.eslintrc.json');
-    $this->assertScaffoldedFile('docroot/.gitattributes');
-    $this->assertScaffoldedFile('docroot/.ht.router.php');
-    $this->assertScaffoldedFile('docroot/.htaccess');
-    $this->assertScaffoldedFile('docroot/sites/default/default.services.yml');
-    $this->assertScaffoldedFile('docroot/sites/default/default.settings.php');
-    $this->assertScaffoldedFile('docroot/sites/example.settings.local.php');
-    $this->assertScaffoldedFile('docroot/sites/example.sites.php');
-    $this->assertScaffoldedFile('docroot/index.php');
-    $this->assertScaffoldedFile('docroot/robots.txt');
-    $this->assertScaffoldedFile('docroot/update.php');
-    $this->assertScaffoldedFile('docroot/web.config');
+  protected function assertDrupalProjectSutWasScaffolded($sut, $is_link) {
+    $this->assertDrupalRootWasScaffolded($sut . '/docroot', $is_link);
+  }
+
+  /**
+   *
+   */
+  protected function assertDrupalRootWasScaffolded($docroot, $is_link) {
+    $from_project = 'scaffolded from "file-mappings" in project-level composer.json fixture';
+    $from_scaffold_override = 'scaffolded from the scaffold-override-fixture';
+    $from_core = 'from drupal/core';
+
+    // Ensure that the autoload.php file was written.
+    $this->assertFileExists($docroot . '/autoload.php');
+
+    // Ensure that the .htaccess.txt file was not written, as our
+    // top-level composer.json excludes it from the files to scaffold.
+    $this->assertFileNotExists($docroot . '/.htaccess');
+
+    // Assert other scaffold files are written in the correct locations.
+    $this->assertScaffoldedFile($docroot . '/.csslintrc', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/.editorconfig', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/.eslintignore', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/.eslintrc.json', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/.gitattributes', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/.ht.router.php', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/sites/default/default.services.yml', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/sites/default/default.settings.php', $is_link, $from_scaffold_override);
+    $this->assertScaffoldedFile($docroot . '/sites/example.settings.local.php', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/sites/example.sites.php', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/index.php', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/robots.txt', $is_link, $from_project);
+    $this->assertScaffoldedFile($docroot . '/update.php', $is_link, $from_core);
+    $this->assertScaffoldedFile($docroot . '/web.config', $is_link, $from_core);
   }
 
   /**
    * Asserts that a given file exists and is/is not a symlink.
    */
-  protected function assertScaffoldedFile($file, $is_link = NULL) {
-    $path = $this->sut . '/' . $file;
+  protected function assertScaffoldedFile($path, $is_link, $contents_contains) {
     $this->assertFileExists($path);
-
-    if (is_bool($is_link)) {
-      $this->assertSame($is_link, is_link($path));
-    }
-  }
-
-  /**
-   * Provide default Composer Scaffold configuration for testing.
-   */
-  protected function getDefaultComposerScaffoldConfig() {
-    return [
-      "allowed-packages" => [
-        "fixtures/drupal-core-fixture",
-        "fixtures/scaffold-override-fixture",
-      ],
-      "locations" => [
-        "web-root" => "./docroot",
-      ],
-      "symlink" => TRUE,
-      "file-mapping" => [
-        "drupal/core" => [
-          "assets/.htaccess" => FALSE,
-        ],
-        "my/project" => [
-          "assets/robots-default.txt" => "[web-root]/robots.txt",
-        ],
-      ],
-    ];
+    $contents = file_get_contents($path);
+    $this->assertContains($contents_contains, basename($path) . ': ' . $contents);
+    $this->assertSame($is_link, is_link($path));
   }
 
 }
