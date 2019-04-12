@@ -56,8 +56,8 @@ class Handler {
   /**
    * Command begins event.
    *
-   * @param \Composer\Script\Event $event
-   *   The Composer event.
+   * @param \Composer\Plugin\CommandEvent $commandEvent
+   *   The Composer command event.
    */
   public function onCmdBeginsEvent(CommandEvent $commandEvent) {
     // No function yet.
