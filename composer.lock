@@ -2589,7 +2589,8 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^5.5.9|>=7.0.8"
+        "php": "^5.5.9|>=7.0.8",
+        "composer-plugin-api": "^1.0.0"
     },
     "platform-dev": [],
     "platform-overrides": {
