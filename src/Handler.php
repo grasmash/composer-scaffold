@@ -70,7 +70,7 @@ class Handler {
    *   The Composer event.
    */
   public function onPostCmdEvent(Event $event) {
-    $this->moveAllFiles();
+    $this->scaffold();
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
     // Drupal requires this in order to easily locate relocated vendor dirs.
@@ -107,7 +107,7 @@ class Handler {
   /**
    * Copies all scaffold files from source to destination.
    */
-  public function moveAllFiles() {
+  public function scaffold() {
     // Call any pre-scaffold scripts that may be defined.
     $dispatcher = new EventDispatcher($this->composer, $this->io);
     $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
@@ -115,7 +115,7 @@ class Handler {
     $this->allowedPackages = $this->getAllowedPackages();
     $file_mappings = $this->getFileMappingsFromPackages($this->allowedPackages);
     $file_mappings = $this->replaceWebRootToken($file_mappings);
-    $this->moveFiles($file_mappings);
+    $this->moveScaffoldFiles($file_mappings);
 
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
@@ -303,32 +303,17 @@ EOF;
    *   An multidimensional array of file mappings, as returned by
    *   self::getFileMappingsFromPackages().
    */
-  protected function moveFiles(array $file_mappings) {
+  protected function moveScaffoldFiles(array $file_mappings) {
     $options = $this->getOptions();
     $symlink = $options['symlink'];
 
-    foreach ($file_mappings as $package_name => $files) {
+    foreach ($file_mappings as $package_name => $package_file_mappings) {
       if (!$this->getAllowedPackage($package_name)) {
         // @todo Add test case for this!
         $this->io->writeError("The package <comment>$package_name</comment> is listed in file-mappings, but not an allowed package. Skipping.");
         continue;
       }
-      $this->io->write("Scaffolding files for <comment>$package_name</comment> package");
-      foreach ($files as $source => $destination) {
-        if ($destination && is_string($destination)) {
-          $package_path = $this->getPackagePath($package_name);
-          $source_path = $package_path . '/' . $source;
-          if (!file_exists($source_path)) {
-            $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
-            continue;
-          }
-          if (is_dir($source_path)) {
-            $this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
-            continue;
-          }
-          $this->moveFile($destination, $source, $symlink, $source_path);
-        }
-      }
+      $this->scaffoldPackageFiles($package_name, $package_file_mappings, $symlink);
     }
   }
 
@@ -444,6 +429,7 @@ EOF;
    *   Whether the destination should be a symlink.
    * @param string $source_path
    *   The absolute path for the source file.
+   *
    * @throws \Exception
    */
   protected function moveFile(
@@ -476,6 +462,39 @@ EOF;
     }
     else {
       $this->io->write("  - $verb source file <info>$source</info> to $destination");
+    }
+  }
+
+  /**
+   * Scaffolds the files for a specific package.
+   *
+   * @param string $package_name
+   *   The name of the package. E.g., my/project.
+   * @param array $package_file_mappings
+   *   An associative array of source to destination file mappings.
+   * @param bool $symlink
+   *   Whether the destination should be a symlink.
+   */
+  protected function scaffoldPackageFiles(
+    $package_name,
+    array $package_file_mappings,
+    $symlink
+  ): void {
+    $this->io->write("Scaffolding files for <comment>$package_name</comment> package");
+    foreach ($package_file_mappings as $source => $destination) {
+      if ($destination && is_string($destination)) {
+        $package_path = $this->getPackagePath($package_name);
+        $source_path = $package_path . '/' . $source;
+        if (!file_exists($source_path)) {
+          $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
+          continue;
+        }
+        if (is_dir($source_path)) {
+          $this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
+          continue;
+        }
+        $this->moveFile($destination, $source, $symlink, $source_path);
+      }
     }
   }
 
