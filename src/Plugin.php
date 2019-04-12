@@ -18,6 +18,8 @@ use Composer\Script\ScriptEvents;
 class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
 
   /**
+   * The Composer Scaffold handler.
+   *
    * @var \Grasmash\ComposerScaffold\Handler
    */
   protected $handler;
@@ -56,6 +58,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
    * Command begins event callback.
    *
    * @param \Composer\Plugin\CommandEvent $event
+   *   The Composer event.
    */
   public function cmdBegins(CommandEvent $event) {
     $this->handler->onCmdBeginsEvent($event);
@@ -65,6 +68,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
    * Post command event callback.
    *
    * @param \Composer\Script\Event $event
+   *   The Composer event.
    */
   public function postCmd(Event $event) {
     $this->handler->onPostCmdEvent($event);

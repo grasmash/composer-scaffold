@@ -16,8 +16,8 @@ Sample composer.json for a project that relies on packages that use composer-sca
   "extra": {
     "composer-scaffold": {
       "allowed-packages": [
-        "fixtures/drupal-core-fixture",
-        "fixtures/scaffold-override-fixture"
+        "drupal/core",
+        "my/project"
       ],
       "locations": {
         "web-root": "./docroot"

@@ -70,7 +70,7 @@ class Handler {
   /**
    * Gets the array of file mappings provided by a given package.
    *
-   * @param \Composer\Package\Package $package
+   * @param \Composer\Package\PackageInterface $package
    *   The Composer package from which to get the file mappings.
    *
    * @return array
@@ -216,7 +216,7 @@ EOF;
    * Retrieve options from optional "extra" configuration.
    *
    * @return array
-   *
+   *   The composer-scaffold configuration array.
    */
   protected function getOptions() {
     $extra = $this->composer->getPackage()->getExtra() + ['composer-scaffold' => []];
@@ -272,7 +272,7 @@ EOF;
    * @return array
    *   An multidimensional array of file mappings with tokens replaced.
    */
-  protected function replaceWebRootToken($file_mappings) {
+  protected function replaceWebRootToken(array $file_mappings) {
     $webroot = $this->getWebRoot();
     $fs = new Filesystem();
     $fs->ensureDirectoryExists($webroot);
@@ -294,7 +294,7 @@ EOF;
    *   An multidimensional array of file mappings, as returned by
    *   self::getFileMappingsFromPackages().
    */
-  protected function moveFiles($file_mappings) {
+  protected function moveFiles(array $file_mappings) {
     $options = $this->getOptions();
     $symlink = $options['symlink'];
     $fs = new Filesystem();
@@ -307,7 +307,7 @@ EOF;
       }
       $this->io->write("Scaffold <info>$package_name</info>:");
       foreach ($files as $source => $destination) {
-        if ($destination) {
+        if ($destination && is_string($destination)) {
           $package_path = $this->getPackagePath($package_name);
           $source_path = $package_path . '/' . $source;
           if (!file_exists($source_path)) {
@@ -318,30 +318,29 @@ EOF;
             $this->io->writeError("$source_path in $package_name is a directory; only files may be scaffolded.");
             continue;
           }
+
+          $destination_path = $file_mappings[$package_name][$source] = str_replace('[web-root]', $this->getWebRoot(), $destination);
+
           // Get rid of the destination if it exists, and make sure that
           // the directory where it's going to be placed exists.
-          @unlink($destination);
-          $fs->ensureDirectoryExists(dirname($destination));
+          @unlink($destination_path);
+          $fs->ensureDirectoryExists(dirname($destination_path));
           $success = FALSE;
           if ($symlink) {
             try {
-              $success = $fs->relativeSymlink($source_path, $destination);
+              $success = $fs->relativeSymlink($source_path, $destination_path);
             }
             catch (\Exception $e) {
             }
           }
           else {
-            $success = copy($source_path, $destination);
+            $success = copy($source_path, $destination_path);
           }
           $verb = $symlink ? 'symlink' : 'copy';
           if (!$success) {
             $this->io->writeError("Could not $verb source file $source_path to $destination");
           }
           else {
-            // TODO: Composer status messages look like this:
-            //   - Installing fixtures/scaffold-override-fixture (dev-master): Symlinking from ../scaffold-override-fixture
-            // We should unify and perhaps use a relative filepath instead of $destination,
-            // which is a full path.
             $this->io->write("  - $verb source file <info>$source</info> to $destination");
           }
         }
@@ -385,11 +384,10 @@ EOF;
    *     ],
    *   ]
    */
-  protected function getFileMappingsFromPackages($allowed_packages): array {
+  protected function getFileMappingsFromPackages(array $allowed_packages): array {
     $file_mappings = [];
     foreach ($allowed_packages as $name => $package) {
       $package_file_mappings = $this->getPackageFileMappings($package);
-      // @todo Write test to ensure overriding occurs as indended.
       $file_mappings = self::arrayMergeRecursiveDistinct(
         $file_mappings,
         $package_file_mappings
@@ -406,7 +404,8 @@ EOF;
    * package has the highest priority. The root package will always be returned
    * at the end of the list.
    *
-   * @return \Composer\Package\Package[]
+   * @return \Composer\Package\PackageInterface[]
+   *   An array of allowed Composer packages.
    */
   protected function getAllowedPackages(): array {
     $options = $this->getOptions();
