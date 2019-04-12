@@ -75,6 +75,11 @@ class ScaffoldTest extends TestCase {
         'assertDrupalProjectSutWasScaffolded',
         TRUE,
       ],
+      [
+        'drupal-drupal',
+        'assertDrupalDrupalSutWasScaffolded',
+        FALSE,
+      ],
     ];
   }
 
@@ -88,11 +93,11 @@ class ScaffoldTest extends TestCase {
 
     // Test composer install.
     $this->runComposer("install");
-    call_user_func([$this, $scaffoldAssertions], $sut, $is_link);
+    call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
 
     // Test composer:scaffold.
     $this->runComposer("composer:scaffold");
-    call_user_func([$this, $scaffoldAssertions], $sut, $is_link);
+    call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
   }
 
   /**
@@ -107,15 +112,22 @@ class ScaffoldTest extends TestCase {
   /**
    * Asserts that scaffold files were correctly moved.
    */
-  protected function assertDrupalProjectSutWasScaffolded($sut, $is_link) {
-    $this->assertDrupalRootWasScaffolded($sut . '/docroot', $is_link);
+  protected function assertDrupalProjectSutWasScaffolded($sut, $is_link, $project_name) {
+    $this->assertDrupalRootWasScaffolded($sut . '/docroot', $is_link, $project_name);
+  }
+
+  /**
+   * Asserts that scaffold files were correctly moved.
+   */
+  protected function assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name) {
+    $this->assertDrupalRootWasScaffolded($sut, $is_link, $project_name);
   }
 
   /**
    * Assert that the scaffold files are placed as we expect them to be.
    */
-  protected function assertDrupalRootWasScaffolded($docroot, $is_link) {
-    $from_project = 'scaffolded from "file-mappings" in project-level composer.json fixture';
+  protected function assertDrupalRootWasScaffolded($docroot, $is_link, $project_name) {
+    $from_project = "scaffolded from \"file-mappings\" in $project_name composer.json fixture";
     $from_scaffold_override = 'scaffolded from the scaffold-override-fixture';
     $from_core = 'from drupal/core';
 
