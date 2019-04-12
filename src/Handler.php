@@ -306,52 +306,27 @@ EOF;
   protected function moveFiles(array $file_mappings) {
     $options = $this->getOptions();
     $symlink = $options['symlink'];
-    $fs = new Filesystem();
 
     foreach ($file_mappings as $package_name => $files) {
       if (!$this->getAllowedPackage($package_name)) {
-        // TODO: We probably don't want to emit an error here. For early development debugging.
-        $this->io->writeError("FYI <info>$package_name</info> is not allowed so we are going to skip it.");
+        // @todo Add test case for this!
+        $this->io->writeError("The package <comment>$package_name</comment> is listed in file-mappings, but not an allowed package. Skipping.");
         continue;
       }
-      $this->io->write("Scaffold <info>$package_name</info>:");
+      $this->io->write("Scaffolding files for <comment>$package_name</comment> package");
       foreach ($files as $source => $destination) {
         if ($destination && is_string($destination)) {
           $package_path = $this->getPackagePath($package_name);
           $source_path = $package_path . '/' . $source;
           if (!file_exists($source_path)) {
-            $this->io->writeError("Could not find source file $source_path for package $package_name\n");
+            $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
             continue;
           }
           if (is_dir($source_path)) {
-            $this->io->writeError("$source_path in $package_name is a directory; only files may be scaffolded.");
+            $this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
             continue;
           }
-
-          $destination_path = $file_mappings[$package_name][$source] = str_replace('[web-root]', $this->getWebRoot(), $destination);
-
-          // Get rid of the destination if it exists, and make sure that
-          // the directory where it's going to be placed exists.
-          @unlink($destination_path);
-          $fs->ensureDirectoryExists(dirname($destination_path));
-          $success = FALSE;
-          if ($symlink) {
-            try {
-              $success = $fs->relativeSymlink($source_path, $destination_path);
-            }
-            catch (\Exception $e) {
-            }
-          }
-          else {
-            $success = copy($source_path, $destination_path);
-          }
-          $verb = $symlink ? 'symlink' : 'copy';
-          if (!$success) {
-            $this->io->writeError("Could not $verb source file $source_path to $destination");
-          }
-          else {
-            $this->io->write("  - $verb source file <info>$source</info> to $destination");
-          }
+          $this->moveFile($destination, $source, $symlink, $source_path);
         }
       }
     }
@@ -456,6 +431,52 @@ EOF;
       $package_path = $installationManager->getInstallPath($this->getPackage($package_name));
     }
     return $package_path;
+  }
+
+  /**
+   * Moves a single scaffold file from source to destination.
+   *
+   * @param string $destination
+   *   The file destination relative path.
+   * @param string $source
+   *   The file source relative path.
+   * @param bool $symlink
+   *   Whether the destination should be a symlink.
+   * @param string $source_path
+   *   The absolute path for the source file.
+   * @throws \Exception
+   */
+  protected function moveFile(
+    $destination,
+    $source,
+    $symlink,
+    $source_path
+  ): void {
+    $fs = new Filesystem();
+    $destination_path = str_replace('[web-root]', $this->getWebRoot(), $destination);
+
+    // Get rid of the destination if it exists, and make sure that
+    // the directory where it's going to be placed exists.
+    @unlink($destination_path);
+    $fs->ensureDirectoryExists(dirname($destination_path));
+    $success = FALSE;
+    if ($symlink) {
+      try {
+        $success = $fs->relativeSymlink($source_path, $destination_path);
+      }
+      catch (\Exception $e) {
+      }
+    }
+    else {
+      $success = copy($source_path, $destination_path);
+    }
+    $verb = $symlink ? 'symlink' : 'copy';
+    if (!$success) {
+      throw new \Exception("Could not $verb source file $source_path to $destination!");
+    }
+    else {
+      $this->io->write("  - $verb source file <info>$source</info> to $destination");
+    }
   }
 
 }
