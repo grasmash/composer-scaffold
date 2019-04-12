@@ -63,7 +63,7 @@ class ScaffoldTest extends TestCase {
     $this->removeSut();
     $this->fileSystem->copy($this->projectRoot . '/tests/fixtures', $this->fixtures);
 
-    $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl")
+    $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl");
     foreach ($composer_json_templates as $composer_json_tmpl) {
       // Inject replacements into composer.json.
       if (file_exists($composer_json_tmpl)) {
