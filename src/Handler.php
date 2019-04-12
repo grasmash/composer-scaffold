@@ -426,7 +426,7 @@ EOF;
     $source,
     $symlink,
     $source_path
-  ): void {
+  ) {
     $fs = new Filesystem();
     $destination_path = str_replace('[web-root]', $this->getWebRoot(), $destination);
 
@@ -468,7 +468,7 @@ EOF;
     $package_name,
     array $package_file_mappings,
     $symlink
-  ): void {
+  ) {
     $this->io->write("Scaffolding files for <comment>$package_name</comment> package");
     foreach ($package_file_mappings as $source => $destination) {
       if ($destination && is_string($destination)) {
