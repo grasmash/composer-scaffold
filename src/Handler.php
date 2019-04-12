@@ -104,7 +104,7 @@ class Handler {
 
     $this->allowedPackages = $this->getAllowedPackages();
     $file_mappings = $this->getFileMappingsFromPackages($this->allowedPackages);
-    $file_mappings = $this->replaceWebRootToken($file_mappings);
+    $file_mappings = $this->replaceLocationTokens($file_mappings);
     $this->moveScaffoldFiles($file_mappings);
 
     // Call post-scaffold scripts.
@@ -259,15 +259,24 @@ EOF;
    * @return array
    *   An multidimensional array of file mappings with tokens replaced.
    */
-  protected function replaceWebRootToken(array $file_mappings) : array {
-    $webroot = $this->getWebRoot();
+  protected function replaceLocationTokens(array $file_mappings) : array {
     $fs = new Filesystem();
-    $fs->ensureDirectoryExists($webroot);
-    $webroot = realpath($webroot);
+    $options = $this->getOptions();
+    $locations = $options['locations'];
+    $locations = array_map(
+      function ($location) use ($fs) {
+        $fs->ensureDirectoryExists($location);
+        $location = realpath($location);
+        return $location;
+      },
+      $locations
+    );
+
+    $interpolator = new Interpolator();
     foreach ($file_mappings as $package_name => $files) {
       foreach ($files as $source => $destination) {
         if (is_string($destination)) {
-          $file_mappings[$package_name][$source] = str_replace('[web-root]', $webroot, $destination);
+          $file_mappings[$package_name][$source] = $interpolator->interpolate($locations, $destination);
         }
       }
     }
