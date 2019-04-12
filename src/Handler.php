@@ -385,6 +385,9 @@ EOF;
    */
   protected function getPackagePath(string $package_name) : string {
     if ($package_name == $this->composer->getPackage()->getName()) {
+      // This will respect the --working-dir option if Composer is invoked with
+      // it. There is no API or method to determine the filesystem path of
+      // a package's composer.json file.
       return getcwd();
     }
     else {
