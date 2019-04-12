@@ -12,6 +12,11 @@
       "Grasmash\\ComposerScaffold\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Grasmash\\ComposerScaffold\\Tests\\": "tests/src"
+    }
+  },
   "extra": {
     "class": "Grasmash\\ComposerScaffold\\Plugin",
     "branch-alias": {
