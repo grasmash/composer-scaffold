@@ -73,6 +73,7 @@ class HandlerTest extends TestCase {
 
   /**
    * @covers ::getWebRoot
+   * @covers ::getOptions
    */
   public function testGetWebRoot() {
     $expected = './build/docroot';
@@ -91,6 +92,67 @@ class HandlerTest extends TestCase {
 
     $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
     $this->assertEquals($expected, $fixture->getWebRoot());
+
+    // Verify correct errors.
+    $this->expectException(\Exception::class);
+    $this->expectExceptionMessage('The extra.composer-scaffold.location.web-root is not set in composer.json.');
+    $extra = [
+      'allowed-packages' => [
+        'foo/bar',
+      ],
+    ];
+    $package->getExtra()->willReturn($extra);
+    $this->composer->getPackage()->willReturn($package->reveal());
+    $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
+    $fixture->getWebRoot();
+  }
+
+  /**
+   * Tests ArrayManipulator::arrayMergeRecursiveExceptEmpty().
+   *
+   * @dataProvider providerTestArrayMergeRecursiveDistinct
+   *
+   * @covers ::getWebRoot
+   */
+  public function testArrayMergeRecursiveDistinct(
+    array $array1,
+    array $array2,
+    array $expected_array
+  ) {
+    $this->assertEquals(Handler::arrayMergeRecursiveDistinct($array1,
+      $array2), $expected_array);
+  }
+  /**
+   * Provides values to testArrayMergeRecursiveDistinct().
+   *
+   * @return array
+   *   An array of values to test.
+   */
+  public function providerTestArrayMergeRecursiveDistinct() :array {
+    return [
+      [
+        [
+          "drupal/core" => [
+            "assets/.htaccess" => "[web-root]/.htaccess",
+            "assets/robots-default.txt" => "[web-root]/robots.txt",
+            "assets/index.php" => "[web-root]/index.php",
+          ],
+        ],
+        [
+          "drupal/core" => [
+            "assets/.htaccess" => FALSE,
+            "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
+          ],
+        ],
+        [
+          "drupal/core" => [
+            "assets/.htaccess" => FALSE,
+            "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
+            "assets/index.php" => "[web-root]/index.php",
+          ],
+        ],
+      ],
+    ];
   }
 
 }
