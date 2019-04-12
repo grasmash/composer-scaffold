@@ -1,6 +1,6 @@
 <?php
 
-namespace Grasmash\ComposerScaffold\Tests;
+namespace Grasmash\ComposerScaffold\Tests\Unit;
 
 use Composer\Composer;
 use Composer\IO\IOInterface;
@@ -122,6 +122,7 @@ class HandlerTest extends TestCase {
     $this->assertEquals(Handler::arrayMergeRecursiveDistinct($array1,
       $array2), $expected_array);
   }
+
   /**
    * Provides values to testArrayMergeRecursiveDistinct().
    *

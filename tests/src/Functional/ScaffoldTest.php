@@ -1,6 +1,6 @@
 <?php
 
-namespace Grasmash\ComposerScaffold\tests;
+namespace Grasmash\ComposerScaffold\Tests\Functional;
 
 use PHPUnit\Framework\TestCase;
 use Composer\Util\Filesystem;
@@ -11,6 +11,18 @@ use Symfony\Component\Process\Process;
  */
 class ScaffoldTest extends TestCase {
 
+  /**
+   * The root of this project.
+   *
+   * @var string
+   */
+  protected $projectRoot;
+
+  /**
+   * Directory to perform the tests in.
+   *
+   * @var string
+   */
   protected $fixtures;
 
   /**
@@ -33,19 +45,18 @@ class ScaffoldTest extends TestCase {
   protected function setUp() {
     $this->fileSystem = new Filesystem();
 
-    $projectRoot = dirname(__DIR__);
-    $this->fixtures = dirname($projectRoot) . '/composer-scaffold-test';
+    $this->projectRoot = realpath(__DIR__ . '/../../..');
+    $this->fixtures = dirname($this->projectRoot) . '/composer-scaffold-test';
   }
 
   /**
    * Create the System-Under-Test.
    */
   protected function createSut($topLevelProjectDir) {
-    $projectRoot = dirname(__DIR__);
     $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
 
     $this->removeSut();
-    $this->fileSystem->copy($projectRoot . '/tests/fixtures', $this->fixtures);
+    $this->fileSystem->copy($this->projectRoot . '/tests/fixtures', $this->fixtures);
 
     return $this->sut;
   }
