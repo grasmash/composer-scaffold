@@ -46,12 +46,8 @@
       },
       "symlink": __SYMLINK__,
       "file-mapping": {
-        "fixtures/drupal-core-fixture": {
-          "assets/.htaccess": false
-        },
-        "my/project": {
-          "assets/robots-default.txt": "[web-root]/robots.txt"
-        }
+        "[web-root]/.htaccess": false,
+        "[web-root]/robots.txt": "assets/robots-default.txt"
       }
     },
     "installer-paths": {

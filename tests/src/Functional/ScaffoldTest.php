@@ -57,6 +57,8 @@ class ScaffoldTest extends TestCase {
     $replacements += [
       'SYMLINK' => 'true',
     ];
+    $interpolator = new Interpolator('__', '__', TRUE);
+    $interpolator->setData($replacements);
     $projectRoot = dirname(__DIR__);
     $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
 
@@ -67,9 +69,8 @@ class ScaffoldTest extends TestCase {
     foreach ($composer_json_templates as $composer_json_tmpl) {
       // Inject replacements into composer.json.
       if (file_exists($composer_json_tmpl)) {
-        $interpolator = new Interpolator('__', '__', TRUE);
         $composer_json_contents = file_get_contents($composer_json_tmpl);
-        $composer_json_contents = $interpolator->interpolate($replacements, $composer_json_contents, FALSE);
+        $composer_json_contents = $interpolator->interpolate($composer_json_contents, FALSE);
         file_put_contents(dirname($composer_json_tmpl) . "/composer.json", $composer_json_contents);
         @unlink($composer_json_tmpl);
       }
@@ -162,10 +163,6 @@ class ScaffoldTest extends TestCase {
     // Ensure that the autoload.php file was written.
     $this->assertFileExists($docroot . '/autoload.php');
 
-    // Ensure that the .htaccess.txt file was not written, as our
-    // top-level composer.json excludes it from the files to scaffold.
-    $this->assertFileNotExists($docroot . '/.htaccess');
-
     // Assert other scaffold files are written in the correct locations.
     $this->assertScaffoldedFile($docroot . '/.csslintrc', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/.editorconfig', $is_link, $from_core);
@@ -181,6 +178,10 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile($docroot . '/robots.txt', $is_link, $from_project);
     $this->assertScaffoldedFile($docroot . '/update.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/web.config', $is_link, $from_core);
+
+    // Ensure that the .htaccess.txt file was not written, as our
+    // top-level composer.json excludes it from the files to scaffold.
+    $this->assertFileNotExists($docroot . '/.htaccess');
   }
 
   /**

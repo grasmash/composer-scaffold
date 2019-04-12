@@ -8,6 +8,7 @@ namespace Grasmash\ComposerScaffold;
 class Interpolator {
   protected $startToken;
   protected $endToken;
+  protected $data;
 
   /**
    * Interpolator constructor.
@@ -20,12 +21,27 @@ class Interpolator {
   public function __construct($startToken = '\[', $endToken = '\]') {
     $this->startToken = $startToken;
     $this->endToken = $endToken;
+    $this->data = [];
+  }
+
+  public function getData() {
+    return $this->data;
+  }
+
+  public function setData($data) {
+    $this->data = $data;
+    return $this;
+  }
+
+  public function interpolate($message, $default = '') {
+    return $this->interpolateData($this->data, $message, $default = '');
   }
 
   /**
    * Interpolate replaces tokens in a string with values from an associative array.
    *
-   * Tokens are surrounded by double curley braces, e.g. "[key]".
+   * Tokens are surrounded by double curley braces, e.g. "[key]". The characters
+   * that surround the key may be defined when the Interpolator is constructed.
    *
    * Example:
    * If the message is 'Hello, [user.name]', then the value of the user.name
@@ -44,7 +60,7 @@ class Interpolator {
    * @return string
    *   The message after replacements have been made.
    */
-  public function interpolate($data, $message, $default = '') {
+  public function interpolateData($data, $message, $default = '') {
     $replacements = $this->replacements($data, $message, $default);
     return strtr($message, $replacements);
   }
