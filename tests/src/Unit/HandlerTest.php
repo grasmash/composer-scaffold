@@ -47,11 +47,11 @@ class HandlerTest extends TestCase {
     $package->getName()->willReturn('foo/bar');
     $this->io->writeError('The allowed package foo/bar does not provide a file mapping for Composer Scaffold.')->shouldBeCalled();
     $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
-    $this->assertEquals([], $fixture->getPackageFileMappings($package->reveal()));
+    $this->assertSame([], $fixture->getPackageFileMappings($package->reveal()));
 
     // With only one of the required parameters.
     $package->getExtra()->willReturn(['composer-scaffold' => []]);
-    $this->assertEquals([], $fixture->getPackageFileMappings($package->reveal()));
+    $this->assertSame([], $fixture->getPackageFileMappings($package->reveal()));
   }
 
   /**
@@ -68,7 +68,7 @@ class HandlerTest extends TestCase {
     $package = $this->prophesize(PackageInterface::class);
     $package->getExtra()->willReturn(['composer-scaffold' => ['file-mapping' => $expected]]);
     $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
-    $this->assertEquals($expected, $fixture->getPackageFileMappings($package->reveal()));
+    $this->assertSame($expected, $fixture->getPackageFileMappings($package->reveal()));
   }
 
   /**
@@ -91,7 +91,7 @@ class HandlerTest extends TestCase {
     $this->composer->getPackage()->willReturn($package->reveal());
 
     $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
-    $this->assertEquals($expected, $fixture->getWebRoot());
+    $this->assertSame($expected, $fixture->getWebRoot());
 
     // Verify correct errors.
     $this->expectException(\Exception::class);
@@ -119,7 +119,7 @@ class HandlerTest extends TestCase {
     array $array2,
     array $expected_array
   ) {
-    $this->assertEquals(Handler::arrayMergeRecursiveDistinct($array1,
+    $this->assertSame(Handler::arrayMergeRecursiveDistinct($array1,
       $array2), $expected_array);
   }
 
