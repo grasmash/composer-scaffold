@@ -32,8 +32,8 @@
     ],
     "test": [
       "@lint",
-      "@cs",
-      "@unit"
+      "@unit",
+      "@cs"
     ]
   },
   "config": {
