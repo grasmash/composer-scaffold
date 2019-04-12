@@ -5,6 +5,7 @@ namespace Grasmash\ComposerScaffold\Tests\Functional;
 use PHPUnit\Framework\TestCase;
 use Composer\Util\Filesystem;
 use Symfony\Component\Process\Process;
+use Grasmash\ComposerScaffold\Interpolator;
 
 /**
  * Tests Composer Scaffold.
@@ -52,11 +53,27 @@ class ScaffoldTest extends TestCase {
   /**
    * Create the System-Under-Test.
    */
-  protected function createSut($topLevelProjectDir) {
+  protected function createSut($topLevelProjectDir, $replacements = []) {
+    $replacements += [
+      'SYMLINK' => 'true',
+    ];
+    $projectRoot = dirname(__DIR__);
     $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
 
     $this->removeSut();
     $this->fileSystem->copy($this->projectRoot . '/tests/fixtures', $this->fixtures);
+
+
+    foreach (['drupal-composer-drupal-project', 'drupal-drupal'] as $dir) {
+      // Inject replacements into composer.json.
+      if (file_exists($this->fixtures . "/$dir/composer.json.tmpl")) {
+        $interpolator = new Interpolator('__', '__', TRUE);
+        $composer_json_contents = file_get_contents($this->fixtures . "/$dir/composer.json.tmpl");
+        $composer_json_contents = $interpolator->interpolate($replacements, $composer_json_contents, FALSE);
+        file_put_contents($this->fixtures . "/$dir/composer.json", $composer_json_contents);
+        @unlink($this->fixtures . "/$dir/composer.json.tmpl");
+      }
+    }
 
     return $this->sut;
   }
@@ -100,7 +117,7 @@ class ScaffoldTest extends TestCase {
    * @dataProvider scaffoldTestValues
    */
   public function testScaffold($topLevelProjectDir, $scaffoldAssertions, $is_link) {
-    $sut = $this->createSut($topLevelProjectDir);
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => $is_link ? 'true' : 'false']);
 
     // Test composer install.
     $this->runComposer("install");
