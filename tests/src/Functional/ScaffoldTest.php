@@ -63,7 +63,6 @@ class ScaffoldTest extends TestCase {
     $this->removeSut();
     $this->fileSystem->copy($this->projectRoot . '/tests/fixtures', $this->fixtures);
 
-
     foreach (['drupal-composer-drupal-project', 'drupal-drupal'] as $dir) {
       // Inject replacements into composer.json.
       if (file_exists($this->fixtures . "/$dir/composer.json.tmpl")) {

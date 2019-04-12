@@ -8,27 +8,31 @@ namespace Grasmash\ComposerScaffold;
 class Interpolator {
   protected $startToken;
   protected $endToken;
-  protected $upper;
 
   /**
+   * Interpolator constructor.
    *
+   * @param string $startToken
+   *   The start marker for a token, e.g. '['.
+   * @param string $endToken
+   *   The end marker for a token, e.g. ']'.
    */
-  public function __construct($startToken = '\[', $endToken = '\]', $upper = FALSE) {
+  public function __construct($startToken = '\[', $endToken = '\]') {
     $this->startToken = $startToken;
     $this->endToken = $endToken;
   }
 
   /**
-   * Interpolate replaces tokens in a string with the correspnding
-   * value from the provided associative array. Tokens are surrounded by double
-   * curley braces, e.g. "[key]".
+   * Interpolate replaces tokens in a string with values from an associative array.
+   *
+   * Tokens are surrounded by double curley braces, e.g. "[key]".
    *
    * Example:
    * If the message is 'Hello, [user.name]', then the value of the user.name
    * item is fetched from the array, and the token [user.name] is
    * replaced with the result.
    *
-   * @param array $data
+   * @param mixed|array $data
    *   Data to use for interpolation.
    * @param string $message
    *   Message containing tokens to be replaced.
@@ -38,6 +42,7 @@ class Interpolator {
    *   tokens are not replaced.
    *
    * @return string
+   *   The message after replacements have been made.
    */
   public function interpolate($data, $message, $default = '') {
     $replacements = $this->replacements($data, $message, $default);
@@ -62,7 +67,8 @@ class Interpolator {
    * @param string $message
    *   String with tokens.
    *
-   * @return string[] map of token to key, e.g. {{key}} => key
+   * @return string[]
+   *   map of token to key, e.g. {{key}} => key
    */
   public function findTokens($message) {
     $regEx = '#' . $this->startToken . '([a-zA-Z0-9._-]+)' . $this->endToken . '#';
@@ -80,9 +86,11 @@ class Interpolator {
   }
 
   /**
-   * Replacements looks up all of the replacements in the configuration
-   * object, given the token keys from the provided message. Keys that
-   * do not exist in the configuration are replaced with the default value.
+   * Replacements finds the tokens that exist in a message and builds a replacement array.
+   *
+   * All of the replacements in the data array are looked up given the token
+   * keys from the provided message. Keys that do not exist in the configuration
+   * are replaced with the default value.
    */
   public function replacements($data, $message, $default = '') {
     $tokens = $this->findTokens($message);
@@ -98,7 +106,7 @@ class Interpolator {
   }
 
   /**
-   *
+   * Get a value from an array. Throw if the type is wrong.
    */
   protected function get($data, $key, $default) {
     if (is_array($data)) {
