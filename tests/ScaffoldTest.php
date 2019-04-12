@@ -38,11 +38,11 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Create the System-Under-Test.
    */
   protected function createSut($topLevelProjectDir) {
     $projectRoot = dirname(__DIR__);
-    $this->sut = $this->fixtures . '/top-level-project';
+    $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
 
     $this->removeSut();
     $this->fileSystem->copy($projectRoot . '/tests/fixtures', $this->fixtures);
@@ -71,7 +71,7 @@ class ScaffoldTest extends TestCase {
   public function scaffoldTestValues() {
     return [
       [
-        'top-level-project',
+        'drupal-composer-drupal-project',
         'assertDrupalProjectSutWasScaffolded',
         TRUE,
       ],
@@ -112,7 +112,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   *
+   * Assert that the scaffold files are placed as we expect them to be.
    */
   protected function assertDrupalRootWasScaffolded($docroot, $is_link) {
     $from_project = 'scaffolded from "file-mappings" in project-level composer.json fixture';
