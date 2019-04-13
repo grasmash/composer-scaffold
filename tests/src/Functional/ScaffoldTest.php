@@ -97,6 +97,32 @@ class ScaffoldTest extends TestCase {
   /**
    * Data provider for testComposerInstallScaffold and testScaffoldCommand.
    */
+  public function scaffoldFixturesThatThrowTestValues() {
+    return [
+      [
+        'drupal-drupal-missing-scaffold-file',
+        'assertDrupalDrupalSutWasScaffolded',
+        TRUE,
+      ],
+    ];
+  }
+
+  /**
+   * Tests that scaffold files throw when they have bad values.
+   *
+   * @dataProvider scaffoldFixturesThatThrowTestValues
+   */
+  public function testScaffoldFixturesThatThrow($topLevelProjectDir, $scaffoldAssertions, $is_link) {
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => $is_link ? 'true' : 'false']);
+
+    // Test composer install. Expect an error.
+    // @todo: assert output contains too.
+    $this->runComposer("install", 1, 'Could not find source file');
+  }
+
+  /**
+   * Data provider for testComposerInstallScaffold and testScaffoldCommand.
+   */
   public function scaffoldTestValues() {
     return [
       [
@@ -132,10 +158,13 @@ class ScaffoldTest extends TestCase {
   /**
    * Runs a `composer` command.
    */
-  protected function runComposer($cmd) {
+  protected function runComposer($cmd, $expectedExitCode = 0, $expectedContents = '') {
     $process = new Process("composer $cmd", $this->sut);
-    $process->setTimeout(300)->setIdleTimeout(300)->mustRun();
-    $this->assertSame(0, $process->getExitCode());
+    $process->setTimeout(300)->setIdleTimeout(300)->run();
+    $this->assertSame($expectedExitCode, $process->getExitCode());
+    if (!empty($expectedContents)) {
+      $this->assertContains($expectedContents, $process->getOutput() . "\n" . $process->getErrorOutput());
+    }
   }
 
   /**
