@@ -17,19 +17,14 @@ Sample composer.json for a project that relies on packages that use composer-sca
     "composer-scaffold": {
       "allowed-packages": [
         "drupal/core",
-        "my/project"
       ],
       "locations": {
         "web-root": "./docroot"
       },
       "symlink": true,
       "file-mapping": {
-        "drupal/core": {
-           "assets/.htaccess": false
-        }
-        "my/project": {
-           "my-assets/robots.txt": "[web-root]/robots.txt"
-        }
+        "[web-root]/.htaccess": false,
+        "[web-root]/robots.txt": "assets/robots-default.txt"
       }
     }
   }
@@ -42,17 +37,39 @@ Sample composer.json for composer-scaffold files in drupal/core:
 {
   "name": "drupal/core",
   "extra": {
-      "composer-scaffold": {
-        "file-mapping": {
-          "drupal/core": {
-            "assets/.htaccess": "[web-root]/.htaccess",
-            "assets/index.php": "[web-root]/index.php",
-            "assets/robots.txt": "[web-root]/robots.txt",
-            "assets/sites/default/default.services.yml": "[web-root]/sites/default/default.services.yml"
-            "assets/sites/default/settings.php": "[web-root]/sites/default/settings.php"
-          }
-        }
+    "composer-scaffold": {
+      "file-mapping": {
+        "[web-root]/.csslintrc": "assets/.csslintrc",
+        "[web-root]/.editorconfig": "assets/.editorconfig",
+        "[web-root]/.eslintignore": "assets/.eslintignore",
+        "[web-root]/.eslintrc.json": "assets/.eslintrc.json",
+        "[web-root]/.gitattributes": "assets/.gitattributes",
+        "[web-root]/.ht.router.php": "assets/.ht.router.php",
+        "[web-root]/.htaccess": "assets/.htaccess",
+        "[web-root]/sites/default/default.services.yml": "assets/default.services.yml",
+        "[web-root]/sites/default/default.settings.php": "assets/default.settings.php",
+        "[web-root]/sites/example.settings.local.php": "assets/example.settings.local.php",
+        "[web-root]/sites/example.sites.php": "assets/example.sites.php",
+        "[web-root]/index.php": "assets/index.php",
+        "[web-root]/robots.txt": "assets/robots.txt",
+        "[web-root]/update.php": "assets/update.php",
+        "[web-root]/web.config": "assets/web.config"
       }
+    }
+  }
+}
+```
+
+@todo: drupal/core can move assets to a different project:
+
+```
+{
+  "name": "drupal/core",
+  "extra": {
+    "composer-scaffold": {
+      "allowed-packages": [
+        "drupal/assets",
+      ]
     }
   }
 }
@@ -66,15 +83,34 @@ Sample composer.json for a library that implements composer-scaffold:
   "extra": {
       "composer-scaffold": {
         "file-mapping": {
-          "pantheon-systems/d8-scaffold-files": {
-            "assets/sites/default/settings.php": "[web-root]/sites/default/settings.php"
-          }
+            "[web-root]/sites/default/settings.php": "assets/sites/default/settings.php"
         }
       }
     }
   }
 }
 ```
+
+@todo: Append to robots.txt:
+
+```
+{
+  "name": "pantheon-systems/d8-scaffold-files",
+  "extra": {
+      "composer-scaffold": {
+        "file-mapping": {
+            "[web-root]/robots.txt": {
+              "path": "assets/my-robots-additions.txt",
+              "mode": "append"
+            }
+        }
+      }
+    }
+  }
+}
+```
+
+With the enhancement above, `false` will expand to `"mode": "remove"`, and a simple string will expand to `"mode": "copy"`, with the string's value being placed in "path". This will therefore retain backwards compatibility with the current implementation, and also will maintain brief, descriptive file mappings for the most common cases (copy and remove).
 
 Patch a file after it's copied:
 
