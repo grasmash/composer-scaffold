@@ -273,7 +273,20 @@ EOF;
    *   The composer-scaffold configuration array.
    */
   protected function getOptions() : array {
-    $extra = $this->composer->getPackage()->getExtra() + ['composer-scaffold' => []];
+    return $this->getOptionsForPackage($this->composer->getPackage());
+  }
+
+  /**
+   * Retrieve options from optional "extra" configuration for a package.
+   *
+   * @param \Composer\Package\PackageInterface $package
+   *   The package to pull configuration options from.
+   *
+   * @return array
+   *   The composer-scaffold configuration array for the given package.
+   */
+  protected function getOptionsForPackage(PackageInterface $package) : array {
+    $extra = $package->getExtra() + ['composer-scaffold' => []];
 
     return $extra['composer-scaffold'] + [
       "allowed-packages" => [],
@@ -436,26 +449,44 @@ EOF;
    *   An array of allowed Composer packages.
    */
   protected function getAllowedPackages(): array {
-    $root_package = $this->composer->getPackage();
     $options = $this->getOptions() + [
       'allowed-packages' => [],
-      'file-mapping' => [],
     ];
-    $allowed_packages = [];
-    foreach ($options['allowed-packages'] as $name) {
+    $allowed_packages = $this->recursiveGetAllowedPackages($options['allowed-packages']);
+
+    // Add root package at the end so that it overrides all the preceding
+    // package.
+    $root_package = $this->composer->getPackage();
+    $allowed_packages[$root_package->getName()] = $root_package;
+
+    return $allowed_packages;
+  }
+
+  /**
+   * Description.
+   *
+   * @param string[] $packages_to_allow
+   *   List of package names.
+   * @param array $allowed_packages
+   *   Mapping of package names to PackageInterface.
+   *
+   * @return array
+   *   Mapping of package names to PackageInterface in priority order.
+   */
+  protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) {
+    $root_package = $this->composer->getPackage();
+    foreach ($packages_to_allow as $name) {
       if ($root_package->getName() === $name) {
         continue;
       }
       $package = $this->getPackage($name);
-      if ($package instanceof PackageInterface) {
+      if ($package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
         $allowed_packages[$name] = $package;
+
+        $packageOptions = $this->getOptionsForPackage($package);
+        $allowed_packages = $this->recursiveGetAllowedPackages($packageOptions['allowed-packages'], $allowed_packages);
       }
     }
-
-    // Add root package at the end so that it overrides all the preceding
-    // package.
-    $allowed_packages[$root_package->getName()] = $root_package;
-
     return $allowed_packages;
   }
 
