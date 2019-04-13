@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace Grasmash\ComposerScaffold;
 
 /**
@@ -18,7 +20,7 @@ class Interpolator {
    * @param string $endToken
    *   The end marker for a token, e.g. ']'.
    */
-  public function __construct($startToken = '\[', $endToken = '\]') {
+  public function __construct(string $startToken = '\[', string $endToken = '\]') {
     $this->startToken = $startToken;
     $this->endToken = $endToken;
     $this->data = [];
@@ -40,13 +42,6 @@ class Interpolator {
   }
 
   /**
-   * Interpolate a message using the standard data set provided via self::setData().
-   */
-  public function interpolate($message, $default = '') {
-    return $this->interpolateData($this->data, $message, $default = '');
-  }
-
-  /**
    * Interpolate replaces tokens in a string with values from an associative array.
    *
    * Tokens are surrounded by double curley braces, e.g. "[key]". The characters
@@ -57,10 +52,10 @@ class Interpolator {
    * item is fetched from the array, and the token [user.name] is
    * replaced with the result.
    *
-   * @param mixed|array $data
-   *   Data to use for interpolation.
    * @param string $message
    *   Message containing tokens to be replaced.
+   * @param mixed|array $extra
+   *   Data to use for interpolation in addition to whatever was provided by self::setData().
    * @param string|bool $default
    *   The value to substitute for tokens that
    *   are not found in the data. If `false`, then missing
@@ -69,16 +64,17 @@ class Interpolator {
    * @return string
    *   The message after replacements have been made.
    */
-  public function interpolateData($data, $message, $default = '') {
-    $replacements = $this->replacements($data, $message, $default);
+  public function interpolate(string $message, $extra = [], $default = '') : string {
+    $data = $extra + $this->data;
+    $replacements = $this->replacements($message, $data, $default);
     return strtr($message, $replacements);
   }
 
   /**
    * Throw if any tokens remain after interpolation.
    */
-  public function mustInterpolate($data, $message) {
-    $result = $this->interpolate($data, $message, FALSE);
+  public function mustInterpolate(string $message, $extra = []) : string {
+    $result = $this->interpolate($message, $extra, FALSE);
     $tokens = $this->findTokens($result);
     if (!empty($tokens)) {
       throw new \Exception('The following required keys were not found in configuration: ' . implode(',', $tokens));
@@ -95,7 +91,7 @@ class Interpolator {
    * @return string[]
    *   map of token to key, e.g. {{key}} => key
    */
-  public function findTokens($message) {
+  public function findTokens(string $message) : array {
     $regEx = '#' . $this->startToken . '([a-zA-Z0-9._-]+)' . $this->endToken . '#';
 
     if (!preg_match_all($regEx, $message, $matches, PREG_SET_ORDER)) {
@@ -117,12 +113,12 @@ class Interpolator {
    * keys from the provided message. Keys that do not exist in the configuration
    * are replaced with the default value.
    */
-  public function replacements($data, $message, $default = '') {
+  public function replacements(string $message, $data, $default = '') : array {
     $tokens = $this->findTokens($message);
 
     $replacements = [];
     foreach ($tokens as $sourceText => $key) {
-      $replacementText = $this->get($data, $key, $default);
+      $replacementText = $this->get($key, $data, $default);
       if ($replacementText !== FALSE) {
         $replacements[$sourceText] = $replacementText;
       }
@@ -133,7 +129,7 @@ class Interpolator {
   /**
    * Get a value from an array. Throw if the type is wrong.
    */
-  protected function get($data, $key, $default) {
+  protected function get(string $key, $data, $default) {
     if (is_array($data)) {
       return array_key_exists($key, $data) ? $data[$key] : $default;
     }

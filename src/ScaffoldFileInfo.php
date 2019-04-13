@@ -200,7 +200,7 @@ class ScaffoldFileInfo {
       'src-full-path' => $this->getSourceFullPath(),
     ] + $extra;
 
-    return $interploator->interpolateData($data, $message, $default);
+    return $interploator->interpolate($message, $data, $default);
   }
 
 }
