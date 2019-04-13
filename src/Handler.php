@@ -72,22 +72,77 @@ class Handler {
    *
    * @return array
    *   An associative array of file mappings, keyed by relative source file
-   *   path. For example:
+   *   path. Items that are specified as 'false' are converted to an empty string.
+   *   For example:
    *   [
    *     'path/to/source/file' => 'path/to/destination',
-   *     'path/to/source/file' => false,
+   *     'path/to/source/file' => '',
    *   ]
    */
   public function getPackageFileMappings(PackageInterface $package) : array {
     $package_extra = $package->getExtra();
 
     if (isset($package_extra['composer-scaffold']['file-mapping'])) {
-      return $package_extra['composer-scaffold']['file-mapping'];
+      $package_file_mappings = $package_extra['composer-scaffold']['file-mapping'];
+      return $this->validatePackageFileMappings($package_file_mappings);
     }
     else {
       $this->io->writeError("The allowed package {$package->getName()} does not provide a file mapping for Composer Scaffold.");
       return [];
     }
+  }
+
+  /**
+   * Validate the package file mappings.
+   *
+   * Throw an exception if there are invalid values, and normalize the value otherwise.
+   *
+   * @param string[] $package_file_mappings
+   *   An array of destination => source scaffold file mappings.
+   *
+   * @return string[]
+   *   The provided $package_file_mappings with its array values normalized.
+   */
+  protected function validatePackageFileMappings(array $package_file_mappings) {
+    $result = [];
+
+    foreach ($package_file_mappings as $key => $value) {
+      $result[$key] = $this->normalizeMapping($value);
+    }
+
+    return $result;
+  }
+
+  /**
+   * Normalize a value from the package file mappings.
+   *
+   * Currently, the valid values are:
+   *   (bool) FALSE: Remove the scaffold file rather than scaffold it.
+   *   'relative/path': Path to the file to place, relative to the package root.
+   *
+   * In the future, we want to normalize to:
+   *   [
+   *      'path' => 'relative/path',
+   *      'mode' => 'copy/prepend/append' // n.b. "copy" could make a symlink
+   *   ]
+   *
+   * @param string|bool $value
+   *   The value to normalize.
+   *
+   * @return string
+   *   The normalized value.
+   */
+  protected function normalizeMapping($value) {
+    if (is_bool($value)) {
+      if (!$value) {
+        return '';
+      }
+      throw new \Exception("File mapping $key cannot be given the value 'true'.");
+    }
+    if (empty($value)) {
+      throw new \Exception("File mapping $key cannot be an empty string.");
+    }
+    return $value;
   }
 
   /**
@@ -98,9 +153,14 @@ class Handler {
     $dispatcher = new EventDispatcher($this->composer, $this->io);
     $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
 
+    $interpolator = $this->getLocationReplacements();
+
     $this->allowedPackages = $this->getAllowedPackages();
     $file_mappings = $this->getFileMappingsFromPackages($this->allowedPackages);
-    $this->moveScaffoldFiles($file_mappings);
+
+    list($list_of_scaffold_files, $resolved_file_mappings) = $this->coalateScaffoldFiles($file_mappings, $interpolator);
+
+    $this->scaffoldPackageFiles($list_of_scaffold_files, $resolved_file_mappings);
 
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
@@ -283,28 +343,40 @@ EOF;
    * @param array $file_mappings
    *   An multidimensional array of file mappings, as returned by
    *   self::getFileMappingsFromPackages().
+   * @param Interpolator $interpolator
+   *   An object with the location mappings (e.g. [web-root]).
+   *
+   * @return array
+   *   - $list_of_scaffold_files: a list of all of the files to scaffold
+   *   - $resolved_file_mappings original $file_mappings by package, with
+   *     values converted to ScaffoldFileInfo objects
    */
-  protected function moveScaffoldFiles(array $file_mappings) {
-    $options = $this->getOptions();
-    $symlink = $options['symlink'];
-
-    $interpolator = $this->getLocationReplacements();
-
+  protected function coalateScaffoldFiles(array $file_mappings, Interpolator $interpolator) {
     $resolved_file_mappings = [];
+    $resolved_package_file_list = [];
     foreach ($file_mappings as $package_name => $package_file_mappings) {
       if (!$this->getAllowedPackage($package_name)) {
         // It should no longer be possible to get here.
         $this->io->writeError("The package <comment>$package_name</comment> is listed in file-mappings, but not an allowed package. Skipping.");
         continue;
       }
-      foreach ($package_file_mappings as $destination => $source) {
-        $destination = $interpolator->interpolate($destination);
-        $source = $this->resolveSourceLocation($package_name, $source);
-        $resolved_file_mappings[$destination] = $source;
+      $package_path = $this->getPackagePath($package_name);
+      foreach ($package_file_mappings as $destination_rel_path => $source_rel_path) {
+        $src_full_path = $this->resolveSourceLocation($package_name, $package_path, $source_rel_path);
+        $dest_full_path = $interpolator->interpolate($destination_rel_path);
+
+        $scaffold_file = (new ScaffoldFileInfo())
+          ->setPackageName($package_name)
+          ->setDestinationRelativePath($destination_rel_path)
+          ->setSourceRelativePath($source_rel_path)
+          ->setDestinationFullPath($dest_full_path)
+          ->setSourceFullPath($src_full_path);
+
+        $list_of_scaffold_files[$destination_rel_path] = $scaffold_file;
+        $resolved_file_mappings[$package_name][$destination_rel_path] = $scaffold_file;
       }
     }
-    $this->io->write("Scaffolding files:");
-    $this->scaffoldPackageFiles($resolved_file_mappings, $symlink);
+    return [$list_of_scaffold_files, $resolved_file_mappings];
   }
 
   /**
@@ -409,19 +481,88 @@ EOF;
   }
 
   /**
+   * ResolveSourceLocation converts the relative source path into an absolute path.
+   *
+   * The path returned will be relative to the package installation location.
+   *
+   * @param string $package_name
+   *   Name of the package containing the source file.
+   * @param string $package_path
+   *   Path to the root of the named package.
+   * @param string $source
+   *   Source location provided as a relative path.
+   *
+   * @return string
+   *   Source location converted to an absolute path, or empty if removed.
+   */
+  public function resolveSourceLocation(string $package_name, string $package_path, string $source) {
+    if (empty($source)) {
+      return '';
+    }
+
+    $source_path = $package_path . '/' . $source;
+
+    if (!file_exists($source_path)) {
+      throw new \Exception("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
+    }
+    if (is_dir($source_path)) {
+      throw new \Exception("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
+    }
+
+    return $source_path;
+  }
+
+  /**
+   * Scaffolds the files for a specific package.
+   *
+   * @param array $list_of_scaffold_files
+   *   An associative array of destination file mappings.
+   * @param array $resolved_file_mappings
+   *   An associative array of package name to [dest => scaffold info mappings].
+   */
+  protected function scaffoldPackageFiles(array $list_of_scaffold_files, array $resolved_file_mappings) {
+    $options = $this->getOptions();
+    $symlink = $options['symlink'];
+
+    // We could simply scaffold all of the files from $list_of_scaffold_files,
+    // which contain only the list of files to be processed. We iterate over
+    // $resolved_file_mappings instead so that we can print out all of the
+    // scaffold files grouped by the package that provided them, including
+    // those not being scaffolded (because they were overridden or removed
+    // by some later package).
+    foreach ($resolved_file_mappings as $package_name => $package_scaffold_files) {
+      $this->io->write("Scaffolding files for <comment>$package_name</comment>:");
+      foreach ($package_scaffold_files as $dest_rel_path => $scaffold_file) {
+        $overriding_package = $scaffold_file->findProvidingPackage($list_of_scaffold_files);
+        if ($scaffold_file->overridden($overriding_package)) {
+          $this->io->write($scaffold_file->interpolate("  - <info>[dest-rel-path]</info> overridden in <comment>$overriding_package</comment>"));
+        }
+        else {
+          $this->process($scaffold_file, $symlink);
+        }
+      }
+    }
+  }
+
+  /**
    * Moves a single scaffold file from source to destination.
    *
-   * @param string $destination_path
-   *   The file destination absolute path.
-   * @param string $source_path
-   *   The file source absolute path.
+   * @param ScaffoldFileInfo $scaffold_file
+   *   The scaffold file to be processed.
    * @param bool $symlink
    *   Whether the destination should be a symlink.
    *
    * @throws \Exception
    */
-  protected function moveFile(string $destination_path, string $source_path, bool $symlink) {
+  protected function process(ScaffoldFileInfo $scaffold_file, bool $symlink) {
     $fs = new Filesystem();
+
+    if ($scaffold_file->removed()) {
+      return;
+    }
+
+    $destination_path = $scaffold_file->getDestinationFullPath();
+    $source_path = $scaffold_file->getSourceFullPath();
 
     // Get rid of the destination if it exists, and make sure that
     // the directory where it's going to be placed exists.
@@ -440,59 +581,10 @@ EOF;
     }
     $verb = $symlink ? 'symlink' : 'copy';
     if (!$success) {
-      throw new \Exception("Could not $verb source file $source_path to $destination_path!");
+      throw new \Exception($scaffold_file->interpolate("Could not $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!"));
     }
     else {
-      $this->io->write("  - $verb source file <info>$source_path</info> to $destination_path");
-    }
-  }
-
-  /**
-   * ResolveSourceLocation converts the relative $source path into an absolute path.
-   *
-   * The path returned will be relative to the package installation location.
-   *
-   * @param string $package_name
-   *   Name of the package containing the source file.
-   * @param string $source
-   *   Source location provided as a relative path.
-   *
-   * @return string
-   *   Source location converted to an absolute path.
-   */
-  public function resolveSourceLocation(string $package_name, $source) {
-    if (!$source || !is_string($source)) {
-      return FALSE;
-    }
-
-    $package_path = $this->getPackagePath($package_name);
-    $source_path = $package_path . '/' . $source;
-
-    if (!file_exists($source_path)) {
-      throw new \Exception("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
-      // $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");.
-    }
-    if (is_dir($source_path)) {
-      throw new \Exception("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
-      // $this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");.
-    }
-
-    return $source_path;
-  }
-
-  /**
-   * Scaffolds the files for a specific package.
-   *
-   * @param array $package_file_mappings
-   *   An associative array of source to destination file mappings.
-   * @param bool $symlink
-   *   Whether the destination should be a symlink.
-   */
-  protected function scaffoldPackageFiles(array $package_file_mappings, bool $symlink) {
-    foreach ($package_file_mappings as $destination => $source) {
-      if ($source && is_string($source)) {
-        $this->moveFile($destination, $source, $symlink);
-      }
+      $this->io->write($scaffold_file->interpolate("  - $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>"));
     }
   }
 
