@@ -15,6 +15,9 @@ class ScaffoldTest extends TestCase {
   /**
    * The root of this project.
    *
+   * Used to substitute this project's base directory into composer.json files
+   * so Composer can find it.
+   *
    * @var string
    */
   protected $projectRoot;
@@ -54,9 +57,9 @@ class ScaffoldTest extends TestCase {
    * Create the System-Under-Test.
    */
   protected function createSut($topLevelProjectDir, $replacements = []) {
-/*    $replacements += [
+    $replacements += [
       'SYMLINK' => 'true',
-    ];*/
+    ];
     $interpolator = new Interpolator('__', '__', TRUE);
     $interpolator->setData($replacements);
     $projectRoot = dirname(__DIR__);
