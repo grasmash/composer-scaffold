@@ -224,8 +224,6 @@ EOF;
   }
 
   /**
-   * @todo: Remove
-   *
    * Merges arrays recursively while preserving.
    *
    * @param array $array1
@@ -237,6 +235,7 @@ EOF;
    *   The merged array.
    *
    * @see http://php.net/manual/en/function.array-merge-recursive.php#92195
+   * @todo: Remove
    */
   public static function arrayMergeRecursiveDistinct(array &$array1, array &$array2) : array {
     $merged = $array1;
@@ -252,10 +251,13 @@ EOF;
   }
 
   /**
-   * getLocationReplacements creates an interpolator that will replace
-   * a path string with the tokens defined in the 'locations' element.
+   * GetLocationReplacements creates an interpolator for the 'locations' element.
+   *
+   * The interpolator returned will replace a path string with the tokens
+   * defined in the 'locations' element.
    *
    * @return Interpolator
+   *   Object that will do replacements in a string using tokens in 'locations' element.
    */
   public function getLocationReplacements() {
     $interpolator = new Interpolator();
@@ -409,14 +411,12 @@ EOF;
   /**
    * Moves a single scaffold file from source to destination.
    *
-   * @param string $destination
-   *   The file destination relative path.
-   * @param string $source
-   *   The file source relative path.
+   * @param string $destination_path
+   *   The file destination absolute path.
+   * @param string $source_path
+   *   The file source absolute path.
    * @param bool $symlink
    *   Whether the destination should be a symlink.
-   * @param string $source_path
-   *   The absolute path for the source file.
    *
    * @throws \Exception
    */
@@ -448,16 +448,21 @@ EOF;
   }
 
   /**
-   * resolveSourceLocation will convert the relative $source path into
-   * an absolute path based from the package path.
+   * ResolveSourceLocation converts the relative $source path into an absolute path.
+   *
+   * The path returned will be relative to the package installation location.
    *
    * @param string $package_name
+   *   Name of the package containing the source file.
    * @param string $source
+   *   Source location provided as a relative path.
+   *
    * @return string
+   *   Source location converted to an absolute path.
    */
   public function resolveSourceLocation(string $package_name, $source) {
     if (!$source || !is_string($source)) {
-      return false;
+      return FALSE;
     }
 
     $package_path = $this->getPackagePath($package_name);
@@ -465,11 +470,11 @@ EOF;
 
     if (!file_exists($source_path)) {
       throw new \Exception("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
-      // $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
+      // $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");.
     }
     if (is_dir($source_path)) {
       throw new \Exception("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
-      //$this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
+      // $this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");.
     }
 
     return $source_path;
@@ -478,8 +483,6 @@ EOF;
   /**
    * Scaffolds the files for a specific package.
    *
-   * @param string $package_name
-   *   The name of the package. E.g., my/project.
    * @param array $package_file_mappings
    *   An associative array of source to destination file mappings.
    * @param bool $symlink
@@ -492,4 +495,5 @@ EOF;
       }
     }
   }
+
 }

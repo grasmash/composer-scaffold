@@ -24,15 +24,24 @@ class Interpolator {
     $this->data = [];
   }
 
+  /**
+   * GetData fetches the data set used by this interpolator.
+   */
   public function getData() {
     return $this->data;
   }
 
+  /**
+   * SetData allows the client to associate a standard data set to use when interpolating.
+   */
   public function setData($data) {
     $this->data = $data;
     return $this;
   }
 
+  /**
+   * Interpolate a message using the standard data set provided via self::setData().
+   */
   public function interpolate($message, $default = '') {
     return $this->interpolateData($this->data, $message, $default = '');
   }
