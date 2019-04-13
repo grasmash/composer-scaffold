@@ -62,10 +62,6 @@ class Handler {
    */
   public function onPostCmdEvent(Event $event) {
     $this->scaffold();
-    // Generate an autoload file in the document root that includes
-    // the autoload.php file in the vendor directory, wherever that is.
-    // Drupal requires this in order to easily locate relocated vendor dirs.
-    $this->generateAutoload();
   }
 
   /**
@@ -104,8 +100,12 @@ class Handler {
 
     $this->allowedPackages = $this->getAllowedPackages();
     $file_mappings = $this->getFileMappingsFromPackages($this->allowedPackages);
-    $file_mappings = $this->replaceWebRootToken($file_mappings);
     $this->moveScaffoldFiles($file_mappings);
+
+    // Generate an autoload file in the document root that includes
+    // the autoload.php file in the vendor directory, wherever that is.
+    // Drupal requires this in order to easily locate relocated vendor dirs.
+    $this->generateAutoload();
 
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
@@ -235,6 +235,7 @@ EOF;
    *   The merged array.
    *
    * @see http://php.net/manual/en/function.array-merge-recursive.php#92195
+   * @todo: Remove
    */
   public static function arrayMergeRecursiveDistinct(array &$array1, array &$array2) : array {
     $merged = $array1;
@@ -250,28 +251,30 @@ EOF;
   }
 
   /**
-   * Replaces '[web-root]' token in file mappings.
+   * GetLocationReplacements creates an interpolator for the 'locations' element.
    *
-   * @param array $file_mappings
-   *   An multidimensional array of file mappings, as returned by
-   *   self::getFileMappingsFromPackages().
+   * The interpolator returned will replace a path string with the tokens
+   * defined in the 'locations' element.
    *
-   * @return array
-   *   An multidimensional array of file mappings with tokens replaced.
+   * @return Interpolator
+   *   Object that will do replacements in a string using tokens in 'locations' element.
    */
-  protected function replaceWebRootToken(array $file_mappings) : array {
-    $webroot = $this->getWebRoot();
+  public function getLocationReplacements() {
+    $interpolator = new Interpolator();
+
     $fs = new Filesystem();
-    $fs->ensureDirectoryExists($webroot);
-    $webroot = realpath($webroot);
-    foreach ($file_mappings as $package_name => $files) {
-      foreach ($files as $source => $destination) {
-        if (is_string($destination)) {
-          $file_mappings[$package_name][$source] = str_replace('[web-root]', $webroot, $destination);
-        }
-      }
-    }
-    return $file_mappings;
+    $options = $this->getOptions();
+    $locations = $options['locations'] + ['web_root' => './'];
+    $locations = array_map(
+      function ($location) use ($fs) {
+        $fs->ensureDirectoryExists($location);
+        $location = realpath($location);
+        return $location;
+      },
+      $locations
+    );
+
+    return $interpolator->setData($locations);
   }
 
   /**
@@ -285,17 +288,23 @@ EOF;
     $options = $this->getOptions();
     $symlink = $options['symlink'];
 
+    $interpolator = $this->getLocationReplacements();
+
+    $resolved_file_mappings = [];
     foreach ($file_mappings as $package_name => $package_file_mappings) {
       if (!$this->getAllowedPackage($package_name)) {
-        // @todo Add test case for this!
-        // @todo Any package mentioned in the top-level composer.json's file
-        // mappings should be implicitly allowed, which means we can remove this
-        // warning.
+        // It should no longer be possible to get here.
         $this->io->writeError("The package <comment>$package_name</comment> is listed in file-mappings, but not an allowed package. Skipping.");
         continue;
       }
-      $this->scaffoldPackageFiles($package_name, $package_file_mappings, $symlink);
+      foreach ($package_file_mappings as $destination => $source) {
+        $destination = $interpolator->interpolate($destination);
+        $source = $this->resolveSourceLocation($package_name, $source);
+        $resolved_file_mappings[$destination] = $source;
+      }
     }
+    $this->io->write("Scaffolding files:");
+    $this->scaffoldPackageFiles($resolved_file_mappings, $symlink);
   }
 
   /**
@@ -338,7 +347,7 @@ EOF;
     $file_mappings = [];
     foreach ($allowed_packages as $name => $package) {
       $package_file_mappings = $this->getPackageFileMappings($package);
-      $file_mappings = self::arrayMergeRecursiveDistinct($file_mappings, $package_file_mappings);
+      $file_mappings[$name] = $package_file_mappings;
     }
     return $file_mappings;
   }
@@ -355,11 +364,16 @@ EOF;
    *   An array of allowed Composer packages.
    */
   protected function getAllowedPackages(): array {
-    $options = $this->getOptions();
-    $allowed_packages_list = $options['allowed-packages'];
-
+    $root_package = $this->composer->getPackage();
+    $options = $this->getOptions() + [
+      'allowed-packages' => [],
+      'file-mapping' => [],
+    ];
     $allowed_packages = [];
-    foreach ($allowed_packages_list as $name) {
+    foreach ($options['allowed-packages'] as $name) {
+      if ($root_package->getName() === $name) {
+        continue;
+      }
       $package = $this->getPackage($name);
       if ($package instanceof PackageInterface) {
         $allowed_packages[$name] = $package;
@@ -368,7 +382,6 @@ EOF;
 
     // Add root package at the end so that it overrides all the preceding
     // package.
-    $root_package = $this->composer->getPackage();
     $allowed_packages[$root_package->getName()] = $root_package;
 
     return $allowed_packages;
@@ -398,20 +411,17 @@ EOF;
   /**
    * Moves a single scaffold file from source to destination.
    *
-   * @param string $destination
-   *   The file destination relative path.
-   * @param string $source
-   *   The file source relative path.
+   * @param string $destination_path
+   *   The file destination absolute path.
+   * @param string $source_path
+   *   The file source absolute path.
    * @param bool $symlink
    *   Whether the destination should be a symlink.
-   * @param string $source_path
-   *   The absolute path for the source file.
    *
    * @throws \Exception
    */
-  protected function moveFile(string $destination, string $source, bool $symlink, string $source_path) {
+  protected function moveFile(string $destination_path, string $source_path, bool $symlink) {
     $fs = new Filesystem();
-    $destination_path = str_replace('[web-root]', $this->getWebRoot(), $destination);
 
     // Get rid of the destination if it exists, and make sure that
     // the directory where it's going to be placed exists.
@@ -430,38 +440,58 @@ EOF;
     }
     $verb = $symlink ? 'symlink' : 'copy';
     if (!$success) {
-      throw new \Exception("Could not $verb source file $source_path to $destination!");
+      throw new \Exception("Could not $verb source file $source_path to $destination_path!");
     }
     else {
-      $this->io->write("  - $verb source file <info>$source</info> to $destination");
+      $this->io->write("  - $verb source file <info>$source_path</info> to $destination_path");
     }
+  }
+
+  /**
+   * ResolveSourceLocation converts the relative $source path into an absolute path.
+   *
+   * The path returned will be relative to the package installation location.
+   *
+   * @param string $package_name
+   *   Name of the package containing the source file.
+   * @param string $source
+   *   Source location provided as a relative path.
+   *
+   * @return string
+   *   Source location converted to an absolute path.
+   */
+  public function resolveSourceLocation(string $package_name, $source) {
+    if (!$source || !is_string($source)) {
+      return FALSE;
+    }
+
+    $package_path = $this->getPackagePath($package_name);
+    $source_path = $package_path . '/' . $source;
+
+    if (!file_exists($source_path)) {
+      throw new \Exception("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
+      // $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");.
+    }
+    if (is_dir($source_path)) {
+      throw new \Exception("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
+      // $this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");.
+    }
+
+    return $source_path;
   }
 
   /**
    * Scaffolds the files for a specific package.
    *
-   * @param string $package_name
-   *   The name of the package. E.g., my/project.
    * @param array $package_file_mappings
    *   An associative array of source to destination file mappings.
    * @param bool $symlink
    *   Whether the destination should be a symlink.
    */
-  protected function scaffoldPackageFiles(string $package_name, array $package_file_mappings, bool $symlink) {
-    $this->io->write("Scaffolding files for <comment>$package_name</comment> package");
-    foreach ($package_file_mappings as $source => $destination) {
-      if ($destination && is_string($destination)) {
-        $package_path = $this->getPackagePath($package_name);
-        $source_path = $package_path . '/' . $source;
-        if (!file_exists($source_path)) {
-          $this->io->writeError("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
-          continue;
-        }
-        if (is_dir($source_path)) {
-          $this->io->writeError("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
-          continue;
-        }
-        $this->moveFile($destination, $source, $symlink, $source_path);
+  protected function scaffoldPackageFiles(array $package_file_mappings, bool $symlink) {
+    foreach ($package_file_mappings as $destination => $source) {
+      if ($source && is_string($source)) {
+        $this->moveFile($destination, $source, $symlink);
       }
     }
   }

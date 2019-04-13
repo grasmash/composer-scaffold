@@ -3,9 +3,7 @@
   "extra": {
     "composer-scaffold": {
       "file-mapping": {
-        "fixtures/scaffold-override-fixture": {
-          "assets/override-settings.php": "[web-root]/sites/default/default.settings.php"
-        }
+        "[web-root]/sites/default/default.settings.php": "assets/override-settings.php"
       }
     }
   }

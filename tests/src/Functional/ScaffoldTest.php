@@ -57,20 +57,22 @@ class ScaffoldTest extends TestCase {
     $replacements += [
       'SYMLINK' => 'true',
     ];
+    $interpolator = new Interpolator('__', '__', TRUE);
+    $interpolator->setData($replacements);
     $projectRoot = dirname(__DIR__);
     $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
 
     $this->removeSut();
     $this->fileSystem->copy($this->projectRoot . '/tests/fixtures', $this->fixtures);
 
-    foreach (['drupal-composer-drupal-project', 'drupal-drupal'] as $dir) {
+    $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl");
+    foreach ($composer_json_templates as $composer_json_tmpl) {
       // Inject replacements into composer.json.
-      if (file_exists($this->fixtures . "/$dir/composer.json.tmpl")) {
-        $interpolator = new Interpolator('__', '__', TRUE);
-        $composer_json_contents = file_get_contents($this->fixtures . "/$dir/composer.json.tmpl");
-        $composer_json_contents = $interpolator->interpolate($replacements, $composer_json_contents, FALSE);
-        file_put_contents($this->fixtures . "/$dir/composer.json", $composer_json_contents);
-        @unlink($this->fixtures . "/$dir/composer.json.tmpl");
+      if (file_exists($composer_json_tmpl)) {
+        $composer_json_contents = file_get_contents($composer_json_tmpl);
+        $composer_json_contents = $interpolator->interpolate($composer_json_contents, FALSE);
+        file_put_contents(dirname($composer_json_tmpl) . "/composer.json", $composer_json_contents);
+        @unlink($composer_json_tmpl);
       }
     }
 
@@ -90,6 +92,32 @@ class ScaffoldTest extends TestCase {
    */
   protected function removeSut() {
     $this->fileSystem->remove($this->fixtures);
+  }
+
+  /**
+   * Data provider for testComposerInstallScaffold and testScaffoldCommand.
+   */
+  public function scaffoldFixturesThatThrowTestValues() {
+    return [
+      [
+        'drupal-drupal-missing-scaffold-file',
+        'assertDrupalDrupalSutWasScaffolded',
+        TRUE,
+      ],
+    ];
+  }
+
+  /**
+   * Tests that scaffold files throw when they have bad values.
+   *
+   * @dataProvider scaffoldFixturesThatThrowTestValues
+   */
+  public function testScaffoldFixturesThatThrow($topLevelProjectDir, $scaffoldAssertions, $is_link) {
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => $is_link ? 'true' : 'false']);
+
+    // Test composer install. Expect an error.
+    // @todo: assert output contains too.
+    $this->runComposer("install", 1, 'Could not find source file');
   }
 
   /**
@@ -130,10 +158,13 @@ class ScaffoldTest extends TestCase {
   /**
    * Runs a `composer` command.
    */
-  protected function runComposer($cmd) {
+  protected function runComposer($cmd, $expectedExitCode = 0, $expectedContents = '') {
     $process = new Process("composer $cmd", $this->sut);
-    $process->setTimeout(300)->setIdleTimeout(300)->mustRun();
-    $this->assertSame(0, $process->getExitCode());
+    $process->setTimeout(300)->setIdleTimeout(300)->run();
+    $this->assertSame($expectedExitCode, $process->getExitCode());
+    if (!empty($expectedContents)) {
+      $this->assertContains($expectedContents, $process->getOutput() . "\n" . $process->getErrorOutput());
+    }
   }
 
   /**
@@ -161,10 +192,6 @@ class ScaffoldTest extends TestCase {
     // Ensure that the autoload.php file was written.
     $this->assertFileExists($docroot . '/autoload.php');
 
-    // Ensure that the .htaccess.txt file was not written, as our
-    // top-level composer.json excludes it from the files to scaffold.
-    $this->assertFileNotExists($docroot . '/.htaccess');
-
     // Assert other scaffold files are written in the correct locations.
     $this->assertScaffoldedFile($docroot . '/.csslintrc', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/.editorconfig', $is_link, $from_core);
@@ -180,6 +207,10 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile($docroot . '/robots.txt', $is_link, $from_project);
     $this->assertScaffoldedFile($docroot . '/update.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/web.config', $is_link, $from_core);
+
+    // Ensure that the .htaccess.txt file was not written, as our
+    // top-level composer.json excludes it from the files to scaffold.
+    $this->assertFileNotExists($docroot . '/.htaccess');
   }
 
   /**
