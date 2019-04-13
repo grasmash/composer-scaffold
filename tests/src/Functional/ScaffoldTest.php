@@ -137,11 +137,11 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   * Tests that scaffold files are correctly moved by the plugin.
+   * Tests that scaffold files are correctly moved.
    *
    * @dataProvider scaffoldTestValues
    */
-  public function testScaffoldPlugin($topLevelProjectDir, $scaffoldAssertions, $is_link) {
+  public function testScaffold($topLevelProjectDir, $scaffoldAssertions, $is_link) {
     $sut = $this->createSut($topLevelProjectDir, [
       'SYMLINK' => $is_link ? 'true' : 'false',
       'PROJECT_ROOT' => $this->projectRoot,
