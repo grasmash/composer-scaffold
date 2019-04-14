@@ -92,11 +92,12 @@ class ScaffoldTest extends TestCase {
   /**
    * Data provider for testComposerInstallScaffold and testScaffoldCommand.
    */
-  public function scaffoldFixturesThatThrowTestValues() {
+  public function scaffoldFixturesWithErrorConditionsTestValues() {
     return [
       [
         'drupal-drupal-missing-scaffold-file',
-        '_no_assertion_',
+        '',
+        '#Could not find source file.*missing-robots-default.txt#msi',
         TRUE,
       ],
     ];
@@ -105,9 +106,9 @@ class ScaffoldTest extends TestCase {
   /**
    * Tests that scaffold files throw when they have bad values.
    *
-   * @dataProvider scaffoldFixturesThatThrowTestValues
+   * @dataProvider scaffoldFixturesWithErrorConditionsTestValues
    */
-  public function testScaffoldFixturesThatThrow($topLevelProjectDir, $scaffoldAssertions, $is_link) {
+  public function testScaffoldFixturesWithErrorConditions($topLevelProjectDir, $stdoutContains, $stderrContains, $is_link) {
     $sut = $this->createSut($topLevelProjectDir, [
       'SYMLINK' => $is_link ? 'true' : 'false',
       'PROJECT_ROOT' => $this->projectRoot,
@@ -115,7 +116,14 @@ class ScaffoldTest extends TestCase {
 
     // Test composer install. Expect an error.
     // @todo: assert output contains too.
-    $this->runComposer("install", 1, 'Could not find source file');
+    list($stdout, $stderr) = $this->runComposer("install", 1);
+
+    if (!empty($stdoutContains)) {
+      $this->assertRegExp($stdoutContains, $stdout);
+    }
+    if (!empty($stderrContains)) {
+      $this->assertRegExp($stderrContains, $stderr);
+    }
   }
 
   /**
@@ -159,13 +167,11 @@ class ScaffoldTest extends TestCase {
   /**
    * Runs a `composer` command.
    */
-  protected function runComposer($cmd, $expectedExitCode = 0, $expectedContents = '') {
+  protected function runComposer($cmd, $expectedExitCode = 0) {
     $process = new Process("composer $cmd", $this->sut);
     $process->setTimeout(300)->setIdleTimeout(300)->run();
-    if (!empty($expectedContents)) {
-      $this->assertContains($expectedContents, $process->getOutput() . "\n" . $process->getErrorOutput());
-    }
     $this->assertSame($expectedExitCode, $process->getExitCode(), $process->getErrorOutput());
+    return [$process->getOutput(), $process->getErrorOutput()];
   }
 
   /**
