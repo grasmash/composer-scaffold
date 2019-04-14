@@ -408,14 +408,13 @@ EOF;
   }
 
   /**
-   * Scaffolds the files for a specific package.
+   * Scaffolds the files in our scaffold collection, package-by-package.
    *
    * @param ScaffoldCollection $scaffoldCollection
    *   The scaffold files to process.
    */
   protected function scaffoldPackageFiles(ScaffoldCollection $scaffoldCollection) {
     $options = $this->getOptions();
-    $symlink = $options['symlink'];
 
     // We could simply scaffold all of the files from $list_of_scaffold_files,
     // which contain only the list of files to be processed. We iterate over
@@ -431,53 +430,9 @@ EOF;
           $this->io->write($scaffold_file->interpolate("  - <info>[dest-rel-path]</info> overridden in <comment>$overriding_package</comment>"));
         }
         else {
-          $this->process($scaffold_file, $symlink);
+          $scaffold_file->process($this->io, $options);
         }
       }
-    }
-  }
-
-  /**
-   * Moves a single scaffold file from source to destination.
-   *
-   * @param ScaffoldFileInfo $scaffold_file
-   *   The scaffold file to be processed.
-   * @param bool $symlink
-   *   Whether the destination should be a symlink.
-   *
-   * @throws \Exception
-   */
-  protected function process(ScaffoldFileInfo $scaffold_file, bool $symlink) {
-    $fs = new Filesystem();
-
-    if ($scaffold_file->removed()) {
-      return;
-    }
-
-    $destination_path = $scaffold_file->getDestinationFullPath();
-    $source_path = $scaffold_file->getSourceFullPath();
-
-    // Get rid of the destination if it exists, and make sure that
-    // the directory where it's going to be placed exists.
-    @unlink($destination_path);
-    $fs->ensureDirectoryExists(dirname($destination_path));
-    $success = FALSE;
-    if ($symlink) {
-      try {
-        $success = $fs->relativeSymlink($source_path, $destination_path);
-      }
-      catch (\Exception $e) {
-      }
-    }
-    else {
-      $success = copy($source_path, $destination_path);
-    }
-    $verb = $symlink ? 'symlink' : 'copy';
-    if (!$success) {
-      throw new \Exception($scaffold_file->interpolate("Could not $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!"));
-    }
-    else {
-      $this->io->write($scaffold_file->interpolate("  - $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>"));
     }
   }
 

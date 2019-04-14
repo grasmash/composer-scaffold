@@ -179,4 +179,49 @@ class ScaffoldFileInfo {
     return $interploator->interpolate($message, $data, $default);
   }
 
+  /**
+   * Moves a single scaffold file from source to destination.
+   *
+   * @param \Composer\IO\IOInterface $io
+   *   The scaffold file to be processed.
+   * @param array $options
+   *   Assorted operational options, e.g. whether the destination should be a symlink.
+   *
+   * @throws \Exception
+   */
+  public function process(IOInterface $io, array $options) {
+    $symlink = $options['symlink'];
+    $fs = new Filesystem();
+
+    if ($this->removed()) {
+      return;
+    }
+
+    $destination_path = $this->getDestinationFullPath();
+    $source_path = $this->getSourceFullPath();
+
+    // Get rid of the destination if it exists, and make sure that
+    // the directory where it's going to be placed exists.
+    @unlink($destination_path);
+    $fs->ensureDirectoryExists(dirname($destination_path));
+    $success = FALSE;
+    if ($symlink) {
+      try {
+        $success = $fs->relativeSymlink($source_path, $destination_path);
+      }
+      catch (\Exception $e) {
+      }
+    }
+    else {
+      $success = copy($source_path, $destination_path);
+    }
+    $verb = $symlink ? 'symlink' : 'copy';
+    if (!$success) {
+      throw new \Exception($this->interpolate("Could not $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!"));
+    }
+    else {
+      $io->write($this->interpolate("  - $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>"));
+    }
+  }
+
 }
