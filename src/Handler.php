@@ -35,13 +35,6 @@ class Handler {
   protected $io;
 
   /**
-   * An array of allowed packages keyed by package name.
-   *
-   * @var \Composer\Package\Package[]
-   */
-  protected $allowedPackages;
-
-  /**
    * Handler constructor.
    *
    * @param \Composer\Composer $composer
@@ -125,8 +118,11 @@ class Handler {
    * In the future, we want to normalize to:
    *   [
    *      'path' => 'relative/path',
-   *      'mode' => 'copy/prepend/append' // n.b. "copy" could make a symlink
+   *      'mode' => 'replace/prepend/append/remove'
    *   ]
+   *
+   * Note that 'replace' might copy or might make a symlink, depending on
+   * settings. The symlink setting is ignored for all modes other than replace.
    *
    * @param string|bool $value
    *   The value to normalize.
@@ -155,14 +151,19 @@ class Handler {
     $dispatcher = new EventDispatcher($this->composer, $this->io);
     $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
 
-    $interpolator = $this->getLocationReplacements();
+    $locationReplacements = $this->getLocationReplacements();
 
-    $this->allowedPackages = $this->getAllowedPackages();
-    $file_mappings = $this->getFileMappingsFromPackages($this->allowedPackages);
+    // Get the list of allowed packages, and then use it to recursively
+    // to fetch the list of file mappings, and normalize them.
+    $allowedPackages = $this->getAllowedPackages();
+    $file_mappings = $this->getFileMappingsFromPackages($allowedPackages);
 
-    list($list_of_scaffold_files, $resolved_file_mappings) = $this->coalateScaffoldFiles($file_mappings, $interpolator);
+    // Collect the list of file mappings, and determine which take priority.
+    $scaffoldCollection = new ScaffoldCollection($this->composer);
+    $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
-    $this->scaffoldPackageFiles($list_of_scaffold_files, $resolved_file_mappings);
+    // Write the collected scaffold files to the designated location on disk.
+    $this->scaffoldPackageFiles($scaffoldCollection);
 
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
@@ -262,7 +263,7 @@ EOF;
   protected function getPackage(string $name) {
     $package = $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
     if (is_null($package)) {
-      $this->io->write("<comment>Composer Scaffold could not find installed package `$name`.</comment>");
+      throw new \Exception("<comment>Composer Scaffold could not find installed package `$name`.</comment>");
     }
 
     return $package;
@@ -326,65 +327,6 @@ EOF;
   }
 
   /**
-   * Copy all files, as defined by $file_mappings.
-   *
-   * @param array $file_mappings
-   *   An multidimensional array of file mappings, as returned by
-   *   self::getFileMappingsFromPackages().
-   * @param Interpolator $interpolator
-   *   An object with the location mappings (e.g. [web-root]).
-   *
-   * @return array
-   *   - $list_of_scaffold_files: a list of all of the files to scaffold
-   *   - $resolved_file_mappings original $file_mappings by package, with
-   *     values converted to ScaffoldFileInfo objects
-   */
-  protected function coalateScaffoldFiles(array $file_mappings, Interpolator $interpolator) {
-    $resolved_file_mappings = [];
-    $resolved_package_file_list = [];
-    foreach ($file_mappings as $package_name => $package_file_mappings) {
-      if (!$this->getAllowedPackage($package_name)) {
-        // It should no longer be possible to get here.
-        $this->io->writeError("The package <comment>$package_name</comment> is listed in file-mappings, but not an allowed package. Skipping.");
-        continue;
-      }
-      $package_path = $this->getPackagePath($package_name);
-      foreach ($package_file_mappings as $destination_rel_path => $source_rel_path) {
-        $src_full_path = $this->resolveSourceLocation($package_name, $package_path, $source_rel_path);
-        $dest_full_path = $interpolator->interpolate($destination_rel_path);
-
-        $scaffold_file = (new ScaffoldFileInfo())
-          ->setPackageName($package_name)
-          ->setDestinationRelativePath($destination_rel_path)
-          ->setSourceRelativePath($source_rel_path)
-          ->setDestinationFullPath($dest_full_path)
-          ->setSourceFullPath($src_full_path);
-
-        $list_of_scaffold_files[$destination_rel_path] = $scaffold_file;
-        $resolved_file_mappings[$package_name][$destination_rel_path] = $scaffold_file;
-      }
-    }
-    return [$list_of_scaffold_files, $resolved_file_mappings];
-  }
-
-  /**
-   * Gets an allowed package from $this->allowedPackages array.
-   *
-   * @param string $package_name
-   *   The Composer package name. E.g., drupal/core.
-   *
-   * @return \Composer\Package\Package|null
-   *   The allowed Composer package, if it exists.
-   */
-  protected function getAllowedPackage($package_name) {
-    if (array_key_exists($package_name, $this->allowedPackages)) {
-      return $this->allowedPackages[$package_name];
-    }
-
-    return NULL;
-  }
-
-  /**
    * Gets a consolidated list of file mappings from all allowed packages.
    *
    * @param \Composer\Package\Package[] $allowed_packages
@@ -405,9 +347,9 @@ EOF;
    */
   protected function getFileMappingsFromPackages(array $allowed_packages) : array {
     $file_mappings = [];
-    foreach ($allowed_packages as $name => $package) {
+    foreach ($allowed_packages as $package_name => $package) {
       $package_file_mappings = $this->getPackageFileMappings($package);
-      $file_mappings[$name] = $package_file_mappings;
+      $file_mappings[$package_name] = $package_file_mappings;
     }
     return $file_mappings;
   }
@@ -466,67 +408,12 @@ EOF;
   }
 
   /**
-   * Gets the file path of a package.
-   *
-   * @param string $package_name
-   *   The package name.
-   *
-   * @return string
-   *   The file path.
-   */
-  protected function getPackagePath(string $package_name) : string {
-    if ($package_name == $this->composer->getPackage()->getName()) {
-      // This will respect the --working-dir option if Composer is invoked with
-      // it. There is no API or method to determine the filesystem path of
-      // a package's composer.json file.
-      return getcwd();
-    }
-    else {
-      return $this->composer->getInstallationManager()->getInstallPath($this->getPackage($package_name));
-    }
-  }
-
-  /**
-   * ResolveSourceLocation converts the relative source path into an absolute path.
-   *
-   * The path returned will be relative to the package installation location.
-   *
-   * @param string $package_name
-   *   Name of the package containing the source file.
-   * @param string $package_path
-   *   Path to the root of the named package.
-   * @param string $source
-   *   Source location provided as a relative path.
-   *
-   * @return string
-   *   Source location converted to an absolute path, or empty if removed.
-   */
-  public function resolveSourceLocation(string $package_name, string $package_path, string $source) {
-    if (empty($source)) {
-      return '';
-    }
-
-    $source_path = $package_path . '/' . $source;
-
-    if (!file_exists($source_path)) {
-      throw new \Exception("Scaffold file <info>$source</info> not found in package <comment>$package_name</comment>. Full path is <comment>$source_path</comment>\n");
-    }
-    if (is_dir($source_path)) {
-      throw new \Exception("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
-    }
-
-    return $source_path;
-  }
-
-  /**
    * Scaffolds the files for a specific package.
    *
-   * @param array $list_of_scaffold_files
-   *   An associative array of destination file mappings.
-   * @param array $resolved_file_mappings
-   *   An associative array of package name to [dest => scaffold info mappings].
+   * @param ScaffoldCollection $scaffoldCollection
+   *   The scaffold files to process.
    */
-  protected function scaffoldPackageFiles(array $list_of_scaffold_files, array $resolved_file_mappings) {
+  protected function scaffoldPackageFiles(ScaffoldCollection $scaffoldCollection) {
     $options = $this->getOptions();
     $symlink = $options['symlink'];
 
@@ -536,10 +423,10 @@ EOF;
     // scaffold files grouped by the package that provided them, including
     // those not being scaffolded (because they were overridden or removed
     // by some later package).
-    foreach ($resolved_file_mappings as $package_name => $package_scaffold_files) {
+    foreach ($scaffoldCollection->fileMappings() as $package_name => $package_scaffold_files) {
       $this->io->write("Scaffolding files for <comment>$package_name</comment>:");
       foreach ($package_scaffold_files as $dest_rel_path => $scaffold_file) {
-        $overriding_package = $scaffold_file->findProvidingPackage($list_of_scaffold_files);
+        $overriding_package = $scaffoldCollection->findProvidingPackage($scaffold_file);
         if ($scaffold_file->overridden($overriding_package)) {
           $this->io->write($scaffold_file->interpolate("  - <info>[dest-rel-path]</info> overridden in <comment>$overriding_package</comment>"));
         }

@@ -139,30 +139,6 @@ class ScaffoldFileInfo {
   }
 
   /**
-   * Return the package name that provides the scaffold file info at this destination path.
-   *
-   * Given the list of all scaffold file info objects, return the package that
-   * provides the scaffold file info for the scaffold file that will be placed
-   * at the destination that this scaffold file would be placed at. Note that
-   * this will be the same as $this->getPackageName() unless this scaffold file
-   * has been overridden or removed by some other package.
-   *
-   * @param string[] $list_of_scaffold_files
-   *   The list of all scaffold file info objects, keyed by destination path
-   *   (and therefore containing only those files being processed)
-   *
-   * @return string
-   *   The name of the package that provided the scaffold file information.
-   */
-  public function findProvidingPackage(array $list_of_scaffold_files) {
-    if (!array_key_exists($this->getDestinationRelativePath(), $list_of_scaffold_files)) {
-      throw new \Exception("Scaffold file not found in list of all scaffold files.");
-    }
-    $scaffold_file = $list_of_scaffold_files[$this->getDestinationRelativePath()];
-    return $scaffold_file->getPackageName();
-  }
-
-  /**
    * Determine whether this scaffold file info is for a destination path that was removed.
    *
    * @return bool
