@@ -97,7 +97,7 @@ class ScaffoldTest extends TestCase {
       [
         'drupal-drupal-missing-scaffold-file',
         '',
-        '#Could not find source file.*missing-robots-default.txt#msi',
+        '#Scaffold file <info>assets/missing-robots-default.txt</info> not found#msi',
         TRUE,
       ],
     ];
@@ -116,7 +116,7 @@ class ScaffoldTest extends TestCase {
 
     // Test composer install. Expect an error.
     // @todo: assert output contains too.
-    list($stdout, $stderr) = $this->runComposer("install", 1);
+    list($stdout, $stderr) = $this->runComposer("install --no-ansi", 1);
 
     if (!empty($stdoutContains)) {
       $this->assertRegExp($stdoutContains, $stdout);
@@ -156,11 +156,11 @@ class ScaffoldTest extends TestCase {
     ]);
 
     // Test composer install.
-    $this->runComposer("install");
+    $this->runComposer("install --no-ansi");
     call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
 
     // Test composer:scaffold.
-    $this->runComposer("composer:scaffold");
+    $this->runComposer("composer:scaffold --no-ansi");
     call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
   }
 

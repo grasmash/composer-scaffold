@@ -87,7 +87,9 @@ class Handler {
       return $this->validatePackageFileMappings($package_file_mappings);
     }
     else {
-      $this->io->writeError("The allowed package {$package->getName()} does not provide a file mapping for Composer Scaffold.");
+      if (!isset($package_extra['composer-scaffold']['allowed-packages'])) {
+        $this->io->writeError("The allowed package {$package->getName()} does not provide a file mapping for Composer Scaffold.");
+      }
       return [];
     }
   }
@@ -534,7 +536,7 @@ EOF;
     $source_path = $package_path . '/' . $source;
 
     if (!file_exists($source_path)) {
-      throw new \Exception("Could not find source file <comment>$source_path</comment> for package <comment>$package_name</comment>\n");
+      throw new \Exception("Scaffold file <info>$source</info> not found in package <comment>$package_name</comment>. Full path is <comment>$source_path</comment>\n");
     }
     if (is_dir($source_path)) {
       throw new \Exception("<comment>$source_path</comment> in <comment>$package_name</comment> is a directory; only files may be scaffolded.");
