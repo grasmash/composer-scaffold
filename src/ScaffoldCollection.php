@@ -17,15 +17,13 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
  */
 class ScaffoldCollection {
 
-  protected $composer;
   protected $listOfScaffoldFiles;
   protected $resolvedFileMappings;
 
   /**
    * ScaffoldCollection constructor.
    */
-  public function __construct($composer) {
-    $this->composer = $composer;
+  public function __construct() {
   }
 
   /**
@@ -36,28 +34,6 @@ class ScaffoldCollection {
    */
   public function fileMappings() {
     return $this->resolvedFileMappings;
-  }
-
-  /**
-   * Gets the file path of a package.
-   *
-   * @param string $package_name
-   *   The package name.
-   *
-   * @return string
-   *   The file path.
-   */
-  protected function getPackagePath(string $package_name) : string {
-    if ($package_name == $this->composer->getPackage()->getName()) {
-      // This will respect the --working-dir option if Composer is invoked with
-      // it. There is no API or method to determine the filesystem path of
-      // a package's composer.json file.
-      return getcwd();
-    }
-    else {
-      $package = $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($package_name, '*');
-      return $this->composer->getInstallationManager()->getInstallPath($package);
-    }
   }
 
   /**
@@ -98,17 +74,14 @@ class ScaffoldCollection {
     $resolved_file_mappings = [];
     $resolved_package_file_list = [];
     foreach ($file_mappings as $package_name => $package_file_mappings) {
-      $package_path = $this->getPackagePath($package_name);
-      foreach ($package_file_mappings as $destination_rel_path => $source_rel_path) {
-        $src_full_path = $this->resolveSourceLocation($package_name, $package_path, $source_rel_path);
+      foreach ($package_file_mappings as $destination_rel_path => $op) {
         $dest_full_path = $locationReplacements->interpolate($destination_rel_path);
 
         $scaffold_file = (new ScaffoldFileInfo())
           ->setPackageName($package_name)
           ->setDestinationRelativePath($destination_rel_path)
-          ->setSourceRelativePath($source_rel_path)
           ->setDestinationFullPath($dest_full_path)
-          ->setSourceFullPath($src_full_path);
+          ->setOp($op);
 
         $list_of_scaffold_files[$destination_rel_path] = $scaffold_file;
         $resolved_file_mappings[$package_name][$destination_rel_path] = $scaffold_file;
@@ -116,38 +89,6 @@ class ScaffoldCollection {
     }
     $this->listOfScaffoldFiles = $list_of_scaffold_files;
     $this->resolvedFileMappings = $resolved_file_mappings;
-  }
-
-  /**
-   * ResolveSourceLocation converts the relative source path into an absolute path.
-   *
-   * The path returned will be relative to the package installation location.
-   *
-   * @param string $package_name
-   *   Name of the package containing the source file.
-   * @param string $package_path
-   *   Path to the root of the named package.
-   * @param string $source
-   *   Source location provided as a relative path.
-   *
-   * @return string
-   *   Source location converted to an absolute path, or empty if removed.
-   */
-  public function resolveSourceLocation(string $package_name, string $package_path, string $source) {
-    if (empty($source)) {
-      return '';
-    }
-
-    $source_path = $package_path . '/' . $source;
-
-    if (!file_exists($source_path)) {
-      throw new \Exception("Scaffold file <info>$source</info> not found in package <comment>$package_name</comment>.");
-    }
-    if (is_dir($source_path)) {
-      throw new \Exception("Scaffold file <info>$source</info> in package <comment>$package_name</comment> is a directory; only files may be scaffolded.");
-    }
-
-    return $source_path;
   }
 
 }

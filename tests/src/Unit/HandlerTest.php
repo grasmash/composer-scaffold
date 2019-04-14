@@ -38,40 +38,6 @@ class HandlerTest extends TestCase {
   }
 
   /**
-   * @covers ::getPackageFileMappings
-   */
-  public function testGetPackageFileMappingsErrors() {
-    // Check missing parameters sets appropriate error.
-    $package = $this->prophesize(PackageInterface::class);
-    $package->getExtra()->willReturn([]);
-    $package->getName()->willReturn('foo/bar');
-    $this->io->writeError('The allowed package foo/bar does not provide a file mapping for Composer Scaffold.')->shouldBeCalled();
-    $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
-    $this->assertSame([], $fixture->getPackageFileMappings($package->reveal()));
-
-    // With only one of the required parameters.
-    $package->getExtra()->willReturn(['composer-scaffold' => []]);
-    $this->assertSame([], $fixture->getPackageFileMappings($package->reveal()));
-  }
-
-  /**
-   * @covers ::getPackageFileMappings
-   */
-  public function testGetPackageFileMappings() {
-    $expected = [
-      'self' => [
-        'assets/.htaccess' => FALSE,
-        'assets/robots-default.txt' => '[web-root]/robots.txt',
-      ],
-    ];
-
-    $package = $this->prophesize(PackageInterface::class);
-    $package->getExtra()->willReturn(['composer-scaffold' => ['file-mapping' => $expected]]);
-    $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
-    $this->assertSame($expected, $fixture->getPackageFileMappings($package->reveal()));
-  }
-
-  /**
    * @covers ::getWebRoot
    * @covers ::getOptions
    */

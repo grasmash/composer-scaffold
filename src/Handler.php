@@ -11,6 +11,9 @@ use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\Operations\ScaffoldReplaceOp;
+use Grasmash\ComposerScaffold\Operations\ScaffoldSkipOp;
+use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
 
 /**
  * Core class of the plugin, contains all logic which files should be fetched.
@@ -63,21 +66,15 @@ class Handler {
    * @param \Composer\Package\PackageInterface $package
    *   The Composer package from which to get the file mappings.
    *
-   * @return array
-   *   An associative array of file mappings, keyed by relative source file
-   *   path. Items that are specified as 'false' are converted to an empty string.
-   *   For example:
-   *   [
-   *     'path/to/source/file' => 'path/to/destination',
-   *     'path/to/source/file' => '',
-   *   ]
+   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface[]
+   *   An array of destination paths => scaffold operation objects.
    */
   public function getPackageFileMappings(PackageInterface $package) : array {
     $package_extra = $package->getExtra();
 
     if (isset($package_extra['composer-scaffold']['file-mapping'])) {
       $package_file_mappings = $package_extra['composer-scaffold']['file-mapping'];
-      return $this->validatePackageFileMappings($package_file_mappings);
+      return $this->createScaffoldOperations($package, $package_file_mappings);
     }
     else {
       if (!isset($package_extra['composer-scaffold']['allowed-packages'])) {
@@ -88,59 +85,145 @@ class Handler {
   }
 
   /**
-   * Validate the package file mappings.
+   * Create scaffold operation objects for all items in the file mappings.
    *
-   * Throw an exception if there are invalid values, and normalize the value otherwise.
+   * @param \Composer\Package\PackageInterface $package
+   *   The package that relative paths will be relative from.
+   * @param array $package_file_mappings
+   *   The package file mappings array (destination path => operation metadata array)
    *
-   * @param string[] $package_file_mappings
-   *   An array of destination => source scaffold file mappings.
-   *
-   * @return string[]
-   *   The provided $package_file_mappings with its array values normalized.
+   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface[]
+   *   A list of scaffolding operation objects
    */
-  protected function validatePackageFileMappings(array $package_file_mappings) {
-    $result = [];
+  protected function createScaffoldOperations(PackageInterface $package, array $package_file_mappings) {
+    $scaffoldOps = [];
 
     foreach ($package_file_mappings as $key => $value) {
-      $result[$key] = $this->normalizeMapping($value);
+      $scaffoldOps[$key] = $this->createScaffoldOp($package, $value);
     }
 
-    return $result;
+    return $scaffoldOps;
   }
 
   /**
-   * Normalize a value from the package file mappings.
+   * Create a scaffolding operation object of an appropriate for the provided metadata.
    *
-   * Currently, the valid values are:
-   *   (bool) FALSE: Remove the scaffold file rather than scaffold it.
-   *   'relative/path': Path to the file to place, relative to the package root.
+   * @param \Composer\Package\PackageInterface $package
+   *   The package that relative paths will be relative from.
+   * @param mixed $value
+   *   The metadata for this operation object, which varies by operation type.
    *
-   * In the future, we want to normalize to:
-   *   [
-   *      'path' => 'relative/path',
-   *      'mode' => 'replace/prepend/append/remove'
-   *   ]
-   *
-   * Note that 'replace' might copy or might make a symlink, depending on
-   * settings. The symlink setting is ignored for all modes other than replace.
-   *
-   * @param string|bool $value
-   *   The value to normalize.
-   *
-   * @return string
-   *   The normalized value.
+   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
+   *   The scaffolding operation object (skip, replace, etc.)
    */
-  protected function normalizeMapping($value) {
+  protected function createScaffoldOp(PackageInterface $package, $value) {
     if (is_bool($value)) {
       if (!$value) {
-        return '';
+        return new ScaffoldSkipOp();
       }
       throw new \Exception("File mapping $key cannot be given the value 'true'.");
     }
     if (empty($value)) {
-      throw new \Exception("File mapping $key cannot be an empty string.");
+      throw new \Exception("File mapping $key cannot be empty.");
     }
-    return $value;
+    if (is_string($value)) {
+      $value = [
+        'mode' => 'replace',
+        'path' => $value,
+      ];
+    }
+
+    // @todo support other operations besides 'replace'.
+    if ($value['mode'] != 'replace') {
+      throw new \Exception("Unknown scaffold op <comment>{$value['mode']}</comment>.");
+    }
+
+    return $this->createScaffoldReplaceOp($package, $value);
+  }
+
+  /**
+   * Create a 'replace' scaffold op.
+   *
+   * Replace ops may copy or symlink, depending on settings.
+   *
+   * @param \Composer\Package\PackageInterface $package
+   *   The package that relative paths will be relative from.
+   * @param array $value
+   *   The metadata for this operation object, i.e. the relative 'path'.
+   *
+   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
+   *   A scaffold replace operation obejct.
+   */
+  protected function createScaffoldReplaceOp(PackageInterface $package, array $value) {
+    $options = $this->getOptions();
+    $op = new ScaffoldReplaceOp();
+
+    $source_rel_path = $value['path'];
+    $src_full_path = $this->resolveSourceLocation($package, $source_rel_path);
+
+    $op
+      ->setSourceRelativePath($source_rel_path)
+      ->setSourceFullPath($src_full_path);
+
+    return $op;
+  }
+
+  /**
+   * Gets the file path of a package.
+   *
+   * Note that if we call getInstallPath on the root package, we get the
+   * wrong answer (the installation manager thinks our package is in
+   * vendor). We therefore add special checking for this case.
+   *
+   * @param \Composer\Package\PackageInterface $package
+   *   The package.
+   *
+   * @return string
+   *   The file path.
+   */
+  protected function getPackagePath(PackageInterface $package) : string {
+    if ($package->getName() == $this->composer->getPackage()->getName()) {
+      // This will respect the --working-dir option if Composer is invoked with
+      // it. There is no API or method to determine the filesystem path of
+      // a package's composer.json file.
+      return getcwd();
+    }
+    else {
+      return $this->composer->getInstallationManager()->getInstallPath($package);
+    }
+  }
+
+  /**
+   * ResolveSourceLocation converts the relative source path into an absolute path.
+   *
+   * The path returned will be relative to the package installation location.
+   *
+   * @param \Composer\Package\PackageInterface $package
+   *   The package containing the source file.
+   * @param string $source
+   *   Source location provided as a relative path.
+   *
+   * @return string
+   *   Source location converted to an absolute path, or empty if removed.
+   */
+  public function resolveSourceLocation(PackageInterface $package, string $source) {
+    if (empty($source)) {
+      return '';
+    }
+
+    $package_path = $this->getPackagePath($package);
+    $package_name = $package->getName();
+
+    $source_path = $package_path . '/' . $source;
+
+    if (!file_exists($source_path)) {
+      throw new \Exception("Scaffold file <info>$source</info> not found in package <comment>$package_name</comment>.");
+    }
+    if (is_dir($source_path)) {
+      throw new \Exception("Scaffold file <info>$source</info> in package <comment>$package_name</comment> is a directory; only files may be scaffolded.");
+    }
+
+    return $source_path;
   }
 
   /**
@@ -159,7 +242,7 @@ class Handler {
     $file_mappings = $this->getFileMappingsFromPackages($allowedPackages);
 
     // Collect the list of file mappings, and determine which take priority.
-    $scaffoldCollection = new ScaffoldCollection($this->composer);
+    $scaffoldCollection = new ScaffoldCollection();
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
     // Write the collected scaffold files to the designated location on disk.
@@ -333,17 +416,8 @@ EOF;
    *   A multidimensional array of file mappings, as returned by
    *   self::getAllowedPackages().
    *
-   * @return array
-   *   An multidimensional array of file mappings, which looks like this:
-   *   [
-   *     'drupal/core' => [
-   *       'path/to/source/file' => 'path/to/destination',
-   *       'path/to/source/file' => false,
-   *     ],
-   *     'some/package' => [
-   *       'path/to/source/file' => 'path/to/destination',
-   *     ],
-   *   ]
+   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface[]
+   *   An array of destination paths => scaffold operation objects.
    */
   protected function getFileMappingsFromPackages(array $allowed_packages) : array {
     $file_mappings = [];

@@ -11,6 +11,7 @@ use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
 
 /**
  * Data file that keeps track of one scaffold file's source, destination, and package.
@@ -22,6 +23,30 @@ class ScaffoldFileInfo {
   protected $destinationFullPath;
   protected $sourceRelPath;
   protected $sourceFullPath;
+  protected $op;
+
+  /**
+   * Set the Scaffold operation.
+   *
+   * @param \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface $op
+   *   Operations object that will handle scaffolding operations.
+   *
+   * @return $this
+   */
+  public function setOp(ScaffoldOperationInterface $op) {
+    $this->op = $op;
+    return $this;
+  }
+
+  /**
+   * Get the Scaffold operation.
+   *
+   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
+   *   Operations object that handles scaffolding (copy, make symlink, etc).
+   */
+  public function op() {
+    return $this->op;
+  }
 
   /**
    * Set the package name.
@@ -139,16 +164,6 @@ class ScaffoldFileInfo {
   }
 
   /**
-   * Determine whether this scaffold file info is for a destination path that was removed.
-   *
-   * @return bool
-   *   True if this scaffold file was removed.
-   */
-  public function removed() {
-    return empty($this->getSourceRelativePath());
-  }
-
-  /**
    * Determine if this scaffold file has been overridden by another package.
    *
    * @param string $providing_package
@@ -165,8 +180,8 @@ class ScaffoldFileInfo {
   /**
    * Interpolate a string using the data from this scaffold file info.
    */
-  public function interpolate(string $message, array $extra = [], $default = FALSE) {
-    $interploator = new Interpolator();
+  public function getInterpolator() {
+    $interpolator = new Interpolator();
 
     $data = [
       'package-name' => $this->getPackageName(),
@@ -174,9 +189,18 @@ class ScaffoldFileInfo {
       'src-rel-path' => $this->getSourceRelativePath(),
       'dest-full-path' => $this->getDestinationFullPath(),
       'src-full-path' => $this->getSourceFullPath(),
-    ] + $extra;
+    ];
 
-    return $interploator->interpolate($message, $data, $default);
+    $interpolator->setData($data);
+    return $interpolator;
+  }
+
+  /**
+   * Interpolate a string using the data from this scaffold file info.
+   */
+  public function interpolate(string $message, array $extra = [], $default = FALSE) {
+    $interpolator = $this->getInterpolator();
+    return $interpolator->interpolate($message, $extra, $default);
   }
 
   /**
@@ -190,38 +214,7 @@ class ScaffoldFileInfo {
    * @throws \Exception
    */
   public function process(IOInterface $io, array $options) {
-    $symlink = $options['symlink'];
-    $fs = new Filesystem();
-
-    if ($this->removed()) {
-      return;
-    }
-
-    $destination_path = $this->getDestinationFullPath();
-    $source_path = $this->getSourceFullPath();
-
-    // Get rid of the destination if it exists, and make sure that
-    // the directory where it's going to be placed exists.
-    @unlink($destination_path);
-    $fs->ensureDirectoryExists(dirname($destination_path));
-    $success = FALSE;
-    if ($symlink) {
-      try {
-        $success = $fs->relativeSymlink($source_path, $destination_path);
-      }
-      catch (\Exception $e) {
-      }
-    }
-    else {
-      $success = copy($source_path, $destination_path);
-    }
-    $verb = $symlink ? 'symlink' : 'copy';
-    if (!$success) {
-      throw new \Exception($this->interpolate("Could not $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!"));
-    }
-    else {
-      $io->write($this->interpolate("  - $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>"));
-    }
+    $this->op()->process($this, $io, $options);
   }
 
 }

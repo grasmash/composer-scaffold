@@ -31,11 +31,26 @@ Sample composer.json for a project that relies on packages that use composer-sca
 }
 ```
 
-Sample composer.json for composer-scaffold files in drupal/core:
+Sample composer.json for drupal/core, with assets placed in a different project:
 
 ```
 {
   "name": "drupal/core",
+  "extra": {
+    "composer-scaffold": {
+      "allowed-packages": [
+        "drupal/assets",
+      ]
+    }
+  }
+}
+```
+
+Sample composer.json for composer-scaffold files in drupal/assets:
+
+```
+{
+  "name": "drupal/assets",
   "extra": {
     "composer-scaffold": {
       "file-mapping": {
@@ -55,21 +70,6 @@ Sample composer.json for composer-scaffold files in drupal/core:
         "[web-root]/update.php": "assets/update.php",
         "[web-root]/web.config": "assets/web.config"
       }
-    }
-  }
-}
-```
-
-@todo: drupal/core can move assets to a different project:
-
-```
-{
-  "name": "drupal/core",
-  "extra": {
-    "composer-scaffold": {
-      "allowed-packages": [
-        "drupal/assets",
-      ]
     }
   }
 }
@@ -109,8 +109,6 @@ Sample composer.json for a library that implements composer-scaffold:
   }
 }
 ```
-
-With the enhancement above, `false` will expand to `"mode": "remove"`, and a simple string will expand to `"mode": "copy"`, with the string's value being placed in "path". This will therefore retain backwards compatibility with the current implementation, and also will maintain brief, descriptive file mappings for the most common cases (copy and remove).
 
 Patch a file after it's copied:
 
