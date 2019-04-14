@@ -299,33 +299,6 @@ EOF;
   }
 
   /**
-   * Merges arrays recursively while preserving.
-   *
-   * @param array $array1
-   *   The first array.
-   * @param array $array2
-   *   The second array.
-   *
-   * @return array
-   *   The merged array.
-   *
-   * @see http://php.net/manual/en/function.array-merge-recursive.php#92195
-   * @todo: Remove
-   */
-  public static function arrayMergeRecursiveDistinct(array &$array1, array &$array2) : array {
-    $merged = $array1;
-    foreach ($array2 as $key => &$value) {
-      if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
-        $merged[$key] = self::arrayMergeRecursiveDistinct($merged[$key], $value);
-      }
-      else {
-        $merged[$key] = $value;
-      }
-    }
-    return $merged;
-  }
-
-  /**
    * GetLocationReplacements creates an interpolator for the 'locations' element.
    *
    * The interpolator returned will replace a path string with the tokens
