@@ -15,6 +15,9 @@ class ScaffoldTest extends TestCase {
   /**
    * The root of this project.
    *
+   * Used to substitute this project's base directory into composer.json files
+   * so Composer can find it.
+   *
    * @var string
    */
   protected $projectRoot;
@@ -47,7 +50,7 @@ class ScaffoldTest extends TestCase {
     $this->fileSystem = new Filesystem();
 
     $this->projectRoot = realpath(__DIR__ . '/../../..');
-    $this->fixtures = dirname($this->projectRoot) . '/composer-scaffold-test';
+    $this->fixtures = sys_get_temp_dir() . '/composer-scaffold-test-' . md5($this->getName() . microtime());
   }
 
   /**
@@ -62,8 +65,7 @@ class ScaffoldTest extends TestCase {
     $projectRoot = dirname(__DIR__);
     $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
 
-    $this->removeSut();
-    $this->fileSystem->copy($this->projectRoot . '/tests/fixtures', $this->fixtures);
+    $this->fileSystem->copy(realpath(__DIR__ . '/../../fixtures'), $this->fixtures);
 
     $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl");
     foreach ($composer_json_templates as $composer_json_tmpl) {
@@ -83,14 +85,7 @@ class ScaffoldTest extends TestCase {
    * {@inheritdoc}
    */
   protected function tearDown() {
-    // For now, leave the SUT in place so that we can inspect it.
-    // $this->removeSut();
-  }
-
-  /**
-   * Removes the system under test.
-   */
-  protected function removeSut() {
+    // Remove the fixture filesystem.
     $this->fileSystem->remove($this->fixtures);
   }
 
@@ -101,7 +96,7 @@ class ScaffoldTest extends TestCase {
     return [
       [
         'drupal-drupal-missing-scaffold-file',
-        'assertDrupalDrupalSutWasScaffolded',
+        '_no_assertion_',
         TRUE,
       ],
     ];
@@ -113,7 +108,10 @@ class ScaffoldTest extends TestCase {
    * @dataProvider scaffoldFixturesThatThrowTestValues
    */
   public function testScaffoldFixturesThatThrow($topLevelProjectDir, $scaffoldAssertions, $is_link) {
-    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => $is_link ? 'true' : 'false']);
+    $sut = $this->createSut($topLevelProjectDir, [
+      'SYMLINK' => $is_link ? 'true' : 'false',
+      'PROJECT_ROOT' => $this->projectRoot,
+    ]);
 
     // Test composer install. Expect an error.
     // @todo: assert output contains too.
@@ -144,7 +142,10 @@ class ScaffoldTest extends TestCase {
    * @dataProvider scaffoldTestValues
    */
   public function testScaffold($topLevelProjectDir, $scaffoldAssertions, $is_link) {
-    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => $is_link ? 'true' : 'false']);
+    $sut = $this->createSut($topLevelProjectDir, [
+      'SYMLINK' => $is_link ? 'true' : 'false',
+      'PROJECT_ROOT' => $this->projectRoot,
+    ]);
 
     // Test composer install.
     $this->runComposer("install");
@@ -161,10 +162,10 @@ class ScaffoldTest extends TestCase {
   protected function runComposer($cmd, $expectedExitCode = 0, $expectedContents = '') {
     $process = new Process("composer $cmd", $this->sut);
     $process->setTimeout(300)->setIdleTimeout(300)->run();
-    $this->assertSame($expectedExitCode, $process->getExitCode());
     if (!empty($expectedContents)) {
       $this->assertContains($expectedContents, $process->getOutput() . "\n" . $process->getErrorOutput());
     }
+    $this->assertSame($expectedExitCode, $process->getExitCode(), $process->getErrorOutput());
   }
 
   /**
