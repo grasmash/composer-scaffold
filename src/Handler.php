@@ -10,10 +10,6 @@ use Composer\Composer;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
-use Grasmash\ComposerScaffold\Operations\ScaffoldCopyOp;
-use Grasmash\ComposerScaffold\Operations\ScaffoldSymlinkOp;
-use Grasmash\ComposerScaffold\Operations\ScaffoldReplaceOp;
-use Grasmash\ComposerScaffold\Operations\ScaffoldSkipOp;
 use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
 use Grasmash\ComposerScaffold\Operations\ScaffoldOperationFactory;
 
@@ -135,7 +131,7 @@ class Handler {
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
     // Drupal requires this in order to easily locate relocated vendor dirs.
-    $generator = new GenerateAutoloadReferenceFile($this->composer);
+    $generator = new GenerateAutoloadReferenceFile($this->getVendorPath());
     $generator->generateAutoload($this->getWebRoot());
 
     // Call post-scaffold scripts.
@@ -157,6 +153,19 @@ class Handler {
       throw new \Exception("The extra.composer-scaffold.location.web-root is not set in composer.json.");
     }
     return $options['locations']['web-root'];
+  }
+
+  /**
+   * Get the path to the 'vendor' directory.
+   *
+   * @return string
+   *   The file path of the vendor directory.
+   */
+  public function getVendorPath() {
+    $vendorDir = $this->composer->getConfig()->get('vendor-dir');
+    $filesystem = new Filesystem();
+    $filesystem->ensureDirectoryExists($vendorDir);
+    return $filesystem->normalizePath(realpath($vendorDir));
   }
 
   /**

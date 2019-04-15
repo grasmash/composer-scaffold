@@ -4,14 +4,11 @@ declare(strict_types = 1);
 
 namespace Grasmash\ComposerScaffold\Operations;
 
-use Composer\Package\PackageInterface;
-use Composer\Script\Event;
 use Composer\Composer;
-use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
-use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Grasmash\ComposerScaffold\ScaffoldFileInfo;
+use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
 /**
  * Scaffold operation to copy or symlink from source to destination.

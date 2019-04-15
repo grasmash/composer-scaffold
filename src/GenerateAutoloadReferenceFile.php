@@ -2,13 +2,6 @@
 
 namespace Grasmash\ComposerScaffold;
 
-use Composer\Script\Event;
-use Composer\Composer;
-use Composer\EventDispatcher\EventSubscriberInterface;
-use Composer\IO\IOInterface;
-use Composer\Plugin\Capable;
-use Composer\Plugin\PluginInterface;
-use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
@@ -17,16 +10,16 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
  */
 class GenerateAutoloadReferenceFile {
 
-  protected $composer;
+  protected $vendorPath;
 
   /**
    * GenerateAutoloadReferenceFile constructor.
    *
-   * @param \Composer\Composer $composer
-   *   Reference to the 'Composer' object.
+   * @param string $vendorPath
+   *   Path to the vendor directory.
    */
-  public function __construct(Composer $composer) {
-    $this->composer = $composer;
+  public function __construct(string $vendorPath) {
+    $this->vendorPath = $vendorPath;
   }
 
   /**
@@ -40,12 +33,10 @@ class GenerateAutoloadReferenceFile {
    *   Where to write the autoload file.
    */
   public function generateAutoload(string $location) {
-    $vendorPath = $this->getVendorPath();
-
     // Calculate the relative path from the webroot (location of the project
     // autoload.php) to the vendor directory.
     $fs = new SymfonyFilesystem();
-    $relativeVendorPath = $fs->makePathRelative($vendorPath, realpath($location));
+    $relativeVendorPath = $fs->makePathRelative($this->vendorPath, realpath($location));
 
     $fs->dumpFile($location . "/autoload.php", $this->autoLoadContents($relativeVendorPath));
   }
@@ -78,19 +69,6 @@ class GenerateAutoloadReferenceFile {
 return require __DIR__ . '/$relativeVendorPath/autoload.php';
 
 EOF;
-  }
-
-  /**
-   * Get the path to the 'vendor' directory.
-   *
-   * @return string
-   *   The file path of the vendor directory.
-   */
-  public function getVendorPath() {
-    $vendorDir = $this->composer->getConfig()->get('vendor-dir');
-    $filesystem = new Filesystem();
-    $filesystem->ensureDirectoryExists($vendorDir);
-    return $filesystem->normalizePath(realpath($vendorDir));
   }
 
 }
