@@ -15,8 +15,6 @@ class ScaffoldFileInfo {
   protected $packageName;
   protected $destinationRelPath;
   protected $destinationFullPath;
-  protected $sourceRelPath;
-  protected $sourceFullPath;
   protected $op;
 
   /**
@@ -89,29 +87,6 @@ class ScaffoldFileInfo {
   }
 
   /**
-   * Set the relative path to the source.
-   *
-   * @param string $sourceRelPath
-   *   The relative path to the source file.
-   *
-   * @return $this
-   */
-  public function setSourceRelativePath(string $sourceRelPath) {
-    $this->sourceRelPath = $sourceRelPath;
-    return $this;
-  }
-
-  /**
-   * Get the relative path to the source.
-   *
-   * @return string
-   *   The relative path to the source file.
-   */
-  public function getSourceRelativePath() {
-    return $this->sourceRelPath;
-  }
-
-  /**
    * Set the full path to the destination.
    *
    * @param string $destinationFullPath
@@ -132,29 +107,6 @@ class ScaffoldFileInfo {
    */
   public function getDestinationFullPath() {
     return $this->destinationFullPath;
-  }
-
-  /**
-   * Set the full path to the source.
-   *
-   * @param string $sourceFullPath
-   *   The full path to the source file.
-   *
-   * @return $this
-   */
-  public function setSourceFullPath(string $sourceFullPath) {
-    $this->sourceFullPath = $sourceFullPath;
-    return $this;
-  }
-
-  /**
-   * Get the full path to the source.
-   *
-   * @return string
-   *   The full path to the source file.
-   */
-  public function getSourceFullPath() {
-    return $this->sourceFullPath;
   }
 
   /**
@@ -180,9 +132,7 @@ class ScaffoldFileInfo {
     $data = [
       'package-name' => $this->getPackageName(),
       'dest-rel-path' => $this->getDestinationRelativePath(),
-      'src-rel-path' => $this->getSourceRelativePath(),
       'dest-full-path' => $this->getDestinationFullPath(),
-      'src-full-path' => $this->getSourceFullPath(),
     ];
 
     $interpolator->setData($data);
