@@ -11,6 +11,8 @@ use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\Operations\ScaffoldCopyOp;
+use Grasmash\ComposerScaffold\Operations\ScaffoldSymlinkOp;
 use Grasmash\ComposerScaffold\Operations\ScaffoldReplaceOp;
 use Grasmash\ComposerScaffold\Operations\ScaffoldSkipOp;
 use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
@@ -156,7 +158,9 @@ class Handler {
    */
   protected function createScaffoldReplaceOp(PackageInterface $package, array $value) {
     $options = $this->getOptions();
-    $op = new ScaffoldReplaceOp();
+    $op = $options['symlink'] ?
+      new ScaffoldSymlinkOp() :
+      new ScaffoldCopyOp();
 
     $source_rel_path = $value['path'];
     $src_full_path = $this->resolveSourceLocation($package, $source_rel_path);

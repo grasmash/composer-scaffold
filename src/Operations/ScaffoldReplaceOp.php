@@ -16,7 +16,7 @@ use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 /**
  * Scaffold operation to copy or symlink from source to destination.
  */
-class ScaffoldReplaceOp implements ScaffoldOperationInterface {
+abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
 
   protected $sourceRelPath;
   protected $sourceFullPath;
@@ -82,35 +82,21 @@ class ScaffoldReplaceOp implements ScaffoldOperationInterface {
    * Process the replace operation. This could be a copy or a symlink.
    */
   public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
-    $interpolator = $scaffold_file->getInterpolator();
-    $symlink = $options['symlink'];
     $fs = new Filesystem();
 
     $destination_path = $scaffold_file->getDestinationFullPath();
-    $source_path = $this->getSourceFullPath();
 
     // Get rid of the destination if it exists, and make sure that
     // the directory where it's going to be placed exists.
     @unlink($destination_path);
     $fs->ensureDirectoryExists(dirname($destination_path));
-    $success = FALSE;
-    if ($symlink) {
-      try {
-        $success = $fs->relativeSymlink($source_path, $destination_path);
-      }
-      catch (\Exception $e) {
-      }
-    }
-    else {
-      $success = copy($source_path, $destination_path);
-    }
-    $verb = $symlink ? 'symlink' : 'copy';
-    if (!$success) {
-      throw new \Exception($interpolator->interpolate("Could not $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!", $this->interpolationData()));
-    }
-    else {
-      $io->write($interpolator->interpolate("  - $verb source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>", $this->interpolationData()));
-    }
+
+    $this->placeScaffold($scaffold_file, $io, $options);
   }
+
+  /**
+   * Place either a symlink or copy the scaffold file as appropriate.
+   */
+  abstract public function placeScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options);
 
 }
