@@ -2,20 +2,30 @@
 
 declare(strict_types = 1);
 
-namespace Grasmash\ComposerScaffold;
+namespace Grasmash\ComposerScaffold\Operations;
+
+use Composer\IO\IOInterface;
+use Grasmash\ComposerScaffold\ScaffoldFileInfo;
+use Grasmash\ComposerScaffold\Interpolator;
 
 /**
- * ScaffoldCollection keeps track of the collection of files to be scaffolded.
+ * ScaffoldOpCollection keeps track of the collection of files to be scaffolded.
  */
-class ScaffoldCollection {
+class ScaffoldOpCollection {
 
   protected $listOfScaffoldFiles;
   protected $resolvedFileMappings;
+  protected $io;
 
   /**
-   * ScaffoldCollection constructor.
+   * ScaffoldOpCollection constructor.
+   *
+   * @param \Composer\IO\IOInterface $io
+   *   A reference to the IO object, to allow us to write progress messages
+   *   as we process scaffold operations.
    */
-  public function __construct() {
+  public function __construct(IOInterface $io) {
+    $this->io = $io;
   }
 
   /**
@@ -37,7 +47,7 @@ class ScaffoldCollection {
    * this will be the same as $this->getPackageName() unless this scaffold file
    * has been overridden or removed by some other package.
    *
-   * @param ScaffoldFileInfo $scaffold_file
+   * @param \Grasmash\ComposerScaffold\ScaffoldFileInfo $scaffold_file
    *   The scaffold file to use to find a providing package name.
    *
    * @return string
@@ -59,7 +69,7 @@ class ScaffoldCollection {
    * @param array $file_mappings
    *   An multidimensional array of file mappings, as returned by
    *   self::getFileMappingsFromPackages().
-   * @param Interpolator $locationReplacements
+   * @param \Grasmash\ComposerScaffold\Interpolator $locationReplacements
    *   An object with the location mappings (e.g. [web-root]).
    */
   public function coalateScaffoldFiles(array $file_mappings, Interpolator $locationReplacements) {
@@ -81,6 +91,34 @@ class ScaffoldCollection {
     }
     $this->listOfScaffoldFiles = $list_of_scaffold_files;
     $this->resolvedFileMappings = $resolved_file_mappings;
+  }
+
+  /**
+   * Scaffolds the files in our scaffold collection, package-by-package.
+   *
+   * @param array $options
+   *   Configuration options from the top-level composer.json file.
+   */
+  public function processScaffoldFiles(array $options) {
+
+    // We could simply scaffold all of the files from $list_of_scaffold_files,
+    // which contain only the list of files to be processed. We iterate over
+    // $resolved_file_mappings instead so that we can print out all of the
+    // scaffold files grouped by the package that provided them, including
+    // those not being scaffolded (because they were overridden or removed
+    // by some later package).
+    foreach ($this->fileMappings() as $package_name => $package_scaffold_files) {
+      $this->io->write("Scaffolding files for <comment>$package_name</comment>:");
+      foreach ($package_scaffold_files as $dest_rel_path => $scaffold_file) {
+        $overriding_package = $this->findProvidingPackage($scaffold_file);
+        if ($scaffold_file->overridden($overriding_package)) {
+          $this->io->write($scaffold_file->interpolate("  - <info>[dest-rel-path]</info> overridden in <comment>$overriding_package</comment>"));
+        }
+        else {
+          $scaffold_file->process($this->io, $options);
+        }
+      }
+    }
   }
 
 }

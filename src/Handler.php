@@ -4,14 +4,15 @@ declare(strict_types = 1);
 
 namespace Grasmash\ComposerScaffold;
 
-use Composer\Package\PackageInterface;
-use Composer\Script\Event;
 use Composer\Composer;
 use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
+use Composer\Package\PackageInterface;
+use Composer\Script\Event;
 use Composer\Util\Filesystem;
-use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
+use Grasmash\ComposerScaffold\Operations\ScaffoldOpCollection;
 use Grasmash\ComposerScaffold\Operations\ScaffoldOperationFactory;
+use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
 
 /**
  * Core class of the plugin, contains all logic which files should be fetched.
@@ -122,11 +123,11 @@ class Handler {
     $file_mappings = $this->getFileMappingsFromPackages($allowedPackages);
 
     // Collect the list of file mappings, and determine which take priority.
-    $scaffoldCollection = new ScaffoldCollection();
+    $scaffoldCollection = new ScaffoldOpCollection($this->io);
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
     // Write the collected scaffold files to the designated location on disk.
-    $this->scaffoldPackageFiles($scaffoldCollection);
+    $scaffoldCollection->processScaffoldFiles($this->getOptions());
 
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
@@ -312,35 +313,6 @@ class Handler {
       }
     }
     return $allowed_packages;
-  }
-
-  /**
-   * Scaffolds the files in our scaffold collection, package-by-package.
-   *
-   * @param ScaffoldCollection $scaffoldCollection
-   *   The scaffold files to process.
-   */
-  protected function scaffoldPackageFiles(ScaffoldCollection $scaffoldCollection) {
-    $options = $this->getOptions();
-
-    // We could simply scaffold all of the files from $list_of_scaffold_files,
-    // which contain only the list of files to be processed. We iterate over
-    // $resolved_file_mappings instead so that we can print out all of the
-    // scaffold files grouped by the package that provided them, including
-    // those not being scaffolded (because they were overridden or removed
-    // by some later package).
-    foreach ($scaffoldCollection->fileMappings() as $package_name => $package_scaffold_files) {
-      $this->io->write("Scaffolding files for <comment>$package_name</comment>:");
-      foreach ($package_scaffold_files as $dest_rel_path => $scaffold_file) {
-        $overriding_package = $scaffoldCollection->findProvidingPackage($scaffold_file);
-        if ($scaffold_file->overridden($overriding_package)) {
-          $this->io->write($scaffold_file->interpolate("  - <info>[dest-rel-path]</info> overridden in <comment>$overriding_package</comment>"));
-        }
-        else {
-          $scaffold_file->process($this->io, $options);
-        }
-      }
-    }
   }
 
 }
