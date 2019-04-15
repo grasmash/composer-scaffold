@@ -28,7 +28,7 @@ class ScaffoldCopyOp extends ScaffoldReplaceOp {
 
     $success = copy($source_path, $destination_path);
     if (!$success) {
-      throw new \Exception($interpolator->interpolate("Could not copy source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>! " . $e->getMessage(), $this->interpolationData()));
+      throw new \Exception($interpolator->interpolate("Could not copy source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!", $this->interpolationData()));
     }
 
     $io->write($interpolator->interpolate("  - copy source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>", $this->interpolationData()));

@@ -31,7 +31,7 @@ class ScaffoldSymlinkOp extends ScaffoldReplaceOp {
       $fs->relativeSymlink($source_path, $destination_path);
     }
     catch (\Exception $e) {
-      throw new \Exception($interpolator->interpolate("Could not symlink source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>! " . $e->getMessage(), $this->interpolationData()));
+      throw new \Exception($interpolator->interpolate("Could not symlink source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>! ", $this->interpolationData()), 1, $e);
     }
 
     $io->write($interpolator->interpolate("  - symlink source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>", $this->interpolationData()));

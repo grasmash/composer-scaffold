@@ -101,10 +101,41 @@ class Handler {
     $scaffoldOps = [];
 
     foreach ($package_file_mappings as $key => $value) {
+      $value = $this->normalizeScaffoldMetadata($key, $value);
       $scaffoldOps[$key] = $this->createScaffoldOp($package, $value);
     }
 
     return $scaffoldOps;
+  }
+
+  /**
+   * Create a scaffolding operation object of an appropriate for the provided metadata.
+   *
+   * @param string $key
+   *   The key (destination path) for the value to normalize.
+   * @param mixed $value
+   *   The metadata for this operation object, which varies by operation type.
+   *
+   * @return array
+   *   Normalized scaffold metadata.
+   */
+  protected function normalizeScaffoldMetadata(string $key, $value) {
+    if (is_bool($value)) {
+      if (!$value) {
+        return ['mode' => 'skip'];
+      }
+      throw new \Exception("File mapping $key cannot be given the value 'true'.");
+    }
+    if (empty($value)) {
+      throw new \Exception("File mapping $key cannot be empty.");
+    }
+    if (is_string($value)) {
+      $value = [
+        'mode' => 'replace',
+        'path' => $value,
+      ];
+    }
+    return $value;
   }
 
   /**
@@ -119,28 +150,15 @@ class Handler {
    *   The scaffolding operation object (skip, replace, etc.)
    */
   protected function createScaffoldOp(PackageInterface $package, $value) {
-    if (is_bool($value)) {
-      if (!$value) {
-        return new ScaffoldSkipOp();
-      }
-      throw new \Exception("File mapping $key cannot be given the value 'true'.");
+    if ($value['mode'] == 'skip') {
+      return new ScaffoldSkipOp();
     }
-    if (empty($value)) {
-      throw new \Exception("File mapping $key cannot be empty.");
-    }
-    if (is_string($value)) {
-      $value = [
-        'mode' => 'replace',
-        'path' => $value,
-      ];
+    if ($value['mode'] == 'replace') {
+      return $this->createScaffoldReplaceOp($package, $value);
     }
 
     // @todo support other operations besides 'replace'.
-    if ($value['mode'] != 'replace') {
-      throw new \Exception("Unknown scaffold op <comment>{$value['mode']}</comment>.");
-    }
-
-    return $this->createScaffoldReplaceOp($package, $value);
+    throw new \Exception("Unknown scaffold op <comment>{$value['mode']}</comment>.");
   }
 
   /**
