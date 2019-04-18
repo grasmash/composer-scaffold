@@ -17,6 +17,7 @@ abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
 
   protected $sourceRelPath;
   protected $sourceFullPath;
+  protected $overwrite;
 
   /**
    * Set the relative path to the source.
@@ -65,6 +66,29 @@ abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
   }
 
   /**
+   * Set whether the scaffold file should overwrite existing files at the same path.
+   *
+   * @param bool $overwrite
+   *   Whether to overwrite existing files.
+   *
+   * @return $this
+   */
+  public function setOverwrite(bool $overwrite) {
+    $this->overwrite = $overwrite;
+    return $this;
+  }
+
+  /**
+   * Determine whether scaffold file should overwrite files already at the same path.
+   *
+   * @return bool
+   *   Value of the 'overwrite' option.
+   */
+  public function getOverwrite() {
+    return $this->overwrite;
+  }
+
+  /**
    * Interpolate a string using the data from this scaffold file info.
    */
   public function interpolationData() {
@@ -82,6 +106,13 @@ abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
     $fs = new Filesystem();
 
     $destination_path = $scaffold_file->getDestinationFullPath();
+
+    // Do nothing if overwrite is 'false' and a file already exists at the destination.
+    if (($this->getOverwrite() === FALSE) && file_exists($destination_path)) {
+      $interpolator = $scaffold_file->getInterpolator();
+      $io->write($interpolator->interpolate("  - Skip scaffold file <info>[dest-rel-path]</info> because it already exists."));
+      return;
+    }
 
     // Get rid of the destination if it exists, and make sure that
     // the directory where it's going to be placed exists.

@@ -6,8 +6,8 @@ namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
-use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Grasmash\ComposerScaffold\ScaffoldFileInfo;
+use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
 /**
  * Scaffold operation to symlink from source to destination.

@@ -141,6 +141,11 @@ class ScaffoldTest extends TestCase {
         'assertDrupalDrupalSutWasScaffolded',
         FALSE,
       ],
+      [
+        'drupal-drupal-test-overwrite',
+        'assertDrupalDrupalFileWasReplaced',
+        FALSE,
+      ],
     ];
   }
 
@@ -186,6 +191,13 @@ class ScaffoldTest extends TestCase {
    */
   protected function assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name) {
     $this->assertDrupalRootWasScaffolded($sut, $is_link, $project_name);
+  }
+
+  protected function assertDrupalDrupalFileWasReplaced($sut, $is_link, $project_name) {
+    $this->assertScaffoldedFile($sut . '/replace-me.txt', $is_link, 'from assets that replaces file');
+    $this->assertScaffoldedFile($sut . '/keep-me.txt', $is_link, 'File in drupal-drupal-test-overwrite that is not replaced');
+    $this->assertScaffoldedFile($sut . '/make-me.txt', $is_link, 'from assets that replaces file');
+    $this->assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name);
   }
 
   /**

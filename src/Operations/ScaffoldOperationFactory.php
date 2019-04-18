@@ -29,7 +29,11 @@ class ScaffoldOperationFactory {
   }
 
   /**
-   * Create a scaffolding operation object of an appropriate for the provided metadata.
+   * Normalize metadata, converting literal values into arrays with the same meaning.
+   *
+   * Conversions performed include:
+   *   - Boolean 'false' means "skip".
+   *   - A string menas "replace", with the string value becoming the path.
    *
    * @param string $key
    *   The key (destination path) for the value to normalize.
@@ -50,10 +54,20 @@ class ScaffoldOperationFactory {
       throw new \Exception("File mapping $key cannot be empty.");
     }
     if (is_string($value)) {
-      $value = [
-        'mode' => 'replace',
-        'path' => $value,
-      ];
+      $value = [ 'path' => $value ];
+    }
+    // If there is no 'mode', then the default is 'replace'
+    if (!isset($value['mode'])) {
+      $value['mode'] = 'replace';
+    }
+    // Accept 'true' or 'always' for the 'overwrite' property. Any other value
+    // is treated as 'false'.
+    if (isset($value['overwrite'])) {
+      $value['overwrite'] = (
+        ($value['overwrite'] === TRUE) ||
+        ($value['overwrite'] == 'true') ||
+        ($value['overwrite'] == 'always')
+      );
     }
     return $value;
   }
@@ -91,7 +105,7 @@ class ScaffoldOperationFactory {
    *
    * @param \Composer\Package\PackageInterface $package
    *   The package that relative paths will be relative from.
-   * @param array $value
+   * @param array $metadata
    *   The metadata for this operation object, i.e. the relative 'path'.
    * @param array $options
    *   Configuration options from the top-level composer.json file.
@@ -99,17 +113,24 @@ class ScaffoldOperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createScaffoldReplaceOp(PackageInterface $package, array $value, array $options) {
+  protected function createScaffoldReplaceOp(PackageInterface $package, array $metadata, array $options) {
     $op = $options['symlink'] ?
       new ScaffoldSymlinkOp() :
       new ScaffoldCopyOp();
 
-    $source_rel_path = $value['path'];
+    $metadata += ['overwrite' => TRUE];
+
+    if (!isset($metadata['path'])) {
+      throw new \Exception("'path' component required for 'replace' operations.");
+    }
+
+    $source_rel_path = $metadata['path'];
     $src_full_path = $this->resolveSourceLocation($package, $source_rel_path);
 
     $op
       ->setSourceRelativePath($source_rel_path)
-      ->setSourceFullPath($src_full_path);
+      ->setSourceFullPath($src_full_path)
+      ->setOverwrite($metadata['overwrite']);
 
     return $op;
   }
