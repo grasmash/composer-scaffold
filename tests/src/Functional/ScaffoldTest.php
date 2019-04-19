@@ -193,6 +193,13 @@ class ScaffoldTest extends TestCase {
     $this->assertDrupalRootWasScaffolded($sut, $is_link, $project_name);
   }
 
+  /**
+   * Assert that the appropriate file was replaced.
+   *
+   * Check the drupal/drupal-based project to confirm that the expected file was
+   * replaced, and that files that were not supposed to be replaced remain
+   * unchanged.
+   */
   protected function assertDrupalDrupalFileWasReplaced($sut, $is_link, $project_name) {
     $this->assertScaffoldedFile($sut . '/replace-me.txt', $is_link, 'from assets that replaces file');
     $this->assertScaffoldedFile($sut . '/keep-me.txt', $is_link, 'File in drupal-drupal-test-overwrite that is not replaced');

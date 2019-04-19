@@ -101,7 +101,7 @@ class Handler {
 
     foreach ($package_file_mappings as $key => $value) {
       $metadata = $scaffoldOpFactory->normalizeScaffoldMetadata($key, $value);
-      $scaffoldOps[$key] = $scaffoldOpFactory->createScaffoldOp($package, $metadata, $options);
+      $scaffoldOps[$key] = $scaffoldOpFactory->createScaffoldOp($package, $key, $metadata, $options);
     }
 
     return $scaffoldOps;

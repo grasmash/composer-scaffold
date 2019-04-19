@@ -15,20 +15,19 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
  */
 abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
 
-  protected $sourceRelPath;
-  protected $sourceFullPath;
+  protected $source;
   protected $overwrite;
 
   /**
    * Set the relative path to the source.
    *
-   * @param string $sourceRelPath
+   * @param ScaffoldSourcePath $sourcePath
    *   The relative path to the source file.
    *
    * @return $this
    */
-  public function setSourceRelativePath(string $sourceRelPath) {
-    $this->sourceRelPath = $sourceRelPath;
+  public function setSource(ScaffoldSourcePath $sourcePath) {
+    $this->source = $sourcePath;
     return $this;
   }
 
@@ -39,20 +38,7 @@ abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
    *   The relative path to the source file.
    */
   public function getSourceRelativePath() {
-    return $this->sourceRelPath;
-  }
-
-  /**
-   * Set the full path to the source.
-   *
-   * @param string $sourceFullPath
-   *   The full path to the source file.
-   *
-   * @return $this
-   */
-  public function setSourceFullPath(string $sourceFullPath) {
-    $this->sourceFullPath = $sourceFullPath;
-    return $this;
+    return $this->source->relativePath();
   }
 
   /**
@@ -62,7 +48,7 @@ abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
    *   The full path to the source file.
    */
   public function getSourceFullPath() {
-    return $this->sourceFullPath;
+    return $this->source->fullPath();
   }
 
   /**

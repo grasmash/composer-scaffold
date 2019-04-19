@@ -54,9 +54,9 @@ class ScaffoldOperationFactory {
       throw new \Exception("File mapping $key cannot be empty.");
     }
     if (is_string($value)) {
-      $value = [ 'path' => $value ];
+      $value = ['path' => $value];
     }
-    // If there is no 'mode', then the default is 'replace'
+    // If there is no 'mode', then the default is 'replace'.
     if (!isset($value['mode'])) {
       $value['mode'] = 'replace';
     }
@@ -77,6 +77,8 @@ class ScaffoldOperationFactory {
    *
    * @param \Composer\Package\PackageInterface $package
    *   The package that relative paths will be relative from.
+   * @param string $dest_rel_path
+   *   The destination path for the scaffold file. Used only for error messages.
    * @param mixed $value
    *   The metadata for this operation object, which varies by operation type.
    * @param array $options
@@ -85,13 +87,13 @@ class ScaffoldOperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
    *   The scaffolding operation object (skip, replace, etc.)
    */
-  public function createScaffoldOp(PackageInterface $package, $value, array $options) {
+  public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, array $options) {
     switch ($value['mode']) {
       case 'skip':
         return new ScaffoldSkipOp();
 
       case 'replace':
-        return $this->createScaffoldReplaceOp($package, $value, $options);
+        return $this->createScaffoldReplaceOp($package, $dest_rel_path, $value, $options);
     }
 
     // @todo support other operations besides 'replace'.
@@ -105,6 +107,8 @@ class ScaffoldOperationFactory {
    *
    * @param \Composer\Package\PackageInterface $package
    *   The package that relative paths will be relative from.
+   * @param string $dest_rel_path
+   *   The destination path for the scaffold file. Used only for error messages.
    * @param array $metadata
    *   The metadata for this operation object, i.e. the relative 'path'.
    * @param array $options
@@ -113,23 +117,24 @@ class ScaffoldOperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createScaffoldReplaceOp(PackageInterface $package, array $metadata, array $options) {
+  protected function createScaffoldReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
     $op = $options['symlink'] ?
       new ScaffoldSymlinkOp() :
       new ScaffoldCopyOp();
 
     $metadata += ['overwrite' => TRUE];
 
-    if (!isset($metadata['path'])) {
+    if (empty($metadata['path'])) {
       throw new \Exception("'path' component required for 'replace' operations.");
     }
 
-    $source_rel_path = $metadata['path'];
-    $src_full_path = $this->resolveSourceLocation($package, $source_rel_path);
+    $package_name = $package->getName();
+    $package_path = $this->getPackagePath($package);
+
+    $source = ScaffoldSourcePath::create($package_name, $package_path, $dest_rel_path, $metadata['path']);
 
     $op
-      ->setSourceRelativePath($source_rel_path)
-      ->setSourceFullPath($src_full_path)
+      ->setSource($source)
       ->setOverwrite($metadata['overwrite']);
 
     return $op;
@@ -158,39 +163,6 @@ class ScaffoldOperationFactory {
     else {
       return $this->composer->getInstallationManager()->getInstallPath($package);
     }
-  }
-
-  /**
-   * ResolveSourceLocation converts the relative source path into an absolute path.
-   *
-   * The path returned will be relative to the package installation location.
-   *
-   * @param \Composer\Package\PackageInterface $package
-   *   The package containing the source file.
-   * @param string $source
-   *   Source location provided as a relative path.
-   *
-   * @return string
-   *   Source location converted to an absolute path, or empty if removed.
-   */
-  public function resolveSourceLocation(PackageInterface $package, string $source) {
-    if (empty($source)) {
-      return '';
-    }
-
-    $package_path = $this->getPackagePath($package);
-    $package_name = $package->getName();
-
-    $source_path = $package_path . '/' . $source;
-
-    if (!file_exists($source_path)) {
-      throw new \Exception("Scaffold file <info>$source</info> not found in package <comment>$package_name</comment>.");
-    }
-    if (is_dir($source_path)) {
-      throw new \Exception("Scaffold file <info>$source</info> in package <comment>$package_name</comment> is a directory; only files may be scaffolded.");
-    }
-
-    return $source_path;
   }
 
 }
