@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace Grasmash\ComposerScaffold;
 
 use Composer\IO\IOInterface;
-use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
+use Grasmash\ComposerScaffold\Operations\OperationInterface;
 
 /**
  * Data file that keeps track of one scaffold file's source, destination, and package.
@@ -20,12 +20,12 @@ class ScaffoldFileInfo {
   /**
    * Set the Scaffold operation.
    *
-   * @param \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface $op
+   * @param \Grasmash\ComposerScaffold\Operations\OperationInterface $op
    *   Operations object that will handle scaffolding operations.
    *
    * @return $this
    */
-  public function setOp(ScaffoldOperationInterface $op) {
+  public function setOp(OperationInterface $op) {
     $this->op = $op;
     return $this;
   }
@@ -33,7 +33,7 @@ class ScaffoldFileInfo {
   /**
    * Get the Scaffold operation.
    *
-   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   Operations object that handles scaffolding (copy, make symlink, etc).
    */
   public function op() {

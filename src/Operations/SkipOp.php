@@ -10,7 +10,7 @@ use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 /**
  * Scaffold operation to skip a scaffold file (do nothing).
  */
-class ScaffoldSkipOp implements ScaffoldOperationInterface {
+class SkipOp implements OperationInterface {
 
   /**
    * Process the 'skip' operation (just note that we deliberately did nothing).

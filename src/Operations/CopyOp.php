@@ -10,7 +10,7 @@ use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 /**
  * Scaffold operation to copy from source to destination.
  */
-class ScaffoldCopyOp extends ScaffoldReplaceOp {
+class CopyOp extends ReplaceOp {
 
   /**
    * Process the replace operation. This could be a copy or a symlink.

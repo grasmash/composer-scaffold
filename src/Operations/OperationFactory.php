@@ -12,12 +12,12 @@ use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 /**
  * Create Scaffold operation objects based on provided metadata.
  */
-class ScaffoldOperationFactory {
+class OperationFactory {
 
   protected $composer;
 
   /**
-   * ScaffoldOperationFactory constructor.
+   * OperationFactory constructor.
    *
    * @param \Composer\Composer $composer
    *   Reference to the 'Composer' object, since the Scaffold Operation Factory
@@ -84,16 +84,16 @@ class ScaffoldOperationFactory {
    * @param array $options
    *   Configuration options from the top-level composer.json file.
    *
-   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   The scaffolding operation object (skip, replace, etc.)
    */
   public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, array $options) {
     switch ($value['mode']) {
       case 'skip':
-        return new ScaffoldSkipOp();
+        return new SkipOp();
 
       case 'replace':
-        return $this->createScaffoldReplaceOp($package, $dest_rel_path, $value, $options);
+        return $this->createReplaceOp($package, $dest_rel_path, $value, $options);
     }
 
     // @todo support other operations besides 'replace'.
@@ -114,13 +114,13 @@ class ScaffoldOperationFactory {
    * @param array $options
    *   Configuration options from the top-level composer.json file.
    *
-   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createScaffoldReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
+  protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
     $op = $options['symlink'] ?
-      new ScaffoldSymlinkOp() :
-      new ScaffoldCopyOp();
+      new SymlinkOp() :
+      new CopyOp();
 
     $metadata += ['overwrite' => TRUE];
 

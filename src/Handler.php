@@ -10,9 +10,9 @@ use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Composer\Script\Event;
 use Composer\Util\Filesystem;
-use Grasmash\ComposerScaffold\Operations\ScaffoldOpCollection;
-use Grasmash\ComposerScaffold\Operations\ScaffoldOperationFactory;
-use Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface;
+use Grasmash\ComposerScaffold\Operations\OperationCollection;
+use Grasmash\ComposerScaffold\Operations\OperationFactory;
+use Grasmash\ComposerScaffold\Operations\OperationInterface;
 
 /**
  * Core class of the plugin, contains all logic which files should be fetched.
@@ -65,7 +65,7 @@ class Handler {
    * @param \Composer\Package\PackageInterface $package
    *   The Composer package from which to get the file mappings.
    *
-   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface[]
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
    *   An array of destination paths => scaffold operation objects.
    */
   public function getPackageFileMappings(PackageInterface $package) : array {
@@ -91,12 +91,12 @@ class Handler {
    * @param array $package_file_mappings
    *   The package file mappings array (destination path => operation metadata array)
    *
-   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface[]
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
    *   A list of scaffolding operation objects
    */
   protected function createScaffoldOperations(PackageInterface $package, array $package_file_mappings) {
     $options = $this->getOptions();
-    $scaffoldOpFactory = new ScaffoldOperationFactory($this->composer);
+    $scaffoldOpFactory = new OperationFactory($this->composer);
     $scaffoldOps = [];
 
     foreach ($package_file_mappings as $key => $value) {
@@ -123,7 +123,7 @@ class Handler {
     $file_mappings = $this->getFileMappingsFromPackages($allowedPackages);
 
     // Collect the list of file mappings, and determine which take priority.
-    $scaffoldCollection = new ScaffoldOpCollection($this->io);
+    $scaffoldCollection = new OperationCollection($this->io);
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
     // Write the collected scaffold files to the designated location on disk.
@@ -251,7 +251,7 @@ class Handler {
    *   A multidimensional array of file mappings, as returned by
    *   self::getAllowedPackages().
    *
-   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldOperationInterface[]
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
    *   An array of destination paths => scaffold operation objects.
    */
   protected function getFileMappingsFromPackages(array $allowed_packages) : array {

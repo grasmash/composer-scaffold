@@ -9,16 +9,16 @@ use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Grasmash\ComposerScaffold\Interpolator;
 
 /**
- * ScaffoldOpCollection keeps track of the collection of files to be scaffolded.
+ * OperationCollection keeps track of the collection of files to be scaffolded.
  */
-class ScaffoldOpCollection {
+class OperationCollection {
 
   protected $listOfScaffoldFiles;
   protected $resolvedFileMappings;
   protected $io;
 
   /**
-   * ScaffoldOpCollection constructor.
+   * OperationCollection constructor.
    *
    * @param \Composer\IO\IOInterface $io
    *   A reference to the IO object, to allow us to write progress messages

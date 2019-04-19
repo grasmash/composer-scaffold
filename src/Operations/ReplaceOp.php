@@ -13,7 +13,7 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 /**
  * Scaffold operation to copy or symlink from source to destination.
  */
-abstract class ScaffoldReplaceOp implements ScaffoldOperationInterface {
+abstract class ReplaceOp implements OperationInterface {
 
   protected $source;
   protected $overwrite;

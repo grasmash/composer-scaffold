@@ -12,7 +12,7 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 /**
  * Scaffold operation to symlink from source to destination.
  */
-class ScaffoldSymlinkOp extends ScaffoldReplaceOp {
+class SymlinkOp extends ReplaceOp {
 
   /**
    * Process the replace operation. This could be a copy or a symlink.

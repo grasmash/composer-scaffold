@@ -10,7 +10,7 @@ use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 /**
  * Data file that keeps track of one scaffold file's source, destination, and package.
  */
-interface ScaffoldOperationInterface {
+interface OperationInterface {
   // @todo: Should this be part of this interface?
   // public function interpolationData();
 
