@@ -19,7 +19,7 @@ class SymlinkOp extends ReplaceOp {
    */
   public function placeScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
     $interpolator = $scaffold_file->getInterpolator();
-    $source_path = $this->getSourceFullPath();
+    $source_path = $this->getSource()->fullPath();
     $destination_path = $scaffold_file->getDestinationFullPath();
 
     try {

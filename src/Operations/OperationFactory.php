@@ -60,6 +60,12 @@ class OperationFactory {
     if (!isset($value['mode'])) {
       $value['mode'] = 'replace';
     }
+    // If the mode is 'append' or 'prepend', then allow 'path' as
+    // a shortcut for 'append-path' / 'prepend-path'.
+    if (isset($value['path']) && ($value['mode'] == 'append') || ($value['mode'] == 'prepend')) {
+      $value[$value['mode'] . '-path'] = $value['path'];
+      unset($value['path']);
+    }
     // Accept 'true' or 'always' for the 'overwrite' property. Any other value
     // is treated as 'false'.
     if (isset($value['overwrite'])) {
@@ -94,6 +100,12 @@ class OperationFactory {
 
       case 'replace':
         return $this->createReplaceOp($package, $dest_rel_path, $value, $options);
+
+      case 'append':
+      case 'prepend':
+      case 'prepend-append':
+      case 'append-prepend':
+        return $this->createAppendOp($package, $dest_rel_path, $value, $options);
     }
 
     // @todo support other operations besides 'replace'.
@@ -136,6 +148,41 @@ class OperationFactory {
     $op
       ->setSource($source)
       ->setOverwrite($metadata['overwrite']);
+
+    return $op;
+  }
+
+  /**
+   * Create an 'append' (or 'prepend') scaffold op.
+   *
+   * @param \Composer\Package\PackageInterface $package
+   *   The package that relative paths will be relative from.
+   * @param string $dest_rel_path
+   *   The destination path for the scaffold file. Used only for error messages.
+   * @param array $metadata
+   *   The metadata for this operation object, i.e. the relative 'path'.
+   * @param array $options
+   *   Configuration options from the top-level composer.json file.
+   *
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
+   *   A scaffold replace operation obejct.
+   */
+  protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
+
+    $op = AppendPrependOp();
+
+    $package_name = $package->getName();
+    $package_path = $this->getPackagePath($package);
+
+    if (isset($metadata['prepend-path'])) {
+      $prepend_source_file = ScaffoldSourcePath::create($package_name, $package_path, $dest_rel_path, $metadata['prepend-path']);
+      $op->setPrependFile($prepend_source_file);
+    }
+
+    if (isset($metadata['append-path'])) {
+      $append_source_file = ScaffoldSourcePath::create($package_name, $package_path, $dest_rel_path, $metadata['append-path']);
+      $op->setAppendFile($append_source_file);
+    }
 
     return $op;
   }

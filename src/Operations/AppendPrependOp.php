@@ -13,81 +13,57 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 /**
  * Scaffold operation to add to the beginning and/or end of a scaffold file.
  */
-abstract class AppendPrependOp implements OperationInterface {
+class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
 
-  protected $prependRelPath;
-  protected $prependFullPath;
-  protected $appendRelPath;
-  protected $appendFullPath;
-  protected $originalScaffoldOp;
+  use OriginalOpAwareTrait;
+
+  protected $prepend;
+  protected $append;
 
   /**
-   * Set the relative path to the source.
+   * Set the relative path to the prepend file.
    *
-   * @param string $sourceRelPath
-   *   The relative path to the source file.
+   * @param ScaffoldSourcePath $prependPath
+   *   The relative path to the prepend file file.
    *
    * @return $this
    */
-  public function setSourceRelativePath(string $sourceRelPath) {
-    $this->sourceRelPath = $sourceRelPath;
+  public function setPrependFile(ScaffoldSourcePath $prependPath) {
+    $this->prepend = $prependPath;
     return $this;
   }
 
   /**
-   * Get the relative path to the source.
+   * Get the prepend file.
    *
-   * @return string
-   *   The relative path to the source file.
+   * @return ScaffoldSourcePath
+   *   The prepend file reference object.
    */
-  public function getSourceRelativePath() {
-    return $this->sourceRelPath;
+  public function getPrepend() {
+    return $this->prepend;
   }
 
   /**
-   * Set the full path to the source.
+   * Set the relative path to the append file.
    *
-   * @param string $sourceFullPath
-   *   The full path to the source file.
+   * @param ScaffoldSourcePath $appendPath
+   *   The relative path to the append file file.
    *
    * @return $this
    */
-  public function setSourceFullPath(string $sourceFullPath) {
-    $this->sourceFullPath = $sourceFullPath;
+  public function setAppendFile(ScaffoldSourcePath $appendPath) {
+    $this->append = $appendPath;
     return $this;
   }
 
   /**
-   * Get the full path to the source.
+   * Get the append file.
    *
-   * @return string
-   *   The full path to the source file.
+   * @return ScaffoldSourcePath
+   *   The append file reference object.
    */
-  public function getSourceFullPath() {
-    return $this->sourceFullPath;
-  }
-
-  /**
-   * Set whether the scaffold file should overwrite existing files at the same path.
-   *
-   * @param bool $overwrite
-   *   Whether to overwrite existing files.
-   *
-   * @return $this
-   */
-  public function setOverwrite(bool $overwrite) {
-    $this->overwrite = $overwrite;
-    return $this;
-  }
-
-  /**
-   * Determine whether scaffold file should overwrite files already at the same path.
-   *
-   * @return bool
-   *   Value of the 'overwrite' option.
-   */
-  public function getOverwrite() {
-    return $this->overwrite;
+  public function getAppend() {
+    return $this->append;
   }
 
   /**
@@ -95,8 +71,10 @@ abstract class AppendPrependOp implements OperationInterface {
    */
   public function interpolationData() {
     return [
-      'src-rel-path' => $this->getSourceRelativePath(),
-      'src-full-path' => $this->getSourceFullPath(),
+      'prepend-rel-path' => $this->getPrepend()->relativePath(),
+      'prepend-full-path' => $this->getPrepend()->fullPath(),
+      'append-rel-path' => $this->getAppend()->relativePath(),
+      'append-full-path' => $this->getAppend()->fullPath(),
     ];
     return $data;
   }
@@ -105,30 +83,44 @@ abstract class AppendPrependOp implements OperationInterface {
    * Process the replace operation. This could be a copy or a symlink.
    */
   public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
-    $this->originalScaffoldOp->process($scaffold_file, $io, $options);
-
-    $fs = new Filesystem();
-
-    $destination_path = $scaffold_file->getDestinationFullPath();
-
-    // Do nothing if overwrite is 'false' and a file already exists at the destination.
-    if (($this->getOverwrite() === FALSE) && file_exists($destination_path)) {
-      $interpolator = $scaffold_file->getInterpolator();
-      $io->write($interpolator->interpolate("  - Skip scaffold file <info>[dest-rel-path]</info> because it already exists."));
+    // It is not possible to append / prepend unless the destination path
+    // is the same as some scaffold file provided by an earlier package.
+    if (!$this->hasOriginalOp()) {
+      $io->write($interpolator->interpolate("  - Skip appending / prepending to scaffold file <info>[dest-rel-path]</info> because no prior package provided a scaffold file at that path."));
       return;
     }
 
-    // Get rid of the destination if it exists, and make sure that
-    // the directory where it's going to be placed exists.
-    @unlink($destination_path);
-    $fs->ensureDirectoryExists(dirname($destination_path));
+    // First, scaffold the original file.
+    $this->originalOp()->process($scaffold_file, $io, $options);
 
-    $this->placeScaffold($scaffold_file, $io, $options);
+    // Fetch the prepend contents, if provided.
+    $prependContents = '';
+    if (isset($this->prepend)) {
+      $prependContents = file_get_contents($this->prepend->fullPath()) . "\n";
+    }
+
+    // Fetch the append contents, if provided.
+    $appendContents = '';
+    if (isset($this->append)) {
+      $appendContents = "\n" . file_get_contents($this->append->fullPath());
+    }
+
+    // Exit early if there is no append / prepend information.
+    if (empty(trim($prependContents)) && empty(trim($appendContents))) {
+      $io->write($interpolator->interpolate("  - Skip appending / prepending to scaffold file <info>[dest-rel-path]</info> because no content to prepend / append was provided."));
+      return;
+    }
+
+    // We're going to assume that none of these files are going to be
+    // very large, so we will just load them all into memory for now.
+    // We'd want to use streaminig if we thought that anyone would scaffold
+    // and append very large files.
+    $destination_path = $scaffold_file->getDestinationFullPath();
+    $originalContents = file_get_contents($destination_path);
+
+    // Write the appended / prepended contents back to the file.
+    $alteredContents = $prependContents . $originalContents . $appendContents;
+    file_put_contents($destination_path, $alteredContents);
   }
-
-  /**
-   * Place either a symlink or copy the scaffold file as appropriate.
-   */
-  abstract public function placeScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options);
 
 }

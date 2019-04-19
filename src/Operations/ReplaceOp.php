@@ -32,23 +32,13 @@ abstract class ReplaceOp implements OperationInterface {
   }
 
   /**
-   * Get the relative path to the source.
+   * Get the source.
    *
-   * @return string
-   *   The relative path to the source file.
+   * @return ScaffoldSourcePath
+   *   The source file reference object.
    */
-  public function getSourceRelativePath() {
-    return $this->source->relativePath();
-  }
-
-  /**
-   * Get the full path to the source.
-   *
-   * @return string
-   *   The full path to the source file.
-   */
-  public function getSourceFullPath() {
-    return $this->source->fullPath();
+  public function getSource() {
+    return $this->source;
   }
 
   /**
@@ -79,8 +69,8 @@ abstract class ReplaceOp implements OperationInterface {
    */
   public function interpolationData() {
     return [
-      'src-rel-path' => $this->getSourceRelativePath(),
-      'src-full-path' => $this->getSourceFullPath(),
+      'src-rel-path' => $this->getSource()->relativePath(),
+      'src-full-path' => $this->getSource()->fullPath(),
     ];
     return $data;
   }

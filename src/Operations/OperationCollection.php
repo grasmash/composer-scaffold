@@ -85,6 +85,12 @@ class OperationCollection {
           ->setDestinationFullPath($dest_full_path)
           ->setOp($op);
 
+        // If there was already a scaffolding operation happening at this
+        // path, then pass it along to the new scaffold op, if it cares.
+        if (isset($list_of_scaffold_files[$destination_rel_path]) && ($scaffold_file instanceof OriginalOpAwareInterface)) {
+          $scaffold_file->setOriginalOp($list_of_scaffold_files[$destination_rel_path]);
+        }
+
         $list_of_scaffold_files[$destination_rel_path] = $scaffold_file;
         $resolved_file_mappings[$package_name][$destination_rel_path] = $scaffold_file;
       }
