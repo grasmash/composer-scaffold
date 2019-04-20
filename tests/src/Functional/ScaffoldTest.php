@@ -86,7 +86,7 @@ class ScaffoldTest extends TestCase {
    */
   protected function tearDown() {
     // Remove the fixture filesystem.
-    // $this->fileSystem->remove($this->fixtures);
+    $this->fileSystem->remove($this->fixtures);
   }
 
   /**
@@ -190,19 +190,41 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   * Asserts that the drupal/assets scaffold files were correctly moved for
-   * drupal/project layout.
+   * Asserts that the drupal/assets scaffold files correct for drupal/project layout.
    */
   protected function assertDrupalProjectSutWasScaffolded($sut, $is_link, $project_name) {
-    $this->assertDrupalRootWasScaffolded($sut . '/docroot', $is_link, $project_name);
+    $docroot = $sut . '/docroot';
+
+    $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
+    $this->assertDefaultSettingsFromScaffoldOverride($docroot, $is_link);
+    $this->assertHtaccessExcluded($docroot);
   }
 
   /**
-   * Asserts that the drupal/assets scaffold files were correctly moved for
-   * drupal/drupal layout.
+   * Asserts that the drupal/assets scaffold files correct for drupal/drupal layout.
    */
   protected function assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name) {
-    $this->assertDrupalRootWasScaffolded($sut, $is_link, $project_name);
+    $docroot = $sut;
+
+    $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
+    $this->assertDefaultSettingsFromScaffoldOverride($docroot, $is_link);
+    $this->assertHtaccessExcluded($docroot);
+  }
+
+  /**
+   * Ensure that the default settings file was overridden by the test.
+   */
+  protected function assertDefaultSettingsFromScaffoldOverride($docroot, $is_link) {
+    $this->assertScaffoldedFile($docroot . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
+  }
+
+  /**
+   * Ensure that the .htaccess file was excluded by the test.
+   */
+  protected function assertHtaccessExcluded($docroot) {
+    // Ensure that the .htaccess.txt file was not written, as our
+    // top-level composer.json excludes it from the files to scaffold.
+    $this->assertFileNotExists($docroot . '/.htaccess');
   }
 
   /**
@@ -213,26 +235,37 @@ class ScaffoldTest extends TestCase {
    * unchanged.
    */
   protected function assertDrupalDrupalFileWasReplaced($sut, $is_link, $project_name) {
-    $this->assertScaffoldedFile($sut . '/replace-me.txt', $is_link, 'from assets that replaces file');
-    $this->assertScaffoldedFile($sut . '/keep-me.txt', $is_link, 'File in drupal-drupal-test-overwrite that is not replaced');
-    $this->assertScaffoldedFile($sut . '/make-me.txt', $is_link, 'from assets that replaces file');
+    $docroot = $sut;
 
-    $this->assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name);
-    $this->assertScaffoldedFile($sut . '/robots.txt', $is_link, $project_name);
-  }
+    $this->assertScaffoldedFile($docroot . '/replace-me.txt', $is_link, '#from assets that replaces file#');
+    $this->assertScaffoldedFile($docroot . '/keep-me.txt', $is_link, '#File in drupal-drupal-test-overwrite that is not replaced#');
+    $this->assertScaffoldedFile($docroot . '/make-me.txt', $is_link, '#from assets that replaces file#');
 
-  protected function assertDrupalDrupalFileWasAppended($sut, $is_link, $project_name) {
-    $this->assertScaffoldedFile($sut . '/robots.txt', false, 'something that does not appear in the file');
-    $this->assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name);
+    $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
+    $this->assertScaffoldedFile($docroot . '/robots.txt', $is_link, "#$project_name#");
   }
 
   /**
-   * Assert that the scaffold files are placed as we expect them to be.
+   * Confirm that the robots.txt file was prepended / appended as stipulated in the test.
    */
-  protected function assertDrupalRootWasScaffolded($docroot, $is_link, $project_name) {
-    $from_project = "scaffolded from \"file-mappings\" in $project_name composer.json fixture";
-    $from_scaffold_override = 'scaffolded from the scaffold-override-fixture';
-    $from_core = 'from drupal/core';
+  protected function assertDrupalDrupalFileWasAppended($sut, $is_link, $project_name) {
+    $docroot = $sut;
+
+    $this->assertScaffoldedFile($docroot . '/robots.txt', FALSE, '#in drupal-drupal-test-append composer.json fixture.*This content is prepended to the top of the existing robots.txt fixture.*Test version of robots.txt from drupal/core.*This content is appended to the bottom of the existing robots.txt fixture.*in drupal-drupal-test-append composer.json fixture#ms');
+
+    $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
+  }
+
+  /**
+   * Assert that the scaffold files from drupal/assets are placed as we expect them to be.
+   *
+   * This tests that all assets from drupal/assets were scaffolded, save
+   * for .htaccess, robots.txt and default.settings.php, which are scaffolded
+   * in different ways in different tests.
+   */
+  protected function assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name) {
+    $from_project = "#scaffolded from \"file-mappings\" in $project_name composer.json fixture#";
+    $from_core = '#from drupal/core#';
 
     // Ensure that the autoload.php file was written.
     $this->assertFileExists($docroot . '/autoload.php');
@@ -245,16 +278,11 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile($docroot . '/.gitattributes', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/.ht.router.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/sites/default/default.services.yml', $is_link, $from_core);
-    $this->assertScaffoldedFile($docroot . '/sites/default/default.settings.php', $is_link, $from_scaffold_override);
     $this->assertScaffoldedFile($docroot . '/sites/example.settings.local.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/sites/example.sites.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/index.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/update.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/web.config', $is_link, $from_core);
-
-    // Ensure that the .htaccess.txt file was not written, as our
-    // top-level composer.json excludes it from the files to scaffold.
-    $this->assertFileNotExists($docroot . '/.htaccess');
   }
 
   /**
@@ -263,7 +291,7 @@ class ScaffoldTest extends TestCase {
   protected function assertScaffoldedFile($path, $is_link, $contents_contains) {
     $this->assertFileExists($path);
     $contents = file_get_contents($path);
-    $this->assertContains($contents_contains, basename($path) . ': ' . $contents);
+    $this->assertRegExp($contents_contains, basename($path) . ': ' . $contents);
     $this->assertSame($is_link, is_link($path));
   }
 

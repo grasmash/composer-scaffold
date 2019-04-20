@@ -95,7 +95,7 @@ class ReplaceOp implements OperationInterface {
     @unlink($destination_path);
     $fs->ensureDirectoryExists(dirname($destination_path));
 
-    if ($options['symlink'] == true) {
+    if ($options['symlink'] == TRUE) {
       return $this->symlinkScaffold($scaffold_file, $io, $options);
     }
     return $this->copyScaffold($scaffold_file, $io, $options);

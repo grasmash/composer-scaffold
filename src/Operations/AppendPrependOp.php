@@ -108,7 +108,7 @@ class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
 
     // First, scaffold the original file. Disable symlinking, because we
     // need a copy of the file if we're going to append / prepend to it.
-    $this->originalOp()->process($scaffold_file, $io, ['symlink' => false] + $options);
+    $this->originalOp()->process($scaffold_file, $io, ['symlink' => FALSE] + $options);
 
     // Fetch the prepend contents, if provided.
     $prependContents = '';
