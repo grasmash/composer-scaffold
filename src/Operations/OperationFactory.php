@@ -177,7 +177,7 @@ class OperationFactory {
     $package_name = $package->getName();
     $package_path = $this->getPackagePath($package);
 
-    $source = ScaffoldSourcePath::create($package_name, $package_path, $dest_rel_path, $metadata['path']);
+    $source = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['path']);
 
     $op
       ->setSource($source)
@@ -209,12 +209,12 @@ class OperationFactory {
     $package_path = $this->getPackagePath($package);
 
     if (isset($metadata['prepend-path'])) {
-      $prepend_source_file = ScaffoldSourcePath::create($package_name, $package_path, $dest_rel_path, $metadata['prepend-path']);
+      $prepend_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['prepend-path']);
       $op->setPrependFile($prepend_source_file);
     }
 
     if (isset($metadata['append-path'])) {
-      $append_source_file = ScaffoldSourcePath::create($package_name, $package_path, $dest_rel_path, $metadata['append-path']);
+      $append_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['append-path']);
       $op->setAppendFile($append_source_file);
     }
 

@@ -8,6 +8,7 @@ use Composer\Composer;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Grasmash\ComposerScaffold\ScaffoldFileInfo;
+use Grasmash\ComposerScaffold\Interpolator;
 
 /**
  * Manage the source path to a source file to scaffold.
@@ -15,14 +16,14 @@ use Grasmash\ComposerScaffold\ScaffoldFileInfo;
  * Both the relative and full path to the file is maintained so that the
  * shorter name may be used in progress and error messages, as needed.
  */
-class ScaffoldSourcePath {
+class ScaffoldFilePath {
 
   protected $packageName;
   protected $sourceRelPath;
   protected $sourceFullPath;
 
   /**
-   * ScaffoldSourcePath constructor.
+   * ScaffoldFilePath constructor.
    *
    * @param string $package_name
    *   The name of the package containing the source file.
@@ -68,7 +69,7 @@ class ScaffoldSourcePath {
   }
 
   /**
-   * ResolveSourceLocation converts the relative source path into an absolute path.
+   * Convert the relative source path into an absolute path.
    *
    * The path returned will be relative to the package installation location.
    *
@@ -84,7 +85,7 @@ class ScaffoldSourcePath {
    * @return self
    *   Object wrapping the relative and absolute path to the source file.
    */
-  public static function create(string $package_name, string $package_path, string $destination, string $source) : self {
+  public static function sourcePath(string $package_name, string $package_path, string $destination, string $source) : self {
     // Complain if there is no source path.
     if (empty($source)) {
       throw new \Exception("No scaffold file path given for <info>$destination</info> in package <comment>$package_name</comment>.");
@@ -101,6 +102,29 @@ class ScaffoldSourcePath {
     }
 
     return new self($package_name, $source, $source_full_path);
+  }
+
+  /**
+   * Convert the relative destination path into an absolute path.
+   *
+   * Any placeholders in the destination path, e.g. '[web-root]', will be
+   * replaced using the provided location replacements interpolator.
+   *
+   * @param string $package_name
+   *   The name of the package defining the destination path.
+   * @param string $destination
+   *   The relative path to the destination file being scaffolded.
+   * @param \Grasmash\ComposerScaffold\Interpolator $locationReplacements
+   *   Interpolator that includes the [web-root] and any other available
+   *   placeholder replacements.
+   *
+   * @return self
+   *   Object wrapping the relative and absolute path to the destination file.
+   */
+  public static function destinationPath(string $package_name, string $destination, Interpolator $locationReplacements) {
+    $dest_full_path = $locationReplacements->interpolate($destination);
+
+    return new self($package_name, $destination, $dest_full_path);
   }
 
 }

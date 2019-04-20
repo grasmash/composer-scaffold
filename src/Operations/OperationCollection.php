@@ -44,8 +44,8 @@ class OperationCollection {
    * Given the list of all scaffold file info objects, return the package that
    * provides the scaffold file info for the scaffold file that will be placed
    * at the destination that this scaffold file would be placed at. Note that
-   * this will be the same as $this->getPackageName() unless this scaffold file
-   * has been overridden or removed by some other package.
+   * this will be the same as $scaffold_file->packageName() unless this scaffold
+   * file has been overridden or removed by some other package.
    *
    * @param \Grasmash\ComposerScaffold\ScaffoldFileInfo $scaffold_file
    *   The scaffold file to use to find a providing package name.
@@ -60,7 +60,7 @@ class OperationCollection {
       throw new \Exception("Scaffold file not found in list of all scaffold files.");
     }
     $overridden_scaffold_file = $this->listOfScaffoldFiles[$scaffold_file->getDestinationRelativePath()];
-    return $overridden_scaffold_file->getPackageName();
+    return $overridden_scaffold_file->packageName();
   }
 
   /**
@@ -77,12 +77,11 @@ class OperationCollection {
     $resolved_package_file_list = [];
     foreach ($file_mappings as $package_name => $package_file_mappings) {
       foreach ($package_file_mappings as $destination_rel_path => $op) {
-        $dest_full_path = $locationReplacements->interpolate($destination_rel_path);
+
+        $destination = ScaffoldFilePath::destinationPath($package_name, $destination_rel_path, $locationReplacements);
 
         $scaffold_file = (new ScaffoldFileInfo())
-          ->setPackageName($package_name)
-          ->setDestinationRelativePath($destination_rel_path)
-          ->setDestinationFullPath($dest_full_path)
+          ->setDestination($destination)
           ->setOp($op);
 
         // If there was already a scaffolding operation happening at this

@@ -21,12 +21,12 @@ class ReplaceOp implements OperationInterface {
   /**
    * Set the relative path to the source.
    *
-   * @param ScaffoldSourcePath $sourcePath
+   * @param ScaffoldFilePath $sourcePath
    *   The relative path to the source file.
    *
    * @return $this
    */
-  public function setSource(ScaffoldSourcePath $sourcePath) : self {
+  public function setSource(ScaffoldFilePath $sourcePath) : self {
     $this->source = $sourcePath;
     return $this;
   }
@@ -34,10 +34,10 @@ class ReplaceOp implements OperationInterface {
   /**
    * Get the source.
    *
-   * @return ScaffoldSourcePath
+   * @return ScaffoldFilePath
    *   The source file reference object.
    */
-  public function getSource() : ScaffoldSourcePath {
+  public function getSource() : ScaffoldFilePath {
     return $this->source;
   }
 

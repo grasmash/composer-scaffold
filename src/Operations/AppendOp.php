@@ -23,12 +23,12 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   /**
    * Set the relative path to the prepend file.
    *
-   * @param ScaffoldSourcePath $prependPath
+   * @param ScaffoldFilePath $prependPath
    *   The relative path to the prepend file file.
    *
    * @return $this
    */
-  public function setPrependFile(ScaffoldSourcePath $prependPath) : self {
+  public function setPrependFile(ScaffoldFilePath $prependPath) : self {
     $this->prepend = $prependPath;
     return $this;
   }
@@ -36,22 +36,22 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   /**
    * Get the prepend file.
    *
-   * @return ScaffoldSourcePath
+   * @return ScaffoldFilePath
    *   The prepend file reference object.
    */
-  public function getPrepend() : ScaffoldSourcePath {
+  public function getPrepend() : ScaffoldFilePath {
     return $this->prepend;
   }
 
   /**
    * Set the relative path to the append file.
    *
-   * @param ScaffoldSourcePath $appendPath
+   * @param ScaffoldFilePath $appendPath
    *   The relative path to the append file file.
    *
    * @return $this
    */
-  public function setAppendFile(ScaffoldSourcePath $appendPath) : self {
+  public function setAppendFile(ScaffoldFilePath $appendPath) : self {
     $this->append = $appendPath;
     return $this;
   }
@@ -59,10 +59,10 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   /**
    * Get the append file.
    *
-   * @return ScaffoldSourcePath
+   * @return ScaffoldFilePath
    *   The append file reference object.
    */
-  public function getAppend() : ScaffoldSourcePath {
+  public function getAppend() : ScaffoldFilePath {
     return $this->append;
   }
 

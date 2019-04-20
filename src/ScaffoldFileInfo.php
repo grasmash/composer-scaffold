@@ -6,15 +6,20 @@ namespace Grasmash\ComposerScaffold;
 
 use Composer\IO\IOInterface;
 use Grasmash\ComposerScaffold\Operations\OperationInterface;
+use Grasmash\ComposerScaffold\Operations\ScaffoldFilePath;
 
 /**
- * Data file that keeps track of one scaffold file's source, destination, and package.
+ * Data object that keeps track of one scaffold file.
+ *
+ * Scafold files are identified primariy by their destination path. Each
+ * scaffold file also has an 'operation' object that controls how the
+ * scaffold file will be placed (e.g. via copy or symlink, or maybe by
+ * appending multiple files together).  The operation may have one or more
+ * source files.
  */
 class ScaffoldFileInfo {
 
-  protected $packageName;
-  protected $destinationRelPath;
-  protected $destinationFullPath;
+  protected $destination;
   protected $op;
 
   /**
@@ -41,38 +46,25 @@ class ScaffoldFileInfo {
   }
 
   /**
-   * Set the package name.
-   *
-   * @param string $packageName
-   *   The name of the package this scaffold file info was collected from.
-   *
-   * @return $this
-   */
-  public function setPackageName(string $packageName) : self {
-    $this->packageName = $packageName;
-    return $this;
-  }
-
-  /**
    * Get the package name.
    *
    * @return string
    *   The name of the package this scaffold file info was collected from.
    */
-  public function getPackageName() : string {
-    return $this->packageName;
+  public function packageName() : string {
+    return $this->destination->packageName();
   }
 
   /**
    * Set the relative path to the destination.
    *
-   * @param string $destinationRelPath
-   *   The relative path to the destination file.
+   * @param \Grasmash\ComposerScaffold\Operations\ScaffoldFilePath $destination
+   *   The full and relative paths to the destination file and the package defining it.
    *
    * @return $this
    */
-  public function setDestinationRelativePath(string $destinationRelPath) : self {
-    $this->destinationRelPath = $destinationRelPath;
+  public function setDestination(ScaffoldFilePath $destination) : self {
+    $this->destination = $destination;
     return $this;
   }
 
@@ -83,20 +75,7 @@ class ScaffoldFileInfo {
    *   The relative path to the destination file.
    */
   public function getDestinationRelativePath() : string {
-    return $this->destinationRelPath;
-  }
-
-  /**
-   * Set the full path to the destination.
-   *
-   * @param string $destinationFullPath
-   *   The full path to the destination file.
-   *
-   * @return $this
-   */
-  public function setDestinationFullPath(string $destinationFullPath) : self {
-    $this->destinationFullPath = $destinationFullPath;
-    return $this;
+    return $this->destination->relativePath();
   }
 
   /**
@@ -106,7 +85,7 @@ class ScaffoldFileInfo {
    *   The full path to the destination file.
    */
   public function getDestinationFullPath() : string {
-    return $this->destinationFullPath;
+    return $this->destination->fullPath();
   }
 
   /**
@@ -120,7 +99,7 @@ class ScaffoldFileInfo {
    *   Whether this scaffold file if overridden or removed.
    */
   public function overridden(string $providing_package) : bool {
-    return $this->getPackageName() !== $providing_package;
+    return $this->packageName() !== $providing_package;
   }
 
   /**
@@ -133,7 +112,7 @@ class ScaffoldFileInfo {
     $interpolator = new Interpolator();
 
     $data = [
-      'package-name' => $this->getPackageName(),
+      'package-name' => $this->packageName(),
       'dest-rel-path' => $this->getDestinationRelativePath(),
       'dest-full-path' => $this->getDestinationFullPath(),
     ];
