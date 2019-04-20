@@ -25,7 +25,7 @@ interface OriginalOpAwareInterface {
    * @return bool
    *   Whether or not an original operation was provided.
    */
-  public function hasOriginalOp();
+  public function hasOriginalOp() : bool;
 
   /**
    * Return the original operation that this op is overriding.
@@ -33,6 +33,6 @@ interface OriginalOpAwareInterface {
    * @return OperationInterface
    *   The original operation.
    */
-  public function originalOp();
+  public function originalOp() : OperationInterface;
 
 }

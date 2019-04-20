@@ -28,7 +28,7 @@ class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
    *
    * @return $this
    */
-  public function setPrependFile(ScaffoldSourcePath $prependPath) {
+  public function setPrependFile(ScaffoldSourcePath $prependPath) : self {
     $this->prepend = $prependPath;
     return $this;
   }
@@ -39,7 +39,7 @@ class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
    * @return ScaffoldSourcePath
    *   The prepend file reference object.
    */
-  public function getPrepend() {
+  public function getPrepend() : ScaffoldSourcePath {
     return $this->prepend;
   }
 
@@ -51,7 +51,7 @@ class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
    *
    * @return $this
    */
-  public function setAppendFile(ScaffoldSourcePath $appendPath) {
+  public function setAppendFile(ScaffoldSourcePath $appendPath) : self {
     $this->append = $appendPath;
     return $this;
   }
@@ -62,7 +62,7 @@ class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
    * @return ScaffoldSourcePath
    *   The append file reference object.
    */
-  public function getAppend() {
+  public function getAppend() : ScaffoldSourcePath {
     return $this->append;
   }
 
@@ -94,7 +94,9 @@ class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
   }
 
   /**
-   * Process the replace operation. This could be a copy or a symlink.
+   * Append or prepend information onto the overridden scaffold file.
+   *
+   * {@inheritdoc}
    */
   public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
     $interpolator = $scaffold_file->getInterpolator();

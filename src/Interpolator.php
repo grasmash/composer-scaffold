@@ -28,15 +28,21 @@ class Interpolator {
 
   /**
    * GetData fetches the data set used by this interpolator.
+   *
+   * @return array
+   *   Interplation data.
    */
-  public function getData() {
+  public function getData() : array {
     return $this->data;
   }
 
   /**
    * SetData allows the client to associate a standard data set to use when interpolating.
+   *
+   * @param array $data
+   *   Interpolation data to use when interpolating.
    */
-  public function setData($data) {
+  public function setData(array $data) {
     $this->data = $data;
     return $this;
   }
@@ -72,8 +78,16 @@ class Interpolator {
 
   /**
    * Throw if any tokens remain after interpolation.
+   *
+   * @param string $message
+   *   Message containing tokens to be replaced.
+   * @param mixed|array $extra
+   *   Data to use for interpolation in addition to whatever was provided by self::setData().
+   *
+   * @return string
+   *   The message after replacements have been made.
    */
-  public function mustInterpolate(string $message, $extra = []) : string {
+  public function mustInterpolate(string $message, array $extra = []) : string {
     $result = $this->interpolate($message, $extra, FALSE);
     $tokens = $this->findTokens($result);
     if (!empty($tokens)) {
@@ -113,7 +127,7 @@ class Interpolator {
    * keys from the provided message. Keys that do not exist in the configuration
    * are replaced with the default value.
    */
-  public function replacements(string $message, $data, $default = '') : array {
+  protected function replacements(string $message, $data, $default = '') : array {
     $tokens = $this->findTokens($message);
 
     $replacements = [];

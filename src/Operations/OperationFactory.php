@@ -43,7 +43,7 @@ class OperationFactory {
    * @return array
    *   Normalized scaffold metadata.
    */
-  public function normalizeScaffoldMetadata(string $key, $value) {
+  public function normalizeScaffoldMetadata(string $key, $value) : array {
     if (is_bool($value)) {
       if (!$value) {
         return ['mode' => 'skip'];
@@ -101,7 +101,7 @@ class OperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   The scaffolding operation object (skip, replace, etc.)
    */
-  public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, array $options) {
+  public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, array $options) : OperationInterface {
     switch ($value['mode']) {
       case 'skip':
         return new SkipOp();
@@ -137,7 +137,7 @@ class OperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
+  protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) : OperationInterface {
     $op = new ReplaceOp();
 
     $metadata += ['overwrite' => TRUE];
@@ -173,7 +173,7 @@ class OperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
+  protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) : OperationInterface {
 
     $op = new AppendPrependOp();
 

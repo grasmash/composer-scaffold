@@ -26,7 +26,7 @@ class ReplaceOp implements OperationInterface {
    *
    * @return $this
    */
-  public function setSource(ScaffoldSourcePath $sourcePath) {
+  public function setSource(ScaffoldSourcePath $sourcePath) : self {
     $this->source = $sourcePath;
     return $this;
   }
@@ -37,7 +37,7 @@ class ReplaceOp implements OperationInterface {
    * @return ScaffoldSourcePath
    *   The source file reference object.
    */
-  public function getSource() {
+  public function getSource() : ScaffoldSourcePath {
     return $this->source;
   }
 
@@ -49,7 +49,7 @@ class ReplaceOp implements OperationInterface {
    *
    * @return $this
    */
-  public function setOverwrite(bool $overwrite) {
+  public function setOverwrite(bool $overwrite) : self {
     $this->overwrite = $overwrite;
     return $this;
   }
@@ -60,14 +60,17 @@ class ReplaceOp implements OperationInterface {
    * @return bool
    *   Value of the 'overwrite' option.
    */
-  public function getOverwrite() {
+  public function getOverwrite() : bool {
     return $this->overwrite;
   }
 
   /**
    * Interpolate a string using the data from this scaffold file info.
+   *
+   * @return array
+   *   Interpolation data.
    */
-  public function interpolationData() {
+  public function interpolationData() : array {
     return [
       'src-rel-path' => $this->getSource()->relativePath(),
       'src-full-path' => $this->getSource()->fullPath(),
@@ -76,7 +79,9 @@ class ReplaceOp implements OperationInterface {
   }
 
   /**
-   * Process the replace operation. This could be a copy or a symlink.
+   * Copy or Symlink the specified scaffold file.
+   *
+   * {@inheritdoc}
    */
   public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
     $fs = new Filesystem();
@@ -103,6 +108,13 @@ class ReplaceOp implements OperationInterface {
 
   /**
    * Copy the scaffold file.
+   *
+   * @param \Grasmash\ComposerScaffold\ScaffoldFileInfo $scaffold_file
+   *   Scaffold file to process.
+   * @param \Composer\IO\IOInterface $io
+   *   IOInterface to writing to.
+   * @param array $options
+   *   Various options that may alter the behavior of the operation.
    */
   public function copyScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
     $interpolator = $scaffold_file->getInterpolator();
@@ -119,6 +131,13 @@ class ReplaceOp implements OperationInterface {
 
   /**
    * Symlink the scaffold file.
+   *
+   * @param \Grasmash\ComposerScaffold\ScaffoldFileInfo $scaffold_file
+   *   Scaffold file to process.
+   * @param \Composer\IO\IOInterface $io
+   *   IOInterface to writing to.
+   * @param array $options
+   *   Various options that may alter the behavior of the operation.
    */
   public function symlinkScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
     $interpolator = $scaffold_file->getInterpolator();

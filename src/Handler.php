@@ -94,7 +94,7 @@ class Handler {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
    *   A list of scaffolding operation objects
    */
-  protected function createScaffoldOperations(PackageInterface $package, array $package_file_mappings) {
+  protected function createScaffoldOperations(PackageInterface $package, array $package_file_mappings) : array {
     $options = $this->getOptions();
     $scaffoldOpFactory = new OperationFactory($this->composer);
     $scaffoldOps = [];
@@ -147,7 +147,7 @@ class Handler {
    *
    * @throws \Exception
    */
-  public function getWebRoot() {
+  public function getWebRoot() : string {
     $options = $this->getOptions();
     // @todo Allow packages to set web root location?
     if (empty($options['locations']['web-root'])) {
@@ -162,7 +162,7 @@ class Handler {
    * @return string
    *   The file path of the vendor directory.
    */
-  public function getVendorPath() {
+  public function getVendorPath() : string {
     $vendorDir = $this->composer->getConfig()->get('vendor-dir');
     $filesystem = new Filesystem();
     $filesystem->ensureDirectoryExists($vendorDir);
@@ -175,10 +175,10 @@ class Handler {
    * @param string $name
    *   Name of the package to get from the current composer installation.
    *
-   * @return \Composer\Package\PackageInterface|null
+   * @return \Composer\Package\PackageInterface
    *   The Composer package.
    */
-  protected function getPackage(string $name) {
+  protected function getPackage(string $name) : PackageInterface {
     $package = $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
     if (is_null($package)) {
       throw new \Exception("<comment>Composer Scaffold could not find installed package `$name`.</comment>");
@@ -226,7 +226,7 @@ class Handler {
    * @return Interpolator
    *   Object that will do replacements in a string using tokens in 'locations' element.
    */
-  public function getLocationReplacements() {
+  public function getLocationReplacements() : Interpolator {
     $interpolator = new Interpolator();
 
     $fs = new Filesystem();
@@ -288,12 +288,12 @@ class Handler {
   }
 
   /**
-   * Description.
+   * Recursivly build a name-to-package mapping from a list of package names.
    *
    * @param string[] $packages_to_allow
-   *   List of package names.
+   *   List of package names to allow.
    * @param array $allowed_packages
-   *   Mapping of package names to PackageInterface.
+   *   Mapping of package names to PackageInterface of packages already accumulated.
    *
    * @return array
    *   Mapping of package names to PackageInterface in priority order.

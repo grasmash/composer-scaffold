@@ -34,7 +34,7 @@ class OperationCollection {
    * @return array
    *   Associative array containing package name => file mappings
    */
-  public function fileMappings() {
+  public function fileMappings() : array {
     return $this->resolvedFileMappings;
   }
 
@@ -53,7 +53,7 @@ class OperationCollection {
    * @return string
    *   The name of the package that provided the scaffold file information.
    */
-  public function findProvidingPackage(ScaffoldFileInfo $scaffold_file) {
+  public function findProvidingPackage(ScaffoldFileInfo $scaffold_file): string {
     // The scaffold file should always be in our list, but we will check
     // just to be sure that it really is.
     if (!array_key_exists($scaffold_file->getDestinationRelativePath(), $this->listOfScaffoldFiles)) {

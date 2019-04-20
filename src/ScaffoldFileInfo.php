@@ -25,7 +25,7 @@ class ScaffoldFileInfo {
    *
    * @return $this
    */
-  public function setOp(OperationInterface $op) {
+  public function setOp(OperationInterface $op) : self {
     $this->op = $op;
     return $this;
   }
@@ -36,7 +36,7 @@ class ScaffoldFileInfo {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   Operations object that handles scaffolding (copy, make symlink, etc).
    */
-  public function op() {
+  public function op() : OperationInterface {
     return $this->op;
   }
 
@@ -48,7 +48,7 @@ class ScaffoldFileInfo {
    *
    * @return $this
    */
-  public function setPackageName(string $packageName) {
+  public function setPackageName(string $packageName) : self {
     $this->packageName = $packageName;
     return $this;
   }
@@ -59,7 +59,7 @@ class ScaffoldFileInfo {
    * @return string
    *   The name of the package this scaffold file info was collected from.
    */
-  public function getPackageName() {
+  public function getPackageName() : string {
     return $this->packageName;
   }
 
@@ -71,7 +71,7 @@ class ScaffoldFileInfo {
    *
    * @return $this
    */
-  public function setDestinationRelativePath(string $destinationRelPath) {
+  public function setDestinationRelativePath(string $destinationRelPath) : self {
     $this->destinationRelPath = $destinationRelPath;
     return $this;
   }
@@ -82,7 +82,7 @@ class ScaffoldFileInfo {
    * @return string
    *   The relative path to the destination file.
    */
-  public function getDestinationRelativePath() {
+  public function getDestinationRelativePath() : string {
     return $this->destinationRelPath;
   }
 
@@ -94,7 +94,7 @@ class ScaffoldFileInfo {
    *
    * @return $this
    */
-  public function setDestinationFullPath(string $destinationFullPath) {
+  public function setDestinationFullPath(string $destinationFullPath) : self {
     $this->destinationFullPath = $destinationFullPath;
     return $this;
   }
@@ -105,7 +105,7 @@ class ScaffoldFileInfo {
    * @return string
    *   The full path to the destination file.
    */
-  public function getDestinationFullPath() {
+  public function getDestinationFullPath() : string {
     return $this->destinationFullPath;
   }
 
@@ -119,14 +119,17 @@ class ScaffoldFileInfo {
    * @return bool
    *   Whether this scaffold file if overridden or removed.
    */
-  public function overridden(string $providing_package) {
+  public function overridden(string $providing_package) : bool {
     return $this->getPackageName() !== $providing_package;
   }
 
   /**
    * Interpolate a string using the data from this scaffold file info.
+   *
+   * @return Interpolator
+   *   An interpolator for making string replacements.
    */
-  public function getInterpolator() {
+  public function getInterpolator() : Interpolator {
     $interpolator = new Interpolator();
 
     $data = [
@@ -140,9 +143,19 @@ class ScaffoldFileInfo {
   }
 
   /**
-   * Interpolate a string using the data from this scaffold file info.
+   * Given a message with placeholders, return the interpolated result.
+   *
+   * @param string $message
+   *   Message with placeholders to fill in.
+   * @param array $extra
+   *   Additional data to merge with the interpolator.
+   * @param mixed $default
+   *   Default value to use for missing placeholders, or FALSE to keep them.
+   *
+   * @return string
+   *   Interpolated string with placeholders replaced.
    */
-  public function interpolate(string $message, array $extra = [], $default = FALSE) {
+  public function interpolate(string $message, array $extra = [], $default = FALSE) : string {
     $interpolator = $this->getInterpolator();
     return $interpolator->interpolate($message, $extra, $default);
   }

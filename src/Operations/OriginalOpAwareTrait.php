@@ -18,12 +18,7 @@ trait OriginalOpAwareTrait {
   protected $originalOp;
 
   /**
-   * Set a reference to the original scaffold operation at the same destination path.
-   *
-   * @param OperationInterface $originalOp
-   *   The scaffold operation for the source file being appended / prepended.
-   *
-   * @return $this
+   * {@inheritdoc}
    */
   public function setOriginalOp(OperationInterface $originalOp) {
     $this->originalOp = $originalOp;
@@ -31,22 +26,16 @@ trait OriginalOpAwareTrait {
   }
 
   /**
-   * Return 'true' if an original operation was provided.
-   *
-   * @return bool
-   *   Whether or not an original operation was provided.
+   * {@inheritdoc}
    */
-  public function hasOriginalOp() {
+  public function hasOriginalOp() : bool {
     return isset($this->originalOp);
   }
 
   /**
-   * Return the original operation that this op is overriding.
-   *
-   * @return OperationInterface
-   *   The original operation.
+   * {@inheritdoc}
    */
-  public function originalOp() {
+  public function originalOp() : OperationInterface {
     return $this->originalOp;
   }
 

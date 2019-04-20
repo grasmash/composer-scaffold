@@ -84,7 +84,7 @@ class ScaffoldSourcePath {
    * @return self
    *   Object wrapping the relative and absolute path to the source file.
    */
-  public static function create(string $package_name, string $package_path, string $destination, string $source) {
+  public static function create(string $package_name, string $package_path, string $destination, string $source) : self {
     // Complain if there is no source path.
     if (empty($source)) {
       throw new \Exception("No scaffold file path given for <info>$destination</info> in package <comment>$package_name</comment>.");
