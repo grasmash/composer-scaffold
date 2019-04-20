@@ -87,8 +87,8 @@ class OperationCollection {
 
         // If there was already a scaffolding operation happening at this
         // path, then pass it along to the new scaffold op, if it cares.
-        if (isset($list_of_scaffold_files[$destination_rel_path]) && ($scaffold_file instanceof OriginalOpAwareInterface)) {
-          $scaffold_file->setOriginalOp($list_of_scaffold_files[$destination_rel_path]);
+        if (isset($list_of_scaffold_files[$destination_rel_path]) && ($op instanceof OriginalOpAwareInterface)) {
+          $op->setOriginalOp($list_of_scaffold_files[$destination_rel_path]->op());
         }
 
         $list_of_scaffold_files[$destination_rel_path] = $scaffold_file;
@@ -118,7 +118,7 @@ class OperationCollection {
       foreach ($package_scaffold_files as $dest_rel_path => $scaffold_file) {
         $overriding_package = $this->findProvidingPackage($scaffold_file);
         if ($scaffold_file->overridden($overriding_package)) {
-          $this->io->write($scaffold_file->interpolate("  - <info>[dest-rel-path]</info> overridden in <comment>$overriding_package</comment>"));
+          $this->io->write($scaffold_file->interpolate("  - Skip <info>[dest-rel-path]</info>: overridden in <comment>$overriding_package</comment>"));
         }
         else {
           $scaffold_file->process($this->io, $options);

@@ -86,7 +86,7 @@ class ScaffoldTest extends TestCase {
    */
   protected function tearDown() {
     // Remove the fixture filesystem.
-    $this->fileSystem->remove($this->fixtures);
+    // $this->fileSystem->remove($this->fixtures);
   }
 
   /**
@@ -146,6 +146,16 @@ class ScaffoldTest extends TestCase {
         'assertDrupalDrupalFileWasReplaced',
         FALSE,
       ],
+      [
+        'drupal-drupal-test-append',
+        'assertDrupalDrupalFileWasAppended',
+        FALSE,
+      ],
+      [
+        'drupal-drupal-test-append',
+        'assertDrupalDrupalFileWasAppended',
+        TRUE,
+      ],
     ];
   }
 
@@ -180,14 +190,16 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   * Asserts that scaffold files were correctly moved.
+   * Asserts that the drupal/assets scaffold files were correctly moved for
+   * drupal/project layout.
    */
   protected function assertDrupalProjectSutWasScaffolded($sut, $is_link, $project_name) {
     $this->assertDrupalRootWasScaffolded($sut . '/docroot', $is_link, $project_name);
   }
 
   /**
-   * Asserts that scaffold files were correctly moved.
+   * Asserts that the drupal/assets scaffold files were correctly moved for
+   * drupal/drupal layout.
    */
   protected function assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name) {
     $this->assertDrupalRootWasScaffolded($sut, $is_link, $project_name);
@@ -204,6 +216,13 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile($sut . '/replace-me.txt', $is_link, 'from assets that replaces file');
     $this->assertScaffoldedFile($sut . '/keep-me.txt', $is_link, 'File in drupal-drupal-test-overwrite that is not replaced');
     $this->assertScaffoldedFile($sut . '/make-me.txt', $is_link, 'from assets that replaces file');
+
+    $this->assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name);
+    $this->assertScaffoldedFile($sut . '/robots.txt', $is_link, $project_name);
+  }
+
+  protected function assertDrupalDrupalFileWasAppended($sut, $is_link, $project_name) {
+    $this->assertScaffoldedFile($sut . '/robots.txt', false, 'something that does not appear in the file');
     $this->assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name);
   }
 
@@ -230,7 +249,6 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile($docroot . '/sites/example.settings.local.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/sites/example.sites.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/index.php', $is_link, $from_core);
-    $this->assertScaffoldedFile($docroot . '/robots.txt', $is_link, $from_project);
     $this->assertScaffoldedFile($docroot . '/update.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/web.config', $is_link, $from_core);
 

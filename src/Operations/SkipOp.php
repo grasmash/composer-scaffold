@@ -18,7 +18,7 @@ class SkipOp implements OperationInterface {
   public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
     $interpolator = $scaffold_file->getInterpolator();
 
-    $io->write($interpolator->interpolate("  - Skip scaffold file <info>[dest-rel-path]</info>"));
+    $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info>: disabled"));
   }
 
 }

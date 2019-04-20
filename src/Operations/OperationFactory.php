@@ -56,6 +56,14 @@ class OperationFactory {
     if (is_string($value)) {
       $value = ['path' => $value];
     }
+    // If there is no 'mode', but there is an 'append-path' or a 'prepend-path',
+    // then the mode is 'append-prepend'.
+    if (
+      !isset($value['mode']) &&
+      (isset($value['append-path']) || isset($value['prepend-path']))
+    ) {
+      $value['mode'] = 'append-prepend';
+    }
     // If there is no 'mode', then the default is 'replace'.
     if (!isset($value['mode'])) {
       $value['mode'] = 'replace';
@@ -130,9 +138,7 @@ class OperationFactory {
    *   A scaffold replace operation obejct.
    */
   protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
-    $op = $options['symlink'] ?
-      new SymlinkOp() :
-      new CopyOp();
+    $op = new ReplaceOp();
 
     $metadata += ['overwrite' => TRUE];
 
@@ -169,7 +175,7 @@ class OperationFactory {
    */
   protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) {
 
-    $op = AppendPrependOp();
+    $op = new AppendPrependOp();
 
     $package_name = $package->getName();
     $package_path = $this->getPackagePath($package);

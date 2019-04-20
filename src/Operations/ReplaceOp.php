@@ -13,7 +13,7 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 /**
  * Scaffold operation to copy or symlink from source to destination.
  */
-abstract class ReplaceOp implements OperationInterface {
+class ReplaceOp implements OperationInterface {
 
   protected $source;
   protected $overwrite;
@@ -95,12 +95,45 @@ abstract class ReplaceOp implements OperationInterface {
     @unlink($destination_path);
     $fs->ensureDirectoryExists(dirname($destination_path));
 
-    $this->placeScaffold($scaffold_file, $io, $options);
+    if ($options['symlink'] == true) {
+      return $this->symlinkScaffold($scaffold_file, $io, $options);
+    }
+    return $this->copyScaffold($scaffold_file, $io, $options);
   }
 
   /**
-   * Place either a symlink or copy the scaffold file as appropriate.
+   * Copy the scaffold file.
    */
-  abstract public function placeScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options);
+  public function copyScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
+    $interpolator = $scaffold_file->getInterpolator();
+    $source_path = $this->getSource()->fullPath();
+    $destination_path = $scaffold_file->getDestinationFullPath();
+
+    $success = copy($source_path, $destination_path);
+    if (!$success) {
+      throw new \Exception($interpolator->interpolate("Could not copy source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!", $this->interpolationData()));
+    }
+
+    $io->write($interpolator->interpolate("  - Copy <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>", $this->interpolationData()));
+  }
+
+  /**
+   * Symlink the scaffold file.
+   */
+  public function symlinkScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
+    $interpolator = $scaffold_file->getInterpolator();
+    $source_path = $this->getSource()->fullPath();
+    $destination_path = $scaffold_file->getDestinationFullPath();
+
+    try {
+      $fs = new Filesystem();
+      $fs->relativeSymlink($source_path, $destination_path);
+    }
+    catch (\Exception $e) {
+      throw new \Exception($interpolator->interpolate("Could not symlink source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>! ", $this->interpolationData()), 1, $e);
+    }
+
+    $io->write($interpolator->interpolate("  - Link <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>", $this->interpolationData()));
+  }
 
 }
