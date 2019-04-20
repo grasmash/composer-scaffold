@@ -15,7 +15,9 @@ use Grasmash\ComposerScaffold\Operations\OperationFactory;
 use Grasmash\ComposerScaffold\Operations\OperationInterface;
 
 /**
- * Core class of the plugin, contains all logic which files should be fetched.
+ * Core class of the plugin.
+ *
+ * Contains the primary logic which determines the files to be fetched and processed.
  */
 class Handler {
 
@@ -115,15 +117,18 @@ class Handler {
     $dispatcher = new EventDispatcher($this->composer, $this->io);
     $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
 
-    $locationReplacements = $this->getLocationReplacements();
-
-    // Get the list of allowed packages, and then use it to recursively
-    // to fetch the list of file mappings, and normalize them.
+    // Recursively get the list of allowed packages. Only allowed packages
+    // may declare scaffold files. Note that the top-level composer.json file
+    // is implicitly allowed.
     $allowedPackages = $this->getAllowedPackages();
+
+    // Fetch the list of file mappings from each allowed package and
+    // normalize them.
     $file_mappings = $this->getFileMappingsFromPackages($allowedPackages);
 
-    // Collect the list of file mappings, and determine which take priority.
+    // Analyze the list of file mappings, and determine which take priority.
     $scaffoldCollection = new OperationCollection($this->io);
+    $locationReplacements = $this->getLocationReplacements();
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
     // Write the collected scaffold files to the designated location on disk.

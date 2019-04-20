@@ -6,7 +6,7 @@ namespace Grasmash\ComposerScaffold;
 
 use Composer\IO\IOInterface;
 use Grasmash\ComposerScaffold\Operations\OperationInterface;
-use Grasmash\ComposerScaffold\Operations\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
 
 /**
  * Data object that keeps track of one scaffold file.

@@ -2,19 +2,22 @@
 
 declare(strict_types = 1);
 
-namespace Grasmash\ComposerScaffold\Operations;
+namespace Grasmash\ComposerScaffold;
 
-use Composer\Composer;
-use Composer\IO\IOInterface;
-use Composer\Package\PackageInterface;
-use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Grasmash\ComposerScaffold\Interpolator;
 
 /**
- * Manage the source path to a source file to scaffold.
+ * Manage the path to a file to scaffold.
  *
  * Both the relative and full path to the file is maintained so that the
  * shorter name may be used in progress and error messages, as needed.
+ * The name of the package that provided the file path is also recorded
+ * for the same reason.
+ *
+ * ScaffoldFilePaths may be used to represent destination scaffold files,
+ * or the source files used to create them. Static factory methods named
+ * destinationPath and sourcePath, respectively, are provided to create
+ * ScafoldFilePath objects.
  */
 class ScaffoldFilePath {
 

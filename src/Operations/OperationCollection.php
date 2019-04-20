@@ -7,6 +7,7 @@ namespace Grasmash\ComposerScaffold\Operations;
 use Composer\IO\IOInterface;
 use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Grasmash\ComposerScaffold\Interpolator;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
 
 /**
  * OperationCollection keeps track of the collection of files to be scaffolded.

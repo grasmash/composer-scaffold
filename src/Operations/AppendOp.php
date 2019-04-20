@@ -9,6 +9,7 @@ use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
 
 /**
  * Scaffold operation to add to the beginning and/or end of a scaffold file.
@@ -23,7 +24,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   /**
    * Set the relative path to the prepend file.
    *
-   * @param ScaffoldFilePath $prependPath
+   * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $prependPath
    *   The relative path to the prepend file file.
    *
    * @return $this
@@ -36,7 +37,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   /**
    * Get the prepend file.
    *
-   * @return ScaffoldFilePath
+   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The prepend file reference object.
    */
   public function getPrepend() : ScaffoldFilePath {
@@ -46,7 +47,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   /**
    * Set the relative path to the append file.
    *
-   * @param ScaffoldFilePath $appendPath
+   * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $appendPath
    *   The relative path to the append file file.
    *
    * @return $this
@@ -59,7 +60,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   /**
    * Get the append file.
    *
-   * @return ScaffoldFilePath
+   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The append file reference object.
    */
   public function getAppend() : ScaffoldFilePath {

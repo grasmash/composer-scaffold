@@ -9,6 +9,7 @@ use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
 
 /**
  * Scaffold operation to copy or symlink from source to destination.
@@ -21,7 +22,7 @@ class ReplaceOp implements OperationInterface {
   /**
    * Set the relative path to the source.
    *
-   * @param ScaffoldFilePath $sourcePath
+   * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $sourcePath
    *   The relative path to the source file.
    *
    * @return $this
@@ -34,7 +35,7 @@ class ReplaceOp implements OperationInterface {
   /**
    * Get the source.
    *
-   * @return ScaffoldFilePath
+   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The source file reference object.
    */
   public function getSource() : ScaffoldFilePath {
