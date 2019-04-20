@@ -62,7 +62,7 @@ class OperationFactory {
       !isset($value['mode']) &&
       (isset($value['append-path']) || isset($value['prepend-path']))
     ) {
-      $value['mode'] = 'append-prepend';
+      $value['mode'] = 'append';
     }
     // If there is no 'mode', then the default is 'replace'.
     if (!isset($value['mode'])) {
@@ -140,9 +140,6 @@ class OperationFactory {
         return $this->createReplaceOp($package, $dest_rel_path, $value, $options);
 
       case 'append':
-      case 'prepend':
-      case 'prepend-append':
-      case 'append-prepend':
         return $this->createAppendOp($package, $dest_rel_path, $value, $options);
     }
 
@@ -206,7 +203,7 @@ class OperationFactory {
    */
   protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) : OperationInterface {
 
-    $op = new AppendPrependOp();
+    $op = new AppendOp();
 
     $package_name = $package->getName();
     $package_path = $this->getPackagePath($package);

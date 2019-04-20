@@ -13,7 +13,7 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 /**
  * Scaffold operation to add to the beginning and/or end of a scaffold file.
  */
-class AppendPrependOp implements OperationInterface, OriginalOpAwareInterface {
+class AppendOp implements OperationInterface, OriginalOpAwareInterface {
 
   use OriginalOpAwareTrait;
 
