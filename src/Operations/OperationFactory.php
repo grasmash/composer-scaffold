@@ -77,13 +77,43 @@ class OperationFactory {
     // Accept 'true' or 'always' for the 'overwrite' property. Any other value
     // is treated as 'false'.
     if (isset($value['overwrite'])) {
-      $value['overwrite'] = (
-        ($value['overwrite'] === TRUE) ||
-        ($value['overwrite'] == 'true') ||
-        ($value['overwrite'] == 'always')
-      );
+      $value['overwrite'] = $this->normalizeOverwrite($value['overwrite']);
     }
     return $value;
+  }
+
+  /**
+   * Convert overwrite value from one of the allowed values to a boolean.
+   *
+   * Any value not recognized as 'true' is interpreted as 'false'.
+   *
+   * @param mixed $overwrite
+   *   Overwrite value as specified by user.
+   *
+   * @return bool
+   *   Normalized overwrite value expressed as a boolean.
+   */
+  protected function normalizeOverwrite($overwrite) : bool {
+    return ($overwrite === TRUE) ||
+      ($overwrite == 'true') ||
+      ($overwrite == 'always');
+  }
+
+  /**
+   * Determine whether we should default to 'overwrite' true, or 'overwrite' false.
+   *
+   * @param array $options
+   *   Global settings from extras.composer-scaffold.
+   *
+   * @return bool
+   *   The default value for the overwrite option.
+   */
+  protected function getDefaultOverwrite(array $options) : bool {
+    if (isset($options['overwrite'])) {
+      return $this->normalizeOverwrite($options['overwrite']);
+    }
+
+    return TRUE;
   }
 
   /**
@@ -140,7 +170,8 @@ class OperationFactory {
   protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) : OperationInterface {
     $op = new ReplaceOp();
 
-    $metadata += ['overwrite' => TRUE];
+    // If this op does not provide an 'overwrite' value, then fill in the default.
+    $metadata += ['overwrite' => $this->getDefaultOverwrite($options)];
 
     if (empty($metadata['path'])) {
       throw new \Exception("'path' component required for 'replace' operations.");
