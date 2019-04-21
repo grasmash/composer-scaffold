@@ -102,7 +102,6 @@ class ScaffoldTest extends TestCase {
   protected function tearDown() {
     // Remove any temporary directories that were created.
     foreach ($this->tmpDirs as $dir) {
-      fwrite(STDERR, '>>>>>>>>> DELETING ' . $dir . "\n");
       $this->fileSystem->remove($dir);
     }
   }
