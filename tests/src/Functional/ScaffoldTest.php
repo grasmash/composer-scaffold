@@ -12,6 +12,8 @@ use Grasmash\ComposerScaffold\Interpolator;
  */
 class ScaffoldTest extends TestCase {
 
+  const FIXTURE_DIR = 'SCAFFOLD_FIXTURE_DIR';
+
   /**
    * The root of this project.
    *
@@ -44,13 +46,24 @@ class ScaffoldTest extends TestCase {
   protected $fileSystem;
 
   /**
+   * Directories to delete when we are done.
+   *
+   * @var string[]
+   */
+  protected $tmpDirs = [];
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() {
     $this->fileSystem = new Filesystem();
 
     $this->projectRoot = realpath(__DIR__ . '/../../..');
-    $this->fixtures = sys_get_temp_dir() . '/composer-scaffold-test-' . md5($this->getName() . microtime());
+    $this->fixtures = getenv(self::FIXTURE_DIR);
+    if (!$this->fixtures) {
+      $this->fixtures = sys_get_temp_dir() . '/composer-scaffold-test-' . md5($this->getName() . microtime());
+      $this->tmpDirs[] = $this->fixtures;
+    }
   }
 
   /**
@@ -65,6 +78,8 @@ class ScaffoldTest extends TestCase {
     $projectRoot = dirname(__DIR__);
     $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
 
+    // Erase just our sut, to ensure it is clean. Recopy all of the fixtures.
+    $this->fileSystem->remove($this->sut);
     $this->fileSystem->copy(realpath(__DIR__ . '/../../fixtures'), $this->fixtures);
 
     $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl");
@@ -85,8 +100,11 @@ class ScaffoldTest extends TestCase {
    * {@inheritdoc}
    */
   protected function tearDown() {
-    // Remove the fixture filesystem.
-    $this->fileSystem->remove($this->fixtures);
+    // Remove any temporary directories that were created.
+    foreach ($this->tmpDirs as $dir) {
+      fwrite(STDERR, '>>>>>>>>> DELETING ' . $dir . "\n");
+      $this->fileSystem->remove($dir);
+    }
   }
 
   /**

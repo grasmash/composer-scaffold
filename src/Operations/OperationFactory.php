@@ -144,7 +144,6 @@ class OperationFactory {
         return $this->createAppendOp($package, $dest_rel_path, $value, $options);
     }
 
-    // @todo support other operations besides 'replace'.
     throw new \Exception("Unknown scaffold opperation mode <comment>{$value['mode']}</comment>.");
   }
 

@@ -147,6 +147,8 @@ class Handler {
   /**
    * Retrieve the path to the web root.
    *
+   * Note that only the root package can define the web root.
+   *
    * @return string
    *   The file path of the web root.
    *
@@ -154,7 +156,6 @@ class Handler {
    */
   public function getWebRoot() : string {
     $options = $this->getOptions();
-    // @todo Allow packages to set web root location?
     if (empty($options['locations']['web-root'])) {
       throw new \Exception("The extra.composer-scaffold.location.web-root is not set in composer.json.");
     }
@@ -227,6 +228,8 @@ class Handler {
    *
    * The interpolator returned will replace a path string with the tokens
    * defined in the 'locations' element.
+   *
+   * Note that only the root package may define locations.
    *
    * @return Interpolator
    *   Object that will do replacements in a string using tokens in 'locations' element.

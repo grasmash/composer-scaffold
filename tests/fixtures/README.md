@@ -1,5 +1,13 @@
 # Fixtures README
 
-To use these fixtures, copy them to a temporary directory located next to the project directory.
+These fixtures are automatically copied to a temporary directory during test runs. After the test run, the fixtures are automatically deleted.
 
-Alternately, copy them to any other location, and then fix up the path to composer-scaffold in the composer.json file in the fixture being tested (e.g. drupal-composer-drupal-project).
+Set the SCAFFOLD_FIXTURE_DIR environment variable to place the fixtures in a specific location rather than a temporary directory. If this is done, then the fixtures will not be deleted after the test run. This is useful for ad-hoc testing.
+
+Example:
+
+$ SCAFFOLD_FIXTURE_DIR=$HOME/tmp/scaffold-fixtures composer unit
+$ cd $HOME/tmp/scaffold-fixtures
+$ cd drupal-drupal
+$ composer composer:scaffold
+
