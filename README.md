@@ -1,6 +1,6 @@
 # composer-scaffold
 
-Composer plugin for placing scaffold files (like `index.php`, `update.php`, …) from the `drupal/core` project into their desired location inside the web root.
+Composer plugin for placing scaffold files (like `index.php`, `update.php`, …) from the `drupal/core` project into their desired location inside the web root. Only individual files may be scaffolded with this plugin.
 
 ## Usage
 
@@ -34,7 +34,7 @@ It is possible for a project to obtain scaffold files from multiple projects. Fo
 
 Each project allowed to scaffold by the top-level project will be used in turn, with projects declared later in the `allowed-packages` list taking precidence over the projects named before. The top-level composer.json itself is always implicitly allowed to scaffold files, and its scaffold files have highest priority.
 
-### File Mapping
+### Defining Scaffold Files
 
 The placement of scaffold assets is under the control of the project that provides them, but the location is always relative to some directory defined by the root project -- usually the web root. For example, the scaffold file `robots.txt` is copied from its source location, `assets/robots.txt` into the web root in the snippet below.
 ```
@@ -52,7 +52,7 @@ The placement of scaffold assets is under the control of the project that provid
 }
 ```
 
-### Defining Scaffold Locations
+### Defining Project Locations
 
 The top-level project in turn must define where the web root is located. It does so via the `locations` mapping, as shown below:
 ```
@@ -138,12 +138,32 @@ Sometimes, a project might prefer to entirely replace a scaffold file provided b
 Reference section for the configuration directives for the "composer-scaffold" section of the "extra" section of a `composer.json` file appear below.
 
 ### allowed-packages
+
+The `allowed-packages` configuration setting contains an orderd list of package names that will be used during the scaffolding phase.
 ```
 "allowed-packages": [
   "drupal/core",
 ],
 ```
 ### file-mapping
+
+The `file-mapping` configuration setting consists of a map from the destination path of the file to scaffold to a set of properties that control how the file should be scaffolded.
+
+The available properties are as follows:
+
+- mode: One of "replace", "append" or "skip". 
+- path: The path to the source file to write over the destination file.
+- prepend-path: The path to the source file to prepend to the destination file, which must always be a scaffold file provided by some other project.
+- append-path: Like `prepend-path`, but appends content rather than prepends.
+- overwrite: If `false`, prevents a `replace` from happening if the destination already exists.
+
+The mode may be inferred from the other properties. If the mode is not specified, then the following defaults will be supplied:
+
+- replace: Selected if a `path` property is present, or if the entry's value is a string rather than a property set.
+- append: Selected if a `prepend-path` or `append-path` property is present.
+- skip: Selected if the entry's value is a boolean `false`.
+
+Examples:
 ```
 "file-mapping": {
   "[web-root]/sites/default/default.settings.php": {
@@ -166,17 +186,39 @@ Reference section for the configuration directives for the "composer-scaffold" s
   }
 }
 ```
+The short-form of the above example would be:
+```
+"file-mapping": {
+  "[web-root]/sites/default/default.settings.php": "assets/sites/default/default.settings.php",
+  "[web-root]/sites/default/settings.php": {
+    "path": "assets/sites/default/settings.php",
+    "overwrite": false
+  },
+  "[web-root]/robots.txt": {
+    "prepend-path": "assets/robots-prequel.txt",
+    "append-path": "assets/robots-append.txt"
+  },
+  "[web-root]/.htaccess": false
+}
+```
+
 ### locations
+
+The `locations` configuration setting contains a list of named locations that may be used in placing scaffold files. The only required location is `web-root`. Other locations may also be defined if desired.
 ```
 "locations": {
   "web-root": "./docroot"
 },
 ```
 ### overwrite
+
+The top-level `overwrite` property defines the defaults value for the `overwrite` property of `file-mapping` elements. It defaults to `true`; a project may set it to `false` to disable updating scaffold files. Note that `append` operations override the `overwrite` option, and force a fresh copy every time.
 ```
 "overwrite": true,
 ```
 ### symlink
+
+The `symlink` property causes `replace` operations to make a symlink to the source file rather than copying it. This is useful when doing core development, as the symlink files themselves should not be edited. Note that `append` operations override the `symlink` option, to prevent the original scaffold assets from being altered.
 ```
 "symlink": true,
 ```
@@ -310,5 +352,10 @@ Patch a file after it's copied:
 
 ## Related Plugins
 
-Previous versions of drupal-scaffold (see community project, [drupal-composer/drupal-scaffold](https://github.com/drupal-composer/drupal-project)) downloaded each scaffold file directly from its distribution server (e.g. `https://cgit.drupalcode.org`) to the desired destination directory. 
+### drupal-composer/drupal-scaffold
 
+Previous versions of drupal-scaffold (see community project, [drupal-composer/drupal-scaffold](https://github.com/drupal-composer/drupal-project)) downloaded each scaffold file directly from its distribution server (e.g. `https://cgit.drupalcode.org`) to the desired destination directory. This was necessary, because there was no subtree split of the scaffold files available. Copying the scaffold assets from projects already downloaded by Composer is more effective, as downloading and unpacking archive files is more efficient than downloading each scaffold file individually.
+
+### composer/installers
+
+The [composer/installers](https://github.com/composer/installers) plugin is similar to this plugin in that it allows dependencies to be installed in locations other than the `vendor` directory. However, Composer and the `composer/installers` plugin have a limitation that one project cannot be moved inside of another project. Therefore, if you use `composer/installers` to place Drupal modules inside the directory `web/modules/contrib`, then you cannot also use `composer/installers` to place files such as `index.php` and `robots.txt` into the `web` directory. The drupal-scaffold plugin was created to work around this limitation.

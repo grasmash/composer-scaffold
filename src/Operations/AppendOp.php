@@ -101,6 +101,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
    */
   public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
     $interpolator = $scaffold_file->getInterpolator();
+    $destination_path = $scaffold_file->getDestinationFullPath();
 
     // It is not possible to append / prepend unless the destination path
     // is the same as some scaffold file provided by an earlier package.
@@ -111,6 +112,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
 
     // First, scaffold the original file. Disable symlinking, because we
     // need a copy of the file if we're going to append / prepend to it.
+    @unlink($destination_path);
     $this->originalOp()->process($scaffold_file, $io, ['symlink' => FALSE] + $options);
 
     // Fetch the prepend contents, if provided.
@@ -137,7 +139,6 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
     // very large, so we will just load them all into memory for now.
     // We'd want to use streaminig if we thought that anyone would scaffold
     // and append very large files.
-    $destination_path = $scaffold_file->getDestinationFullPath();
     $originalContents = file_get_contents($destination_path);
 
     // Write the appended / prepended contents back to the file.
