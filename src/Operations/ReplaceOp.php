@@ -85,6 +85,7 @@ class ReplaceOp implements OperationInterface {
    */
   public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) {
     $fs = new Filesystem();
+    $options += ['symlink' => FALSE];
 
     $destination_path = $destination->fullPath();
 

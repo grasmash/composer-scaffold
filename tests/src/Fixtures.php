@@ -4,10 +4,13 @@ namespace Grasmash\ComposerScaffold\Tests;
 
 use Composer\Composer;
 use Composer\IO\IOInterface;
+use Composer\IO\BufferIO;
+
 use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
 use PHPUnit\Framework\TestCase;
 
@@ -22,6 +25,98 @@ class Fixtures {
    * @var string[]
    */
   protected $tmpDirs = [];
+
+  protected $io;
+
+  /**
+   * Get an IO fixture.
+   *
+   * @return \Composer\IO\IOInterface
+   *   A Composer IOInterface to write to; output may be retrieved via Fixtures::getOutput()
+   */
+  public function io() : IOInterface {
+    if (!$this->io) {
+      $this->io = new BufferIO();
+    }
+    return $this->io;
+  }
+
+  /**
+   * Get the output from our io() fixture.
+   *
+   * @return string
+   *   Output captured from tests that write to Fixtures::io().
+   */
+  public function getOutput() {
+    return $this->io()->getOutput();
+  }
+
+  /**
+   * Return the path to the project fixtures.
+   *
+   * @return string
+   *   Path to project fixtures
+   */
+  public function allFixturesDir() {
+    return realpath(__DIR__ . '/../fixtures');
+  }
+
+  /**
+   * Return the path to one particular project fixture.
+   *
+   * @return string
+   *   Path to project fixture
+   */
+  public function projectFixtureDir($project_name) {
+    $dir = $this->allFixturesDir() . '/' . $project_name;
+
+    if (!is_dir($dir)) {
+      throw new \Exception("Requested fixture project $project_name that does not exist.");
+    }
+
+    return $dir;
+  }
+
+  /**
+   * Use in place of ScaffoldFilePath::sourcePath to get a path to a source scaffold fixture.
+   *
+   * @param string $project_name
+   *   The name of the project to fetch; $package_name is "fixtures/$project_name".
+   * @param string $source
+   *   The name of the asset; path is "assets/$source".
+   * @param string $destination
+   *   The path to the destination; only used in error messages, not needed for most tests.
+   *
+   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
+   *   The full and relative path to the desired asset
+   */
+  public function sourcePath(string $project_name, string $source, string $destination = 'unknown') : ScaffoldFilePath {
+    $package_name = "fixtures/$project_name";
+    $source_rel_path = "assets/$source";
+    $package_path = $this->projectFixtureDir($project_name);
+    $destination = 'unknown';
+
+    return ScaffoldFilePath::sourcePath($package_name, $package_path, $destination, $source_rel_path);
+  }
+
+  /**
+   * Use in place of ScaffoldFilePath::destinationPath to get a destination path in a tmp dir.
+   *
+   * @param string $destination
+   *   Destination path; should be in the form '[web-root]/robots.txt', where
+   *   '[web-root]' is always literally '[web-root]', with any arbitrarily
+   *   desired filename following.
+   */
+  public function destinationPath(string $destination) {
+    $destinationTmpDir = $this->mkTmpDir();
+    $interpolator = new Interpolator();
+    $interpolator->addData([
+      'web-root' => $destinationTmpDir,
+    ]);
+    $package_name = 'fixtures/tmp-destination';
+
+    return ScaffoldFilePath::destinationPath($package_name, $destination, $interpolator);
+  }
 
   /**
    * Generate a path to a temporary location, but do not create the directory.
@@ -68,6 +163,7 @@ class Fixtures {
     // Clear out variables from the previous pass.
     $this->tmpDirs = [];
     $this->fixturesDir = NULL;
+    $this->io = NULL;
   }
 
   /**
@@ -92,7 +188,7 @@ class Fixtures {
     $interpolator = new Interpolator('__', '__', TRUE);
     $interpolator->setData($replacements);
 
-    $filesystem->copy(realpath(__DIR__ . '/../fixtures'), $fixturesDir);
+    $filesystem->copy($this->allFixturesDir(), $fixturesDir);
 
     $composer_json_templates = glob($fixturesDir . "/*/composer.json.tmpl");
     foreach ($composer_json_templates as $composer_json_tmpl) {
