@@ -48,6 +48,17 @@ class Interpolator {
   }
 
   /**
+   * Add data allows the client to add to the standard data set to use when interpolating.
+   *
+   * @param array $data
+   *   Interpolation data to use when interpolating.
+   */
+  public function addData(array $data) {
+    $this->data = array_merge($this->data, $data);
+    return $this;
+  }
+
+  /**
    * Interpolate replaces tokens in a string with values from an associative array.
    *
    * Tokens are surrounded by double curley braces, e.g. "[key]". The characters

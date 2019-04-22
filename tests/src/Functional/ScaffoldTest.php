@@ -2,10 +2,11 @@
 
 namespace Grasmash\ComposerScaffold\Tests\Functional;
 
-use PHPUnit\Framework\TestCase;
 use Composer\Util\Filesystem;
-use Symfony\Component\Process\Process;
 use Grasmash\ComposerScaffold\Interpolator;
+use Grasmash\ComposerScaffold\Tests\Fixtures;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\Process;
 
 /**
  * Tests Composer Scaffold.
@@ -29,7 +30,7 @@ class ScaffoldTest extends TestCase {
    *
    * @var string
    */
-  protected $fixtures;
+  protected $fixturesDir;
 
   /**
    * The file path to the system under test.
@@ -46,23 +47,16 @@ class ScaffoldTest extends TestCase {
   protected $fileSystem;
 
   /**
-   * Directories to delete when we are done.
-   *
-   * @var string[]
-   */
-  protected $tmpDirs = [];
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp() {
     $this->fileSystem = new Filesystem();
+    $this->fixtures = new Fixtures();
 
     $this->projectRoot = realpath(__DIR__ . '/../../..');
-    $this->fixtures = getenv(self::FIXTURE_DIR);
-    if (!$this->fixtures) {
-      $this->fixtures = sys_get_temp_dir() . '/composer-scaffold-test-' . md5($this->getName() . microtime());
-      $this->tmpDirs[] = $this->fixtures;
+    $this->fixturesDir = getenv(self::FIXTURE_DIR);
+    if (!$this->fixturesDir) {
+      $this->fixturesDir = $this->fixtures->tmpDir($this->getName());
     }
   }
 
@@ -70,28 +64,12 @@ class ScaffoldTest extends TestCase {
    * Create the System-Under-Test.
    */
   protected function createSut($topLevelProjectDir, $replacements = []) {
-    $replacements += [
-      'SYMLINK' => 'true',
-    ];
-    $interpolator = new Interpolator('__', '__', TRUE);
-    $interpolator->setData($replacements);
-    $projectRoot = dirname(__DIR__);
-    $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
+    $this->sut = $this->fixturesDir . '/' . $topLevelProjectDir;
 
     // Erase just our sut, to ensure it is clean. Recopy all of the fixtures.
     $this->fileSystem->remove($this->sut);
-    $this->fileSystem->copy(realpath(__DIR__ . '/../../fixtures'), $this->fixtures);
 
-    $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl");
-    foreach ($composer_json_templates as $composer_json_tmpl) {
-      // Inject replacements into composer.json.
-      if (file_exists($composer_json_tmpl)) {
-        $composer_json_contents = file_get_contents($composer_json_tmpl);
-        $composer_json_contents = $interpolator->interpolate($composer_json_contents, [], FALSE);
-        file_put_contents(dirname($composer_json_tmpl) . "/composer.json", $composer_json_contents);
-        @unlink($composer_json_tmpl);
-      }
-    }
+    $this->fixtures->cloneFixtureProjects($this->fixturesDir, $replacements);
 
     return $this->sut;
   }
@@ -100,10 +78,8 @@ class ScaffoldTest extends TestCase {
    * {@inheritdoc}
    */
   protected function tearDown() {
-    // Remove any temporary directories that were created.
-    foreach ($this->tmpDirs as $dir) {
-      $this->fileSystem->remove($dir);
-    }
+    // Remove any temporary directories et. al. that were created.
+    $this->fixtures->tearDown();
   }
 
   /**
