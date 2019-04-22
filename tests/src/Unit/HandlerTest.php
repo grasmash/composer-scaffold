@@ -38,40 +38,6 @@ class HandlerTest extends TestCase {
   }
 
   /**
-   * @covers ::getPackageFileMappings
-   */
-  public function testGetPackageFileMappingsErrors() {
-    // Check missing parameters sets appropriate error.
-    $package = $this->prophesize(PackageInterface::class);
-    $package->getExtra()->willReturn([]);
-    $package->getName()->willReturn('foo/bar');
-    $this->io->writeError('The allowed package foo/bar does not provide a file mapping for Composer Scaffold.')->shouldBeCalled();
-    $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
-    $this->assertSame([], $fixture->getPackageFileMappings($package->reveal()));
-
-    // With only one of the required parameters.
-    $package->getExtra()->willReturn(['composer-scaffold' => []]);
-    $this->assertSame([], $fixture->getPackageFileMappings($package->reveal()));
-  }
-
-  /**
-   * @covers ::getPackageFileMappings
-   */
-  public function testGetPackageFileMappings() {
-    $expected = [
-      'self' => [
-        'assets/.htaccess' => FALSE,
-        'assets/robots-default.txt' => '[web-root]/robots.txt',
-      ],
-    ];
-
-    $package = $this->prophesize(PackageInterface::class);
-    $package->getExtra()->willReturn(['composer-scaffold' => ['file-mapping' => $expected]]);
-    $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
-    $this->assertSame($expected, $fixture->getPackageFileMappings($package->reveal()));
-  }
-
-  /**
    * @covers ::getWebRoot
    * @covers ::getOptions
    */
@@ -105,55 +71,6 @@ class HandlerTest extends TestCase {
     $this->composer->getPackage()->willReturn($package->reveal());
     $fixture = new Handler($this->composer->reveal(), $this->io->reveal());
     $fixture->getWebRoot();
-  }
-
-  /**
-   * Tests ArrayManipulator::arrayMergeRecursiveExceptEmpty().
-   *
-   * @dataProvider providerTestArrayMergeRecursiveDistinct
-   *
-   * @covers ::getWebRoot
-   */
-  public function testArrayMergeRecursiveDistinct(
-    array $array1,
-    array $array2,
-    array $expected_array
-  ) {
-    $this->assertSame(Handler::arrayMergeRecursiveDistinct($array1,
-      $array2), $expected_array);
-  }
-
-  /**
-   * Provides values to testArrayMergeRecursiveDistinct().
-   *
-   * @return array
-   *   An array of values to test.
-   */
-  public function providerTestArrayMergeRecursiveDistinct() :array {
-    return [
-      [
-        [
-          "drupal/core" => [
-            "assets/.htaccess" => "[web-root]/.htaccess",
-            "assets/robots-default.txt" => "[web-root]/robots.txt",
-            "assets/index.php" => "[web-root]/index.php",
-          ],
-        ],
-        [
-          "drupal/core" => [
-            "assets/.htaccess" => FALSE,
-            "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
-          ],
-        ],
-        [
-          "drupal/core" => [
-            "assets/.htaccess" => FALSE,
-            "assets/robots-default.txt" => "[web-root]/robots.txt.bak",
-            "assets/index.php" => "[web-root]/index.php",
-          ],
-        ],
-      ],
-    ];
   }
 
 }

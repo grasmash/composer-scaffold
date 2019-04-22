@@ -24,44 +24,38 @@
       "options": {
         "symlink": true
       }
-    },
-    "scaffold-override-fixture": {
-      "type": "path",
-      "url": "../scaffold-override-fixture",
-      "options": {
-        "symlink": true
-      }
     }
   },
   "require": {
     "grasmash/composer-scaffold": "*",
-    "fixtures/drupal-core-fixture": "*",
-    "fixtures/scaffold-override-fixture": "*"
+    "fixtures/drupal-core-fixture": "*"
   },
   "extra": {
     "composer-scaffold": {
       "allowed-packages": [
-        "fixtures/drupal-core-fixture",
-        "fixtures/scaffold-override-fixture"
+        "fixtures/drupal-core-fixture"
       ],
       "locations": {
-        "web-root": "./docroot"
+        "web-root": "./"
       },
       "symlink": __SYMLINK__,
       "file-mapping": {
         "[web-root]/.htaccess": false,
-        "[web-root]/robots.txt": "assets/robots-default.txt"
+        "[web-root]/robots.txt": {
+          "prepend-path": "assets/prepend-to-robots.txt",
+          "append-path": "assets/append-to-robots.txt"
+        }
       }
     },
     "installer-paths": {
-      "docroot/core": ["type:drupal-core"],
-      "docroot/modules/contrib/{$name}": ["type:drupal-module"],
-      "docroot/modules/custom/{$name}": ["type:drupal-custom-module"],
-      "docroot/profiles/contrib/{$name}": ["type:drupal-profile"],
-      "docroot/profiles/custom/{$name}": ["type:drupal-custom-profile"],
-      "docroot/themes/contrib/{$name}": ["type:drupal-theme"],
-      "docroot/themes/custom/{$name}": ["type:drupal-custom-theme"],
-      "docroot/libraries/{$name}": ["type:drupal-library"],
+      "core": ["type:drupal-core"],
+      "modules/contrib/{$name}": ["type:drupal-module"],
+      "modules/custom/{$name}": ["type:drupal-custom-module"],
+      "profiles/contrib/{$name}": ["type:drupal-profile"],
+      "profiles/custom/{$name}": ["type:drupal-custom-profile"],
+      "themes/contrib/{$name}": ["type:drupal-theme"],
+      "themes/custom/{$name}": ["type:drupal-custom-theme"],
+      "libraries/{$name}": ["type:drupal-library"],
       "drush/Commands/contrib/{$name}": ["type:drupal-drush"]
     }
   }

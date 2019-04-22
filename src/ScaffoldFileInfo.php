@@ -4,36 +4,45 @@ declare(strict_types = 1);
 
 namespace Grasmash\ComposerScaffold;
 
-use Composer\Package\PackageInterface;
-use Composer\Script\Event;
-use Composer\Composer;
-use Composer\EventDispatcher\EventDispatcher;
 use Composer\IO\IOInterface;
-use Composer\Util\Filesystem;
-use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\Operations\OperationInterface;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
 
 /**
- * Data file that keeps track of one scaffold file's source, destination, and package.
+ * Data object that keeps track of one scaffold file.
+ *
+ * Scafold files are identified primariy by their destination path. Each
+ * scaffold file also has an 'operation' object that controls how the
+ * scaffold file will be placed (e.g. via copy or symlink, or maybe by
+ * appending multiple files together).  The operation may have one or more
+ * source files.
  */
 class ScaffoldFileInfo {
 
-  protected $packageName;
-  protected $destinationRelPath;
-  protected $destinationFullPath;
-  protected $sourceRelPath;
-  protected $sourceFullPath;
+  protected $destination;
+  protected $op;
 
   /**
-   * Set the package name.
+   * Set the Scaffold operation.
    *
-   * @param string $packageName
-   *   The name of the package this scaffold file info was collected from.
+   * @param \Grasmash\ComposerScaffold\Operations\OperationInterface $op
+   *   Operations object that will handle scaffolding operations.
    *
    * @return $this
    */
-  public function setPackageName(string $packageName) {
-    $this->packageName = $packageName;
+  public function setOp(OperationInterface $op) : self {
+    $this->op = $op;
     return $this;
+  }
+
+  /**
+   * Get the Scaffold operation.
+   *
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
+   *   Operations object that handles scaffolding (copy, make symlink, etc).
+   */
+  public function op() : OperationInterface {
+    return $this->op;
   }
 
   /**
@@ -42,20 +51,20 @@ class ScaffoldFileInfo {
    * @return string
    *   The name of the package this scaffold file info was collected from.
    */
-  public function getPackageName() {
-    return $this->packageName;
+  public function packageName() : string {
+    return $this->destination->packageName();
   }
 
   /**
    * Set the relative path to the destination.
    *
-   * @param string $destinationRelPath
-   *   The relative path to the destination file.
+   * @param \Grasmash\ComposerScaffold\Operations\ScaffoldFilePath $destination
+   *   The full and relative paths to the destination file and the package defining it.
    *
    * @return $this
    */
-  public function setDestinationRelativePath(string $destinationRelPath) {
-    $this->destinationRelPath = $destinationRelPath;
+  public function setDestination(ScaffoldFilePath $destination) : self {
+    $this->destination = $destination;
     return $this;
   }
 
@@ -65,44 +74,8 @@ class ScaffoldFileInfo {
    * @return string
    *   The relative path to the destination file.
    */
-  public function getDestinationRelativePath() {
-    return $this->destinationRelPath;
-  }
-
-  /**
-   * Set the relative path to the source.
-   *
-   * @param string $sourceRelPath
-   *   The relative path to the source file.
-   *
-   * @return $this
-   */
-  public function setSourceRelativePath(string $sourceRelPath) {
-    $this->sourceRelPath = $sourceRelPath;
-    return $this;
-  }
-
-  /**
-   * Get the relative path to the source.
-   *
-   * @return string
-   *   The relative path to the source file.
-   */
-  public function getSourceRelativePath() {
-    return $this->sourceRelPath;
-  }
-
-  /**
-   * Set the full path to the destination.
-   *
-   * @param string $destinationFullPath
-   *   The full path to the destination file.
-   *
-   * @return $this
-   */
-  public function setDestinationFullPath(string $destinationFullPath) {
-    $this->destinationFullPath = $destinationFullPath;
-    return $this;
+  public function getDestinationRelativePath() : string {
+    return $this->destination->relativePath();
   }
 
   /**
@@ -111,65 +84,8 @@ class ScaffoldFileInfo {
    * @return string
    *   The full path to the destination file.
    */
-  public function getDestinationFullPath() {
-    return $this->destinationFullPath;
-  }
-
-  /**
-   * Set the full path to the source.
-   *
-   * @param string $sourceFullPath
-   *   The full path to the source file.
-   *
-   * @return $this
-   */
-  public function setSourceFullPath(string $sourceFullPath) {
-    $this->sourceFullPath = $sourceFullPath;
-    return $this;
-  }
-
-  /**
-   * Get the full path to the source.
-   *
-   * @return string
-   *   The full path to the source file.
-   */
-  public function getSourceFullPath() {
-    return $this->sourceFullPath;
-  }
-
-  /**
-   * Return the package name that provides the scaffold file info at this destination path.
-   *
-   * Given the list of all scaffold file info objects, return the package that
-   * provides the scaffold file info for the scaffold file that will be placed
-   * at the destination that this scaffold file would be placed at. Note that
-   * this will be the same as $this->getPackageName() unless this scaffold file
-   * has been overridden or removed by some other package.
-   *
-   * @param string[] $list_of_scaffold_files
-   *   The list of all scaffold file info objects, keyed by destination path
-   *   (and therefore containing only those files being processed)
-   *
-   * @return string
-   *   The name of the package that provided the scaffold file information.
-   */
-  public function findProvidingPackage(array $list_of_scaffold_files) {
-    if (!array_key_exists($this->getDestinationRelativePath(), $list_of_scaffold_files)) {
-      throw new \Exception("Scaffold file not found in list of all scaffold files.");
-    }
-    $scaffold_file = $list_of_scaffold_files[$this->getDestinationRelativePath()];
-    return $scaffold_file->getPackageName();
-  }
-
-  /**
-   * Determine whether this scaffold file info is for a destination path that was removed.
-   *
-   * @return bool
-   *   True if this scaffold file was removed.
-   */
-  public function removed() {
-    return empty($this->getSourceRelativePath());
+  public function getDestinationFullPath() : string {
+    return $this->destination->fullPath();
   }
 
   /**
@@ -182,25 +98,59 @@ class ScaffoldFileInfo {
    * @return bool
    *   Whether this scaffold file if overridden or removed.
    */
-  public function overridden(string $providing_package) {
-    return $this->getPackageName() !== $providing_package;
+  public function overridden(string $providing_package) : bool {
+    return $this->packageName() !== $providing_package;
   }
 
   /**
    * Interpolate a string using the data from this scaffold file info.
+   *
+   * @return Interpolator
+   *   An interpolator for making string replacements.
    */
-  public function interpolate(string $message, array $extra = [], $default = FALSE) {
-    $interploator = new Interpolator();
+  public function getInterpolator() : Interpolator {
+    $interpolator = new Interpolator();
 
     $data = [
-      'package-name' => $this->getPackageName(),
+      'package-name' => $this->packageName(),
       'dest-rel-path' => $this->getDestinationRelativePath(),
-      'src-rel-path' => $this->getSourceRelativePath(),
       'dest-full-path' => $this->getDestinationFullPath(),
-      'src-full-path' => $this->getSourceFullPath(),
-    ] + $extra;
+    ];
 
-    return $interploator->interpolateData($data, $message, $default);
+    $interpolator->setData($data);
+    return $interpolator;
+  }
+
+  /**
+   * Given a message with placeholders, return the interpolated result.
+   *
+   * @param string $message
+   *   Message with placeholders to fill in.
+   * @param array $extra
+   *   Additional data to merge with the interpolator.
+   * @param mixed $default
+   *   Default value to use for missing placeholders, or FALSE to keep them.
+   *
+   * @return string
+   *   Interpolated string with placeholders replaced.
+   */
+  public function interpolate(string $message, array $extra = [], $default = FALSE) : string {
+    $interpolator = $this->getInterpolator();
+    return $interpolator->interpolate($message, $extra, $default);
+  }
+
+  /**
+   * Moves a single scaffold file from source to destination.
+   *
+   * @param \Composer\IO\IOInterface $io
+   *   The scaffold file to be processed.
+   * @param array $options
+   *   Assorted operational options, e.g. whether the destination should be a symlink.
+   *
+   * @throws \Exception
+   */
+  public function process(IOInterface $io, array $options) {
+    $this->op()->process($this, $io, $options);
   }
 
 }
