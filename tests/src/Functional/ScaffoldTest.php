@@ -3,6 +3,7 @@
 namespace Grasmash\ComposerScaffold\Tests\Functional;
 
 use Composer\Util\Filesystem;
+use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
 use PHPUnit\Framework\TestCase;
@@ -89,8 +90,7 @@ class ScaffoldTest extends TestCase {
     return [
       [
         'drupal-drupal-missing-scaffold-file',
-        '',
-        '#Scaffold file <info>assets/missing-robots-default.txt</info> not found#msi',
+        'Scaffold file <info>assets/missing-robots-default.txt</info> not found in package <comment>fixtures/drupal-drupal-missing-scaffold-file</comment>.',
         TRUE,
       ],
     ];
@@ -101,22 +101,19 @@ class ScaffoldTest extends TestCase {
    *
    * @dataProvider scaffoldFixturesWithErrorConditionsTestValues
    */
-  public function testScaffoldFixturesWithErrorConditions($topLevelProjectDir, $stdoutContains, $stderrContains, $is_link) {
+  public function testScaffoldFixturesWithErrorConditions($topLevelProjectDir, $expectedExceptionMessage, $is_link) {
     $sut = $this->createSut($topLevelProjectDir, [
       'SYMLINK' => $is_link ? 'true' : 'false',
       'PROJECT_ROOT' => $this->projectRoot,
     ]);
 
-    // Test composer install. Expect an error.
-    // @todo: assert output contains too.
-    list($stdout, $stderr) = $this->runComposer("install --no-ansi", 1);
+    // Run composer install to get the dependencies we need to test.
+    $this->runComposer("install --no-ansi --no-scripts");
 
-    if (!empty($stdoutContains)) {
-      $this->assertRegExp($stdoutContains, $stdout);
-    }
-    if (!empty($stderrContains)) {
-      $this->assertRegExp($stderrContains, $stderr);
-    }
+    // Test scaffold. Expect an error.
+    $this->expectException(\Exception::class);
+    $this->expectExceptionMessage($expectedExceptionMessage);
+    $this->runScaffold($sut);
   }
 
   /**
@@ -152,6 +149,13 @@ class ScaffoldTest extends TestCase {
     ];
   }
 
+  protected function runScaffold($sut) {
+    chdir($sut);
+    $handler = new Handler($this->fixtures->getComposer(), $this->fixtures->io());
+    $handler->scaffold();
+    return $this->fixtures->getOutput();
+  }
+
   /**
    * Tests that scaffold files are correctly moved.
    *
@@ -163,12 +167,12 @@ class ScaffoldTest extends TestCase {
       'PROJECT_ROOT' => $this->projectRoot,
     ]);
 
-    // Test composer install.
-    $this->runComposer("install --no-ansi");
-    call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
+    // Run composer install to get the dependencies we need to test.
+    $this->runComposer("install --no-ansi --no-scripts");
 
     // Test composer:scaffold.
-    $this->runComposer("composer:scaffold --no-ansi");
+    $scaffoldOutput = $this->runScaffold($sut);
+    // @todo We could assert that $scaffoldOutput must contain some expected text
     call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
   }
 

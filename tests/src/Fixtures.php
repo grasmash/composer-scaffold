@@ -13,6 +13,7 @@ use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
 use PHPUnit\Framework\TestCase;
+use Composer\Factory;
 
 /**
  * Convenience class for creating fixtures.
@@ -27,6 +28,7 @@ class Fixtures {
   protected $tmpDirs = [];
 
   protected $io;
+  protected $composer;
 
   /**
    * Get an IO fixture.
@@ -39,6 +41,13 @@ class Fixtures {
       $this->io = new BufferIO();
     }
     return $this->io;
+  }
+
+  public function getComposer() : Composer {
+    if (!$this->composer) {
+      $this->composer = Factory::create($this->io(), null, true);
+    }
+    return $this->composer;
   }
 
   /**
