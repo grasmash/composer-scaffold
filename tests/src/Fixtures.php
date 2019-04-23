@@ -118,7 +118,7 @@ class Fixtures {
   /**
    * Use in place of Handler::getLocationReplacements() to obtain a 'web-root'.
    *
-   * @return Interpolator
+   * @return \Grasmash\ComposerScaffold\Interpolator
    *   An interpolator with location replacements, including 'web-root'.
    */
   public function getLocationReplacements() : Interpolator {
@@ -140,7 +140,7 @@ class Fixtures {
    * @param string $source
    *   The name of the asset; path is "assets/$source".
    *
-   * @return ReplaceOp
+   * @return \Grasmash\ComposerScaffold\Operations\ReplaceOp
    *   A replace operation object.
    */
   public function replaceOp(string $project_name, string $source) : ReplaceOp {
@@ -156,7 +156,7 @@ class Fixtures {
    * @param string $source
    *   The name of the asset; path is "assets/$source".
    *
-   * @return AppendOp
+   * @return \Grasmash\ComposerScaffold\Operations\AppendOp
    *   An append opperation object.
    */
   public function appendOp(string $project_name, string $source) : AppendOp {
@@ -171,11 +171,14 @@ class Fixtures {
    *   Destination path; should be in the form '[web-root]/robots.txt', where
    *   '[web-root]' is always literally '[web-root]', with any arbitrarily
    *   desired filename following.
-   * @param Interpolator $interpolator
+   * @param \Grasmash\ComposerScaffold\Interpolator $interpolator
    *   Location replacements. Obtain via Fixtures::getLocationReplacements()
    *   when creating multiple scaffold destinations.
+   * @param string $package_name
+   *   The name of the fixture package that this path came from. Optional;
+   *   taken from interpolator if not provided.
    *
-   * @return ScaffoldFilePath
+   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   A destination scaffold file backed by temporary storage.
    */
   public function destinationPath(string $destination, Interpolator $interpolator = NULL, string $package_name = NULL) {

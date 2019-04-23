@@ -43,7 +43,6 @@ class OperationCollectionTest extends TestCase {
 
     $sut = new OperationCollection($fixtures->io());
 
-
     // Test the system under test.
     $sut->coalateScaffoldFiles($file_mappings, $locationReplacements);
     $resolved_file_mappings = $sut->fileMappings();
@@ -53,27 +52,41 @@ class OperationCollectionTest extends TestCase {
     $this->assertEquals(array_keys($file_mappings), array_keys($resolved_file_mappings));
 
     // Also assert that we have the right ScaffoldFileInfo objects in the destination.
-    $this->assertResolvedToSameOp('fixtures/drupal-assets-fixture', '[web-root]/index.php', $file_mappings, $resolved_file_mappings);
-    $this->assertResolvedToSameOp('fixtures/drupal-profile', '[web-root]/sites/default/default.services.yml', $file_mappings, $resolved_file_mappings);
-    $this->assertResolvedToSameOp('fixtures/drupal-drupal', '[web-root]/robots.txt', $file_mappings, $resolved_file_mappings);
+    $this->assertResolvedToSameOp('fixtures/drupal-assets-fixture', '[web-root]/index.php', $file_mappings, $scaffold_list, $resolved_file_mappings);
+    $this->assertResolvedToSameOp('fixtures/drupal-profile', '[web-root]/sites/default/default.services.yml', $file_mappings, $scaffold_list, $resolved_file_mappings);
+    $this->assertResolvedToSameOp('fixtures/drupal-drupal', '[web-root]/robots.txt', $file_mappings, $scaffold_list, $resolved_file_mappings);
 
-    // Assert that the files below have been overridden
+    // Assert that the files below have been overridden.
     $this->assertOverridden('fixtures/drupal-assets-fixture', '[web-root]/.htaccess', $scaffold_list, $resolved_file_mappings);
     $this->assertOverridden('fixtures/drupal-assets-fixture', '[web-root]/robots.txt', $scaffold_list, $resolved_file_mappings);
   }
 
-  protected function assertResolvedToSameOp($project, $dest, $file_mappings, $resolved_file_mappings) {
+  /**
+   * Check to see if a given file was not overridden.
+   *
+   * The package name in the scaffold list for the provided destination should
+   * match the package name from the specified project.
+   */
+  protected function assertResolvedToSameOp($project, $dest, $file_mappings, $scaffold_list, $resolved_file_mappings) {
     $resolved_file_info = $resolved_file_mappings[$project][$dest];
     $this->assertEquals(get_class($resolved_file_info), ScaffoldFileInfo::class);
     $resolved_scaffold_op = $resolved_file_info->op();
     $this->assertEquals(get_class($file_mappings[$project][$dest]), get_class($resolved_scaffold_op));
     $this->assertEquals($file_mappings[$project][$dest], $resolved_scaffold_op);
+
+    $this->assertEquals($project, $scaffold_list[$dest]->packageName());
   }
 
+  /**
+   * Check if a given file was overridden.
+   *
+   * Assert that the file in the scaffold list at the specified destination
+   * comes from a different package than the one in the file info.
+   */
   protected function assertOverridden($project, $dest, $scaffold_list, $resolved_file_mappings) {
     $resolved_file_info = $resolved_file_mappings[$project][$dest];
     $this->assertEquals(get_class($resolved_file_info), ScaffoldFileInfo::class);
-    $this->assertNotEquals($scaffold_list[$dest]->packageName(), $resolved_file_info->packageName());
+    $this->assertNotEquals($project, $scaffold_list[$dest]->packageName());
   }
 
 }
