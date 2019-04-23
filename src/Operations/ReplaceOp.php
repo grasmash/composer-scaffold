@@ -65,20 +65,6 @@ class ReplaceOp implements OperationInterface {
   }
 
   /**
-   * Interpolate a string using the data from this scaffold file info.
-   *
-   * @return array
-   *   Interpolation data.
-   */
-  public function interpolationData() : array {
-    return [
-      'src-rel-path' => $this->getSource()->relativePath(),
-      'src-full-path' => $this->getSource()->fullPath(),
-    ];
-    return $data;
-  }
-
-  /**
    * Copy or Symlink the specified scaffold file.
    *
    * {@inheritdoc}

@@ -3,17 +3,18 @@
 namespace Grasmash\ComposerScaffold\Tests;
 
 use Composer\Composer;
-use Composer\IO\IOInterface;
+use Composer\Factory;
 use Composer\IO\BufferIO;
-
+use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
+use Grasmash\ComposerScaffold\Operations\AppendOp;
+use Grasmash\ComposerScaffold\Operations\ReplaceOp;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
 use PHPUnit\Framework\TestCase;
-use Composer\Factory;
 
 /**
  * Convenience class for creating fixtures.
@@ -115,20 +116,71 @@ class Fixtures {
   }
 
   /**
+   * Use in place of Handler::getLocationReplacements() to obtain a 'web-root'.
+   *
+   * @return Interpolator
+   *   An interpolator with location replacements, including 'web-root'.
+   */
+  public function getLocationReplacements() : Interpolator {
+    $destinationTmpDir = $this->mkTmpDir();
+    $interpolator = new Interpolator();
+    $interpolator->setData([
+      'web-root' => $destinationTmpDir,
+      'package-name' => 'fixtures/tmp-destination',
+    ]);
+
+    return $interpolator;
+  }
+
+  /**
+   * Use to create a ReplaceOp fixture.
+   *
+   * @param string $project_name
+   *   The name of the project to fetch; $package_name is "fixtures/$project_name".
+   * @param string $source
+   *   The name of the asset; path is "assets/$source".
+   *
+   * @return ReplaceOp
+   *   A replace operation object.
+   */
+  public function replaceOp(string $project_name, string $source) : ReplaceOp {
+    $source_path = $this->sourcePath($project_name, $source);
+    return (new ReplaceOp())->setSource($source_path);
+  }
+
+  /**
+   * Use to create an AppendOp fixture.
+   *
+   * @param string $project_name
+   *   The name of the project to fetch; $package_name is "fixtures/$project_name".
+   * @param string $source
+   *   The name of the asset; path is "assets/$source".
+   *
+   * @return AppendOp
+   *   An append opperation object.
+   */
+  public function appendOp(string $project_name, string $source) : AppendOp {
+    $source_path = $this->sourcePath($project_name, $source);
+    return (new AppendOp())->setAppendFile($source_path);
+  }
+
+  /**
    * Use in place of ScaffoldFilePath::destinationPath to get a destination path in a tmp dir.
    *
    * @param string $destination
    *   Destination path; should be in the form '[web-root]/robots.txt', where
    *   '[web-root]' is always literally '[web-root]', with any arbitrarily
    *   desired filename following.
+   * @param Interpolator $interpolator
+   *   Location replacements. Obtain via Fixtures::getLocationReplacements()
+   *   when creating multiple scaffold destinations.
+   *
+   * @return ScaffoldFilePath
+   *   A destination scaffold file backed by temporary storage.
    */
-  public function destinationPath(string $destination) {
-    $destinationTmpDir = $this->mkTmpDir();
-    $interpolator = new Interpolator();
-    $interpolator->addData([
-      'web-root' => $destinationTmpDir,
-    ]);
-    $package_name = 'fixtures/tmp-destination';
+  public function destinationPath(string $destination, Interpolator $interpolator = NULL, string $package_name = NULL) {
+    $interpolator = $interpolator ?: $this->getLocationReplacements();
+    $package_name = $package_name ?: $interpolator->interpolate('[package-name]');
 
     return ScaffoldFilePath::destinationPath($package_name, $destination, $interpolator);
   }
