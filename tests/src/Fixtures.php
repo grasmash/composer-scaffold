@@ -43,9 +43,15 @@ class Fixtures {
     return $this->io;
   }
 
+  /**
+   * Get the Composer object
+   *
+   * @return \Composer\Composer
+   *   The main Composer object, needed by the scaffold Handler, etc.
+   */
   public function getComposer() : Composer {
     if (!$this->composer) {
-      $this->composer = Factory::create($this->io(), null, true);
+      $this->composer = Factory::create($this->io(), NULL, TRUE);
     }
     return $this->composer;
   }

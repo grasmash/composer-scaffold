@@ -149,6 +149,9 @@ class ScaffoldTest extends TestCase {
     ];
   }
 
+  /**
+   * Run the scaffold operation
+   */
   protected function runScaffold($sut) {
     chdir($sut);
     $handler = new Handler($this->fixtures->getComposer(), $this->fixtures->io());
