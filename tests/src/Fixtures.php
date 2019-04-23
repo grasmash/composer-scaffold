@@ -44,7 +44,7 @@ class Fixtures {
   }
 
   /**
-   * Get the Composer object
+   * Get the Composer object.
    *
    * @return \Composer\Composer
    *   The main Composer object, needed by the scaffold Handler, etc.

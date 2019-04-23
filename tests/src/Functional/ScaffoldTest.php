@@ -150,7 +150,7 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   * Run the scaffold operation
+   * Run the scaffold operation.
    */
   protected function runScaffold($sut) {
     chdir($sut);
