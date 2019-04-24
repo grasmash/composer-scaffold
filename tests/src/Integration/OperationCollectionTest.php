@@ -1,6 +1,6 @@
 <?php
 
-namespace Grasmash\ComposerScaffold\Tests\Unit;
+namespace Grasmash\ComposerScaffold\Tests\Integration;
 
 use Composer\Composer;
 use Composer\IO\IOInterface;
