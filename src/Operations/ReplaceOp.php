@@ -69,7 +69,7 @@ class ReplaceOp implements OperationInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
     $fs = new Filesystem();
     $options += ['symlink' => FALSE];
 
@@ -78,8 +78,8 @@ class ReplaceOp implements OperationInterface {
     // Do nothing if overwrite is 'false' and a file already exists at the destination.
     if (($this->getOverwrite() === FALSE) && file_exists($destination_path)) {
       $interpolator = $destination->getInterpolator();
-      $io->write($interpolator->interpolate("  - Skip scaffold file <info>[dest-rel-path]</info> because it already exists."));
-      return;
+      $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info> because it already exists and overwrite is <comment>false</comment>."));
+      return (new ScaffoldResult($destination))->setManaged(FALSE);
     }
 
     // Get rid of the destination if it exists, and make sure that
@@ -103,7 +103,7 @@ class ReplaceOp implements OperationInterface {
    * @param array $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function copyScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) {
+  public function copyScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
     $interpolator = $destination->getInterpolator();
     $this->getSource()->addInterpolationData($interpolator);
 
@@ -113,6 +113,8 @@ class ReplaceOp implements OperationInterface {
     }
 
     $io->write($interpolator->interpolate("  - Copy <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>"));
+
+    return (new ScaffoldResult($destination))->setManaged($this->getOverwrite());
   }
 
   /**
@@ -125,7 +127,7 @@ class ReplaceOp implements OperationInterface {
    * @param array $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function symlinkScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) {
+  public function symlinkScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
     $interpolator = $destination->getInterpolator();
     $source_path = $this->getSource()->fullPath();
     $destination_path = $destination->fullPath();
@@ -139,6 +141,8 @@ class ReplaceOp implements OperationInterface {
     }
 
     $io->write($interpolator->interpolate("  - Link <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>"));
+
+    return (new ScaffoldResult($destination))->setManaged($this->getOverwrite());
   }
 
 }

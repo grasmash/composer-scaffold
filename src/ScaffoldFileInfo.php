@@ -141,7 +141,7 @@ class ScaffoldFileInfo {
    * @throws \Exception
    */
   public function process(IOInterface $io, array $options) {
-    $this->op()->process($this->destination, $io, $options);
+    return $this->op()->process($this->destination, $io, $options);
   }
 
 }

@@ -132,13 +132,18 @@ class Handler {
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
     // Write the collected scaffold files to the designated location on disk.
-    $scaffoldCollection->processScaffoldFiles($this->getOptions());
+    $scaffoldResults = $scaffoldCollection->processScaffoldFiles($this->getOptions());
 
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
     // Drupal requires this in order to easily locate relocated vendor dirs.
+    $autoloadPath = ScaffoldFilePath::autoloadPath($this->rootPackageName(), $this->getWebRoot());
     $generator = new GenerateAutoloadReferenceFile($this->getVendorPath());
-    $generator->generateAutoload($this->getWebRoot());
+    $scaffoldResults[] = $generator->generateAutoload($autoloadPath);
+
+    // Add the managed scaffold files to .gitignore if applicable.
+    $manager = new ManageGitIgnore(getcwd());
+    $manager->manageIgnored($scaffoldResults, $this->getOptions());
 
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
@@ -306,6 +311,17 @@ class Handler {
     $allowed_packages[$root_package->getName()] = $root_package;
 
     return $allowed_packages;
+  }
+
+  /**
+   * Get the root package name.
+   *
+   * @return string
+   *   The package name of the root project
+   */
+  protected function rootPackageName() : string {
+    $root_package = $this->composer->getPackage();
+    return $root_package->getName();
   }
 
   /**

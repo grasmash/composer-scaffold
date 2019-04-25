@@ -205,6 +205,14 @@ The short-form of the above example would be:
 ```
 Note that there is no distinct "prepend" mode; "append" mode is used to both append and prepend to scaffold files. The reason for this is that scaffold file entries are identified in the file-mapping section keyed by their destination path, and it is not possible for multiple entries to have the same key. If "prepend" were a separate mode, then it would not be possible to both prepend and append to the same file.
 
+### gitignore
+
+The `gitignore` configuration setting controls whether or not this plugin will manage `.gitignore` files for files written during the scaffold operation.
+
+- true: `.gitignore` files will be updated when scaffold files are written.
+- false: `.gitignore` files will never be modified.
+- Not set: `.gitignore` files will be updated if the target directory is a local working copy of a git repository, and the `vendor` directory is not committed in that repository.
+ 
 ### locations
 
 The `locations` configuration setting contains a list of named locations that may be used in placing scaffold files. The only required location is `web-root`. Other locations may also be defined if desired.
@@ -230,6 +238,8 @@ The `symlink` property causes `replace` operations to make a symlink to the sour
 Scaffold files should be treated the same way that the `vendor` directory is handled. If you need to commit `vendor` (e.g. in order to deploy your site), then you should also commit your scaffold files. You should not commit your `vendor` directory or scaffold files unless it is necessary.
 
 If a dependency provides a scaffold file with `overwrite` set to `false`, that file should be committed to your repository.
+
+By default, `.gitignore` files will be automatically updated if needed when scaffold files are written. See the `gitignore` setting in the Specifications section above.
 
 ## Examples
 

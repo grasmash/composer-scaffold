@@ -4,6 +4,8 @@ namespace Grasmash\ComposerScaffold;
 
 use Composer\Util\Filesystem;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\Operations\ScaffoldResult;
 
 /**
  * Generates an 'autoload.php' that includes the autoloader created by Composer.
@@ -29,16 +31,22 @@ class GenerateAutoloadReferenceFile {
    * Composer generated. Drupal does this so that it can guarentee that there
    * will always be an `autoload.php` file in a well-known location.
    *
-   * @param string $location
+   * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $autoloadPath
    *   Where to write the autoload file.
+   *
+   * @return \Grasmash\ComposerScaffold\Operations\ScaffoldResult
+   *   The result of the autoload file generation
    */
-  public function generateAutoload(string $location) {
+  public function generateAutoload(ScaffoldFilePath $autoloadPath) : ScaffoldResult {
+    $location = dirname($autoloadPath->fullPath());
     // Calculate the relative path from the webroot (location of the project
     // autoload.php) to the vendor directory.
     $fs = new SymfonyFilesystem();
     $relativeVendorPath = $fs->makePathRelative($this->vendorPath, realpath($location));
 
-    $fs->dumpFile($location . "/autoload.php", $this->autoLoadContents($relativeVendorPath));
+    $fs->dumpFile($autoloadPath->fullPath(), $this->autoLoadContents($relativeVendorPath));
+
+    return (new ScaffoldResult($autoloadPath))->setManaged();
   }
 
   /**

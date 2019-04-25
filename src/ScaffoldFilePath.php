@@ -23,8 +23,8 @@ class ScaffoldFilePath {
 
   protected $type;
   protected $packageName;
-  protected $sourceRelPath;
-  protected $sourceFullPath;
+  protected $relPath;
+  protected $fullPath;
 
   /**
    * ScaffoldFilePath constructor.
@@ -32,17 +32,17 @@ class ScaffoldFilePath {
    * @param string $path_type
    *   The type of scaffold file this is, 'src' or 'dest'.
    * @param string $package_name
-   *   The name of the package containing the source file.
-   * @param string $source_rel_path
-   *   The relative path to the source file.
-   * @param string $source_full_path
-   *   The full installed path to the source file.
+   *   The name of the package containing the file.
+   * @param string $rel_path
+   *   The relative path to the file.
+   * @param string $full_path
+   *   The full path to the file.
    */
-  public function __construct(string $path_type, string $package_name, string $source_rel_path, string $source_full_path) {
+  public function __construct(string $path_type, string $package_name, string $rel_path, string $full_path) {
     $this->type = $path_type;
     $this->packageName = $package_name;
-    $this->sourceRelPath = $source_rel_path;
-    $this->sourceFullPath = $source_full_path;
+    $this->relPath = $rel_path;
+    $this->fullPath = $full_path;
   }
 
   /**
@@ -62,7 +62,7 @@ class ScaffoldFilePath {
    *   Relative path to file.
    */
   public function relativePath() : string {
-    return $this->sourceRelPath;
+    return $this->relPath;
   }
 
   /**
@@ -72,7 +72,7 @@ class ScaffoldFilePath {
    *   Full path to file.
    */
   public function fullPath() : string {
-    return $this->sourceFullPath;
+    return $this->fullPath;
   }
 
   /**
@@ -128,10 +128,28 @@ class ScaffoldFilePath {
    * @return self
    *   Object wrapping the relative and absolute path to the destination file.
    */
-  public static function destinationPath(string $package_name, string $destination, Interpolator $locationReplacements) {
+  public static function destinationPath(string $package_name, string $destination, Interpolator $locationReplacements) : self {
     $dest_full_path = $locationReplacements->interpolate($destination);
 
     return new self('dest', $package_name, $destination, $dest_full_path);
+  }
+
+  /**
+   * Generate a scaffold file path object for the autoload file.
+   *
+   * @param string $package_name
+   *   The name of the package defining the autoload file (the root package).
+   * @param string $web_root
+   *   The path to the web root.
+   *
+   * @return self
+   *   Object wrapping the relative and absolute path to the destination file.
+   */
+  public static function autoloadPath(string $package_name, string $web_root) : self {
+    $rel_path = 'autoload.php';
+    $dest_rel_path = '[web-root]/' . $rel_path;
+    $dest_full_path = $web_root . '/' . $rel_path;
+    return new self('autoload', $package_name, $dest_rel_path, $dest_full_path);
   }
 
   /**

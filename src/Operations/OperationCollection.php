@@ -114,9 +114,12 @@ class OperationCollection {
    *
    * @param array $options
    *   Configuration options from the top-level composer.json file.
+   *
+   * @return ScaffoldResult[]
+   *   Associative array of destination path : scaffold result for each scaffolded file.
    */
   public function processScaffoldFiles(array $options) {
-
+    $result = [];
     // We could simply scaffold all of the files from $list_of_scaffold_files,
     // which contain only the list of files to be processed. We iterate over
     // $resolved_file_mappings instead so that we can print out all of the
@@ -131,10 +134,11 @@ class OperationCollection {
           $this->io->write($scaffold_file->interpolate("  - Skip <info>[dest-rel-path]</info>: overridden in <comment>$overriding_package</comment>"));
         }
         else {
-          $scaffold_file->process($this->io, $options);
+          $result[$dest_rel_path] = $scaffold_file->process($this->io, $options);
         }
       }
     }
+    return $result;
   }
 
 }
