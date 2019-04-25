@@ -6,13 +6,21 @@ use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
+use Grasmash\ComposerScaffold\Tests\RunCommandTrait;
+use Grasmash\ComposerScaffold\Tests\AssertUtilsTrait;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
 /**
  * Tests Composer Scaffold.
+ *
+ * The purpose of this test file is to exercise all of the different kinds of
+ * scaffold operations: copy, symlinks, skips and so on.
  */
 class ScaffoldTest extends TestCase {
+
+  use RunCommandTrait;
+  use AssertUtilsTrait;
 
   const FIXTURE_DIR = 'SCAFFOLD_FIXTURE_DIR';
 
@@ -54,11 +62,19 @@ class ScaffoldTest extends TestCase {
     $this->fileSystem = new Filesystem();
     $this->fixtures = new Fixtures();
 
-    $this->projectRoot = realpath(__DIR__ . '/../../..');
+    $this->projectRoot = $this->fixtures->projectRoot();
     $this->fixturesDir = getenv(self::FIXTURE_DIR);
     if (!$this->fixturesDir) {
       $this->fixturesDir = $this->fixtures->tmpDir($this->getName());
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function tearDown() {
+    // Remove any temporary directories et. al. that were created.
+    $this->fixtures->tearDown();
   }
 
   /**
@@ -70,17 +86,10 @@ class ScaffoldTest extends TestCase {
     // Erase just our sut, to ensure it is clean. Recopy all of the fixtures.
     $this->fileSystem->remove($this->sut);
 
+    $replacements += ['PROJECT_ROOT' => $this->projectRoot];
     $this->fixtures->cloneFixtureProjects($this->fixturesDir, $replacements);
 
     return $this->sut;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function tearDown() {
-    // Remove any temporary directories et. al. that were created.
-    $this->fixtures->tearDown();
   }
 
   /**
@@ -104,11 +113,10 @@ class ScaffoldTest extends TestCase {
   public function testScaffoldFixturesWithErrorConditions($topLevelProjectDir, $expectedExceptionMessage, $is_link) {
     $sut = $this->createSut($topLevelProjectDir, [
       'SYMLINK' => $is_link ? 'true' : 'false',
-      'PROJECT_ROOT' => $this->projectRoot,
     ]);
 
     // Run composer install to get the dependencies we need to test.
-    $this->runComposer("install --no-ansi --no-scripts");
+    $this->runComposer("install --no-ansi --no-scripts", $this->sut);
 
     // Test scaffold. Expect an error.
     $this->expectException(\Exception::class);
@@ -151,6 +159,11 @@ class ScaffoldTest extends TestCase {
 
   /**
    * Run the scaffold operation.
+   *
+   * This is equivalent to running `composer composer-scaffold`, but we
+   * do the equivalent operation by instantiating a Handler object in order
+   * to continue running in the same process, so that coverage may be
+   * calculated for the code executed by these tests.
    */
   protected function runScaffold($sut) {
     chdir($sut);
@@ -167,26 +180,15 @@ class ScaffoldTest extends TestCase {
   public function testScaffold($topLevelProjectDir, $scaffoldAssertions, $is_link) {
     $sut = $this->createSut($topLevelProjectDir, [
       'SYMLINK' => $is_link ? 'true' : 'false',
-      'PROJECT_ROOT' => $this->projectRoot,
     ]);
 
     // Run composer install to get the dependencies we need to test.
-    $this->runComposer("install --no-ansi --no-scripts");
+    $this->runComposer("install --no-ansi --no-scripts", $this->sut);
 
     // Test composer:scaffold.
     $scaffoldOutput = $this->runScaffold($sut);
     // @todo We could assert that $scaffoldOutput must contain some expected text
     call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
-  }
-
-  /**
-   * Runs a `composer` command.
-   */
-  protected function runComposer($cmd, $expectedExitCode = 0) {
-    $process = new Process("composer $cmd", $this->sut);
-    $process->setTimeout(300)->setIdleTimeout(300)->run();
-    $this->assertSame($expectedExitCode, $process->getExitCode(), $process->getErrorOutput());
-    return [$process->getOutput(), $process->getErrorOutput()];
   }
 
   /**
@@ -283,16 +285,6 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile($docroot . '/index.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/update.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/web.config', $is_link, $from_core);
-  }
-
-  /**
-   * Asserts that a given file exists and is/is not a symlink.
-   */
-  protected function assertScaffoldedFile($path, $is_link, $contents_contains) {
-    $this->assertFileExists($path);
-    $contents = file_get_contents($path);
-    $this->assertRegExp($contents_contains, basename($path) . ': ' . $contents);
-    $this->assertSame($is_link, is_link($path));
   }
 
 }

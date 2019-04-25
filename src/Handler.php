@@ -181,13 +181,26 @@ class Handler {
    * @param string $name
    *   Name of the package to get from the current composer installation.
    *
+   * @return \Composer\Package\PackageInterface|null
+   *   The Composer package.
+   */
+  protected function getPackage(string $name) {
+    return $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
+  }
+
+  /**
+   * Retrieve a package from the current composer process. Throw if it does not exist.
+   *
+   * @param string $name
+   *   Name of the package to get from the current composer installation.
+   *
    * @return \Composer\Package\PackageInterface
    *   The Composer package.
    */
-  protected function getPackage(string $name) : PackageInterface {
-    $package = $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
+  protected function requirePackage(string $name) : PackageInterface {
+    $package = $this->getPackage($name);
     if (is_null($package)) {
-      throw new \Exception("<comment>Composer Scaffold could not find installed package `$name`.</comment>");
+      throw new \Exception("Composer Scaffold could not find installed package `$name`.");
     }
 
     return $package;
@@ -313,7 +326,7 @@ class Handler {
         continue;
       }
       $package = $this->getPackage($name);
-      if ($package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
+      if ($package && $package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
         $allowed_packages[$name] = $package;
 
         $packageOptions = $this->getOptionsForPackage($package);

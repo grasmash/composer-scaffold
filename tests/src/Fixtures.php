@@ -68,6 +68,16 @@ class Fixtures {
   }
 
   /**
+   * Return the path to this project so that it may be injected into composer.json files.
+   *
+   * @return string
+   *   Path to the root of this project.
+   */
+  public function projectRoot() {
+    return realpath(__DIR__ . '/../..');
+  }
+
+  /**
    * Return the path to the project fixtures.
    *
    * @return string
