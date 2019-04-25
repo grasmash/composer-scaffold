@@ -7,9 +7,9 @@ namespace Grasmash\ComposerScaffold\Operations;
 use Composer\Composer;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
-use Grasmash\ComposerScaffold\ScaffoldFileInfo;
-use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
 /**
  * Scaffold operation to add to the beginning and/or end of a scaffold file.
@@ -68,30 +68,18 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   }
 
   /**
-   * Interpolate a string using the data from this scaffold file info.
+   * Add interpolation data for our append and prepend source files.
+   *
+   * @param \Grasmash\ComposerScaffold\Interpolator $interpolator
+   *   Interpolator to add data to.
    */
-  public function interpolationData() {
-    $data = [
-      'prepend-rel-path' => '',
-      'prepend-full-path' => '',
-      'append-rel-path' => '',
-      'append-full-path' => '',
-    ];
-
+  protected function addInterpolationData(Interpolator $interpolator) {
     if (isset($this->prepend)) {
-      $data = [
-        'prepend-rel-path' => $this->getPrepend()->relativePath(),
-        'prepend-full-path' => $this->getPrepend()->fullPath(),
-      ] + $data;
+      $this->prepend->addInterpolationData($interpolator, 'prepend');
     }
     if (isset($this->append)) {
-      $data = [
-        'append-rel-path' => $this->getAppend()->relativePath(),
-        'append-full-path' => $this->getAppend()->fullPath(),
-      ] + $data;
+      $this->append->addInterpolationData($interpolator, 'append');
     }
-
-    return $data;
   }
 
   /**
@@ -99,39 +87,40 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
-    $interpolator = $scaffold_file->getInterpolator();
-    $destination_path = $scaffold_file->getDestinationFullPath();
+  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) {
+    $interpolator = $destination->getInterpolator();
+    $this->addInterpolationData($interpolator);
+    $destination_path = $destination->fullPath();
 
     // It is not possible to append / prepend unless the destination path
     // is the same as some scaffold file provided by an earlier package.
     if (!$this->hasOriginalOp()) {
-      $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info>: Cannot append/prepend because no prior package provided a scaffold file at that path.", $this->interpolationData()));
+      $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info>: Cannot append/prepend because no prior package provided a scaffold file at that path."));
       return;
     }
 
     // First, scaffold the original file. Disable symlinking, because we
     // need a copy of the file if we're going to append / prepend to it.
     @unlink($destination_path);
-    $this->originalOp()->process($scaffold_file, $io, ['symlink' => FALSE] + $options);
+    $this->originalOp()->process($destination, $io, ['symlink' => FALSE] + $options);
 
     // Fetch the prepend contents, if provided.
     $prependContents = '';
     if (!empty($this->prepend)) {
       $prependContents = file_get_contents($this->prepend->fullPath()) . "\n";
-      $io->write($interpolator->interpolate("  - Prepend to <info>[dest-rel-path]</info> from <info>[prepend-rel-path]</info>", $this->interpolationData()));
+      $io->write($interpolator->interpolate("  - Prepend to <info>[dest-rel-path]</info> from <info>[prepend-rel-path]</info>"));
     }
 
     // Fetch the append contents, if provided.
     $appendContents = '';
     if (!empty($this->append)) {
       $appendContents = "\n" . file_get_contents($this->append->fullPath());
-      $io->write($interpolator->interpolate("  - Append to <info>[dest-rel-path]</info> from <info>[append-rel-path]</info>", $this->interpolationData()));
+      $io->write($interpolator->interpolate("  - Append to <info>[dest-rel-path]</info> from <info>[append-rel-path]</info>"));
     }
 
     // Exit early if there is no append / prepend data.
     if (empty(trim($prependContents)) && empty(trim($appendContents))) {
-      $io->write($interpolator->interpolate("  - Keep <info>[dest-rel-path]</info> unchanged: no content to prepend / append was provided.", $this->interpolationData()));
+      $io->write($interpolator->interpolate("  - Keep <info>[dest-rel-path]</info> unchanged: no content to prepend / append was provided."));
       return;
     }
 

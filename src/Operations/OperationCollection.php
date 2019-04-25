@@ -40,6 +40,16 @@ class OperationCollection {
   }
 
   /**
+   * Get the final list of what should be scaffolded where.
+   *
+   * @return array
+   *   Associative array containing destination => operation mappings
+   */
+  public function scaffoldList() : array {
+    return $this->listOfScaffoldFiles;
+  }
+
+  /**
    * Return the package name that provides the scaffold file info at this destination path.
    *
    * Given the list of all scaffold file info objects, return the package that

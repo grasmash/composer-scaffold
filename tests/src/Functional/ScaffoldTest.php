@@ -2,15 +2,25 @@
 
 namespace Grasmash\ComposerScaffold\Tests\Functional;
 
-use PHPUnit\Framework\TestCase;
 use Composer\Util\Filesystem;
-use Symfony\Component\Process\Process;
+use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
+use Grasmash\ComposerScaffold\Tests\Fixtures;
+use Grasmash\ComposerScaffold\Tests\RunCommandTrait;
+use Grasmash\ComposerScaffold\Tests\AssertUtilsTrait;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Process\Process;
 
 /**
  * Tests Composer Scaffold.
+ *
+ * The purpose of this test file is to exercise all of the different kinds of
+ * scaffold operations: copy, symlinks, skips and so on.
  */
 class ScaffoldTest extends TestCase {
+
+  use RunCommandTrait;
+  use AssertUtilsTrait;
 
   const FIXTURE_DIR = 'SCAFFOLD_FIXTURE_DIR';
 
@@ -29,7 +39,7 @@ class ScaffoldTest extends TestCase {
    *
    * @var string
    */
-  protected $fixtures;
+  protected $fixturesDir;
 
   /**
    * The file path to the system under test.
@@ -46,64 +56,40 @@ class ScaffoldTest extends TestCase {
   protected $fileSystem;
 
   /**
-   * Directories to delete when we are done.
-   *
-   * @var string[]
-   */
-  protected $tmpDirs = [];
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp() {
     $this->fileSystem = new Filesystem();
+    $this->fixtures = new Fixtures();
 
-    $this->projectRoot = realpath(__DIR__ . '/../../..');
-    $this->fixtures = getenv(self::FIXTURE_DIR);
-    if (!$this->fixtures) {
-      $this->fixtures = sys_get_temp_dir() . '/composer-scaffold-test-' . md5($this->getName() . microtime());
-      $this->tmpDirs[] = $this->fixtures;
+    $this->projectRoot = $this->fixtures->projectRoot();
+    $this->fixturesDir = getenv(self::FIXTURE_DIR);
+    if (!$this->fixturesDir) {
+      $this->fixturesDir = $this->fixtures->tmpDir($this->getName());
     }
-  }
-
-  /**
-   * Create the System-Under-Test.
-   */
-  protected function createSut($topLevelProjectDir, $replacements = []) {
-    $replacements += [
-      'SYMLINK' => 'true',
-    ];
-    $interpolator = new Interpolator('__', '__', TRUE);
-    $interpolator->setData($replacements);
-    $projectRoot = dirname(__DIR__);
-    $this->sut = $this->fixtures . '/' . $topLevelProjectDir;
-
-    // Erase just our sut, to ensure it is clean. Recopy all of the fixtures.
-    $this->fileSystem->remove($this->sut);
-    $this->fileSystem->copy(realpath(__DIR__ . '/../../fixtures'), $this->fixtures);
-
-    $composer_json_templates = glob($this->fixtures . "/*/composer.json.tmpl");
-    foreach ($composer_json_templates as $composer_json_tmpl) {
-      // Inject replacements into composer.json.
-      if (file_exists($composer_json_tmpl)) {
-        $composer_json_contents = file_get_contents($composer_json_tmpl);
-        $composer_json_contents = $interpolator->interpolate($composer_json_contents, [], FALSE);
-        file_put_contents(dirname($composer_json_tmpl) . "/composer.json", $composer_json_contents);
-        @unlink($composer_json_tmpl);
-      }
-    }
-
-    return $this->sut;
   }
 
   /**
    * {@inheritdoc}
    */
   protected function tearDown() {
-    // Remove any temporary directories that were created.
-    foreach ($this->tmpDirs as $dir) {
-      $this->fileSystem->remove($dir);
-    }
+    // Remove any temporary directories et. al. that were created.
+    $this->fixtures->tearDown();
+  }
+
+  /**
+   * Create the System-Under-Test.
+   */
+  protected function createSut($topLevelProjectDir, $replacements = []) {
+    $this->sut = $this->fixturesDir . '/' . $topLevelProjectDir;
+
+    // Erase just our sut, to ensure it is clean. Recopy all of the fixtures.
+    $this->fileSystem->remove($this->sut);
+
+    $replacements += ['PROJECT_ROOT' => $this->projectRoot];
+    $this->fixtures->cloneFixtureProjects($this->fixturesDir, $replacements);
+
+    return $this->sut;
   }
 
   /**
@@ -113,8 +99,7 @@ class ScaffoldTest extends TestCase {
     return [
       [
         'drupal-drupal-missing-scaffold-file',
-        '',
-        '#Scaffold file <info>assets/missing-robots-default.txt</info> not found#msi',
+        'Scaffold file <info>assets/missing-robots-default.txt</info> not found in package <comment>fixtures/drupal-drupal-missing-scaffold-file</comment>.',
         TRUE,
       ],
     ];
@@ -125,22 +110,18 @@ class ScaffoldTest extends TestCase {
    *
    * @dataProvider scaffoldFixturesWithErrorConditionsTestValues
    */
-  public function testScaffoldFixturesWithErrorConditions($topLevelProjectDir, $stdoutContains, $stderrContains, $is_link) {
+  public function testScaffoldFixturesWithErrorConditions($topLevelProjectDir, $expectedExceptionMessage, $is_link) {
     $sut = $this->createSut($topLevelProjectDir, [
       'SYMLINK' => $is_link ? 'true' : 'false',
-      'PROJECT_ROOT' => $this->projectRoot,
     ]);
 
-    // Test composer install. Expect an error.
-    // @todo: assert output contains too.
-    list($stdout, $stderr) = $this->runComposer("install --no-ansi", 1);
+    // Run composer install to get the dependencies we need to test.
+    $this->runComposer("install --no-ansi --no-scripts", $this->sut);
 
-    if (!empty($stdoutContains)) {
-      $this->assertRegExp($stdoutContains, $stdout);
-    }
-    if (!empty($stderrContains)) {
-      $this->assertRegExp($stderrContains, $stderr);
-    }
+    // Test scaffold. Expect an error.
+    $this->expectException(\Exception::class);
+    $this->expectExceptionMessage($expectedExceptionMessage);
+    $this->runScaffold($sut);
   }
 
   /**
@@ -177,6 +158,21 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
+   * Run the scaffold operation.
+   *
+   * This is equivalent to running `composer composer-scaffold`, but we
+   * do the equivalent operation by instantiating a Handler object in order
+   * to continue running in the same process, so that coverage may be
+   * calculated for the code executed by these tests.
+   */
+  protected function runScaffold($sut) {
+    chdir($sut);
+    $handler = new Handler($this->fixtures->getComposer(), $this->fixtures->io());
+    $handler->scaffold();
+    return $this->fixtures->getOutput();
+  }
+
+  /**
    * Tests that scaffold files are correctly moved.
    *
    * @dataProvider scaffoldTestValues
@@ -184,26 +180,15 @@ class ScaffoldTest extends TestCase {
   public function testScaffold($topLevelProjectDir, $scaffoldAssertions, $is_link) {
     $sut = $this->createSut($topLevelProjectDir, [
       'SYMLINK' => $is_link ? 'true' : 'false',
-      'PROJECT_ROOT' => $this->projectRoot,
     ]);
 
-    // Test composer install.
-    $this->runComposer("install --no-ansi");
-    call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
+    // Run composer install to get the dependencies we need to test.
+    $this->runComposer("install --no-ansi --no-scripts", $this->sut);
 
     // Test composer:scaffold.
-    $this->runComposer("composer:scaffold --no-ansi");
+    $scaffoldOutput = $this->runScaffold($sut);
+    // @todo We could assert that $scaffoldOutput must contain some expected text
     call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
-  }
-
-  /**
-   * Runs a `composer` command.
-   */
-  protected function runComposer($cmd, $expectedExitCode = 0) {
-    $process = new Process("composer $cmd", $this->sut);
-    $process->setTimeout(300)->setIdleTimeout(300)->run();
-    $this->assertSame($expectedExitCode, $process->getExitCode(), $process->getErrorOutput());
-    return [$process->getOutput(), $process->getErrorOutput()];
   }
 
   /**
@@ -300,16 +285,6 @@ class ScaffoldTest extends TestCase {
     $this->assertScaffoldedFile($docroot . '/index.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/update.php', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/web.config', $is_link, $from_core);
-  }
-
-  /**
-   * Asserts that a given file exists and is/is not a symlink.
-   */
-  protected function assertScaffoldedFile($path, $is_link, $contents_contains) {
-    $this->assertFileExists($path);
-    $contents = file_get_contents($path);
-    $this->assertRegExp($contents_contains, basename($path) . ': ' . $contents);
-    $this->assertSame($is_link, is_link($path));
   }
 
 }

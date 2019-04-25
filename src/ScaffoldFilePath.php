@@ -21,6 +21,7 @@ use Grasmash\ComposerScaffold\Interpolator;
  */
 class ScaffoldFilePath {
 
+  protected $type;
   protected $packageName;
   protected $sourceRelPath;
   protected $sourceFullPath;
@@ -28,6 +29,8 @@ class ScaffoldFilePath {
   /**
    * ScaffoldFilePath constructor.
    *
+   * @param string $path_type
+   *   The type of scaffold file this is, 'src' or 'dest'.
    * @param string $package_name
    *   The name of the package containing the source file.
    * @param string $source_rel_path
@@ -35,7 +38,8 @@ class ScaffoldFilePath {
    * @param string $source_full_path
    *   The full installed path to the source file.
    */
-  public function __construct(string $package_name, string $source_rel_path, string $source_full_path) {
+  public function __construct(string $path_type, string $package_name, string $source_rel_path, string $source_full_path) {
+    $this->type = $path_type;
     $this->packageName = $package_name;
     $this->sourceRelPath = $source_rel_path;
     $this->sourceFullPath = $source_full_path;
@@ -104,7 +108,7 @@ class ScaffoldFilePath {
       throw new \Exception("Scaffold file <info>$source</info> in package <comment>$package_name</comment> is a directory; only files may be scaffolded.");
     }
 
-    return new self($package_name, $source, $source_full_path);
+    return new self('src', $package_name, $source, $source_full_path);
   }
 
   /**
@@ -127,7 +131,42 @@ class ScaffoldFilePath {
   public static function destinationPath(string $package_name, string $destination, Interpolator $locationReplacements) {
     $dest_full_path = $locationReplacements->interpolate($destination);
 
-    return new self($package_name, $destination, $dest_full_path);
+    return new self('dest', $package_name, $destination, $dest_full_path);
+  }
+
+  /**
+   * Add data about the relative and full path to this item to the provided interpolator.
+   *
+   * @param \Grasmash\ComposerScaffold\Interpolator $interpolator
+   *   Interpolator to add data to.
+   * @param string $namePrefix
+   *   Prefix to add before -rel-path and -full-path item names. Defaults to path type.
+   */
+  public function addInterpolationData(Interpolator $interpolator, string $namePrefix = '') {
+    if (empty($namePrefix)) {
+      $namePrefix = $this->type;
+    }
+    $data = [
+      'package-name' => $this->packageName(),
+      "{$namePrefix}-rel-path" => $this->relativePath(),
+      "{$namePrefix}-full-path" => $this->fullPath(),
+    ];
+    $interpolator->addData($data);
+  }
+
+  /**
+   * Interpolate a string using the data from this scaffold file info.
+   *
+   * @param string $namePrefix
+   *   Prefix to add before -rel-path and -full-path item names. Defaults to path type.
+   *
+   * @return \Grasmash\ComposerScaffold\Interpolator
+   *   An interpolator for making string replacements.
+   */
+  public function getInterpolator($namePrefix = '') : Interpolator {
+    $interpolator = new Interpolator();
+    $this->addInterpolationData($interpolator, $namePrefix);
+    return $interpolator;
   }
 
 }

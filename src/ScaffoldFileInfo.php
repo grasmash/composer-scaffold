@@ -109,16 +109,7 @@ class ScaffoldFileInfo {
    *   An interpolator for making string replacements.
    */
   public function getInterpolator() : Interpolator {
-    $interpolator = new Interpolator();
-
-    $data = [
-      'package-name' => $this->packageName(),
-      'dest-rel-path' => $this->getDestinationRelativePath(),
-      'dest-full-path' => $this->getDestinationFullPath(),
-    ];
-
-    $interpolator->setData($data);
-    return $interpolator;
+    return $this->destination->getInterpolator();
   }
 
   /**
@@ -150,7 +141,7 @@ class ScaffoldFileInfo {
    * @throws \Exception
    */
   public function process(IOInterface $io, array $options) {
-    $this->op()->process($this, $io, $options);
+    $this->op()->process($this->destination, $io, $options);
   }
 
 }

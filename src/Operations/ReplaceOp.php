@@ -7,7 +7,6 @@ namespace Grasmash\ComposerScaffold\Operations;
 use Composer\Composer;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
-use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
 
@@ -66,32 +65,19 @@ class ReplaceOp implements OperationInterface {
   }
 
   /**
-   * Interpolate a string using the data from this scaffold file info.
-   *
-   * @return array
-   *   Interpolation data.
-   */
-  public function interpolationData() : array {
-    return [
-      'src-rel-path' => $this->getSource()->relativePath(),
-      'src-full-path' => $this->getSource()->fullPath(),
-    ];
-    return $data;
-  }
-
-  /**
    * Copy or Symlink the specified scaffold file.
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) {
     $fs = new Filesystem();
+    $options += ['symlink' => FALSE];
 
-    $destination_path = $scaffold_file->getDestinationFullPath();
+    $destination_path = $destination->fullPath();
 
     // Do nothing if overwrite is 'false' and a file already exists at the destination.
     if (($this->getOverwrite() === FALSE) && file_exists($destination_path)) {
-      $interpolator = $scaffold_file->getInterpolator();
+      $interpolator = $destination->getInterpolator();
       $io->write($interpolator->interpolate("  - Skip scaffold file <info>[dest-rel-path]</info> because it already exists."));
       return;
     }
@@ -102,58 +88,57 @@ class ReplaceOp implements OperationInterface {
     $fs->ensureDirectoryExists(dirname($destination_path));
 
     if ($options['symlink'] == TRUE) {
-      return $this->symlinkScaffold($scaffold_file, $io, $options);
+      return $this->symlinkScaffold($destination, $io, $options);
     }
-    return $this->copyScaffold($scaffold_file, $io, $options);
+    return $this->copyScaffold($destination, $io, $options);
   }
 
   /**
    * Copy the scaffold file.
    *
-   * @param \Grasmash\ComposerScaffold\ScaffoldFileInfo $scaffold_file
+   * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $destination
    *   Scaffold file to process.
    * @param \Composer\IO\IOInterface $io
    *   IOInterface to writing to.
    * @param array $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function copyScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
-    $interpolator = $scaffold_file->getInterpolator();
-    $source_path = $this->getSource()->fullPath();
-    $destination_path = $scaffold_file->getDestinationFullPath();
+  public function copyScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) {
+    $interpolator = $destination->getInterpolator();
+    $this->getSource()->addInterpolationData($interpolator);
 
-    $success = copy($source_path, $destination_path);
+    $success = copy($this->getSource()->fullPath(), $destination->fullPath());
     if (!$success) {
-      throw new \Exception($interpolator->interpolate("Could not copy source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!", $this->interpolationData()));
+      throw new \Exception($interpolator->interpolate("Could not copy source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!"));
     }
 
-    $io->write($interpolator->interpolate("  - Copy <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>", $this->interpolationData()));
+    $io->write($interpolator->interpolate("  - Copy <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>"));
   }
 
   /**
    * Symlink the scaffold file.
    *
-   * @param \Grasmash\ComposerScaffold\ScaffoldFileInfo $scaffold_file
+   * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $destination
    *   Scaffold file to process.
    * @param \Composer\IO\IOInterface $io
    *   IOInterface to writing to.
    * @param array $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function symlinkScaffold(ScaffoldFileInfo $scaffold_file, IOInterface $io, array $options) {
-    $interpolator = $scaffold_file->getInterpolator();
+  public function symlinkScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) {
+    $interpolator = $destination->getInterpolator();
     $source_path = $this->getSource()->fullPath();
-    $destination_path = $scaffold_file->getDestinationFullPath();
+    $destination_path = $destination->fullPath();
 
     try {
       $fs = new Filesystem();
-      $fs->relativeSymlink($source_path, $destination_path);
+      $fs->relativeSymlink($this->getSource()->fullPath(), $destination->fullPath());
     }
     catch (\Exception $e) {
-      throw new \Exception($interpolator->interpolate("Could not symlink source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>! ", $this->interpolationData()), 1, $e);
+      throw new \Exception($interpolator->interpolate("Could not symlink source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>! "), 1, $e);
     }
 
-    $io->write($interpolator->interpolate("  - Link <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>", $this->interpolationData()));
+    $io->write($interpolator->interpolate("  - Link <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>"));
   }
 
 }
