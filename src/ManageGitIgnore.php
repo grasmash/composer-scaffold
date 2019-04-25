@@ -126,7 +126,7 @@ class ManageGitIgnore {
       $isTracked = $this->checkTracked($scaffoldResult->destination()->fullPath());
       if (!$isIgnored && !$isTracked && $scaffoldResult->isManaged()) {
         $path = $scaffoldResult->destination()->fullPath();
-        $dir = dirname($path);
+        $dir = realpath(dirname($path));
         $name = basename($path);
         $addToGitIgnore[$dir][] = $name;
       }
@@ -147,6 +147,7 @@ class ManageGitIgnore {
    */
   public function addToGitIgnore(string $dir, array $entries) {
     sort($entries);
+
     $gitIgnorePath = $dir . '/.gitignore';
 
     $contents = $this->gitIgnoreContents($gitIgnorePath);

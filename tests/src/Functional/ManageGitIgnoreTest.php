@@ -61,7 +61,7 @@ class ManageGitIgnoreTest extends TestCase {
    */
   protected function tearDown() {
     // Remove any temporary directories et. al. that were created.
-    // $this->fixtures->tearDown();
+    $this->fixtures->tearDown();
   }
 
   /**
@@ -94,6 +94,7 @@ class ManageGitIgnoreTest extends TestCase {
 .eslintrc.json
 .gitattributes
 .ht.router.php
+autoload.php
 index.php
 robots.txt
 update.php
