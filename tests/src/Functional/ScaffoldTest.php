@@ -121,7 +121,7 @@ class ScaffoldTest extends TestCase {
     // Test scaffold. Expect an error.
     $this->expectException(\Exception::class);
     $this->expectExceptionMessage($expectedExceptionMessage);
-    $this->runScaffold($sut);
+    $this->fixtures->runScaffold($sut);
   }
 
   /**
@@ -158,21 +158,6 @@ class ScaffoldTest extends TestCase {
   }
 
   /**
-   * Run the scaffold operation.
-   *
-   * This is equivalent to running `composer composer-scaffold`, but we
-   * do the equivalent operation by instantiating a Handler object in order
-   * to continue running in the same process, so that coverage may be
-   * calculated for the code executed by these tests.
-   */
-  protected function runScaffold($sut) {
-    chdir($sut);
-    $handler = new Handler($this->fixtures->getComposer(), $this->fixtures->io());
-    $handler->scaffold();
-    return $this->fixtures->getOutput();
-  }
-
-  /**
    * Tests that scaffold files are correctly moved.
    *
    * @dataProvider scaffoldTestValues
@@ -186,7 +171,7 @@ class ScaffoldTest extends TestCase {
     $this->runComposer("install --no-ansi --no-scripts", $this->sut);
 
     // Test composer:scaffold.
-    $scaffoldOutput = $this->runScaffold($sut);
+    $scaffoldOutput = $this->fixtures->runScaffold($sut);
     // @todo We could assert that $scaffoldOutput must contain some expected text
     call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
   }

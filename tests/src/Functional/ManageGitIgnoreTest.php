@@ -84,8 +84,14 @@ class ManageGitIgnoreTest extends TestCase {
     $this->runCommand('git add .', $sut);
     $this->runCommand('git commit -m "Initial commit."', $sut);
 
-    // Run the scaffold command and ensure that scaffold operation ran.
-    $this->runComposer("install --no-ansi", $sut);
+    // Run composer install, but supress scaffolding.
+    $this->runComposer("install --no-ansi --no-scripts", $sut);
+    $this->assertFileNotExists($sut . '/docroot/index.php');
+    $this->assertFileNotExists($sut . '/docroot/.gitignore');
+
+    // Run the scaffold command.
+    $this->fixtures->runScaffold($sut);
+    $this->assertFileExists($sut . '/docroot/index.php');
 
     $expected = <<<EOT
 .csslintrc

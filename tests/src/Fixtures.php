@@ -282,4 +282,19 @@ class Fixtures {
     }
   }
 
+  /**
+   * Run the scaffold operation.
+   *
+   * This is equivalent to running `composer composer-scaffold`, but we
+   * do the equivalent operation by instantiating a Handler object in order
+   * to continue running in the same process, so that coverage may be
+   * calculated for the code executed by these tests.
+   */
+  public function runScaffold($sut) {
+    chdir($sut);
+    $handler = new Handler($this->getComposer(), $this->io());
+    $handler->scaffold();
+    return $this->getOutput();
+  }
+
 }
