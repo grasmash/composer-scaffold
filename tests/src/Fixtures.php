@@ -3,6 +3,7 @@
 namespace Grasmash\ComposerScaffold\Tests;
 
 use Composer\Composer;
+use Composer\Console\Application;
 use Composer\Factory;
 use Composer\IO\BufferIO;
 use Composer\IO\IOInterface;
@@ -15,6 +16,9 @@ use Grasmash\ComposerScaffold\Operations\ReplaceOp;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\StringInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 /**
  * Convenience class for creating fixtures.
@@ -290,11 +294,43 @@ class Fixtures {
    * to continue running in the same process, so that coverage may be
    * calculated for the code executed by these tests.
    */
-  public function runScaffold($sut) {
-    chdir($sut);
+  public function runScaffold($cwd) {
+    chdir($cwd);
     $handler = new Handler($this->getComposer(), $this->io());
     $handler->scaffold();
     return $this->getOutput();
+  }
+
+  /**
+   * Runs a `composer` command.
+   *
+   * @param string $cmd
+   *   The Composer command to execute (escaped as required)
+   * @param string $cwd
+   *   The current working directory to run the command from.
+   * @param int $expectedExitCode
+   *   The expected exit code; will throw if a different exit code is returned.
+   *
+   * @return array
+   *   Standard output and standard error from the command
+   */
+  public function runComposer(string $cmd, string $cwd, int $expectedExitCode = 0) {
+    chdir($cwd);
+    $input = new StringInput($cmd);
+    $output = new BufferedOutput();
+    $application = new Application();
+    $application->setAutoExit(false);
+    try {
+      $exitCode = $application->run($input, $output);
+    }
+    catch (\Exception $e) {
+      print "Exception: " . $e->getMessage() . "\n";
+    }
+    if ($exitCode != $expectedExitCode) {
+      print("Command '$cmd' - Expected exit code: $expectedExitCode, actual exit code: $exitCode\n");
+    }
+    $output = $output->fetch();
+    return $output;
   }
 
 }

@@ -7,7 +7,6 @@ use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
 use Grasmash\ComposerScaffold\Tests\AssertUtilsTrait;
-use Grasmash\ComposerScaffold\Tests\RunCommandTrait;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
@@ -20,7 +19,6 @@ use Symfony\Component\Process\Process;
  */
 class ComposerHookTest extends TestCase {
 
-  use RunCommandTrait;
   use AssertUtilsTrait;
 
   /**
@@ -81,26 +79,26 @@ class ComposerHookTest extends TestCase {
 
     // First test: run composer install. This is the same as composer update
     // since there is no lock file. Ensure that scaffold operation ran.
-    $this->runComposer("install --no-ansi", $sut);
+    $this->fixtures->runComposer("install --no-ansi", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#Test version of default.settings.php from drupal/core#');
 
     // Run composer required to add in the scaffold-override-fixture. This
     // project is "allowed" in our main fixture project, but not required.
     // We expect that requiring this library should re-scaffold, resulting
     // in a changed default.settings.php file.
-    $this->runComposer("require --no-ansi fixtures/scaffold-override-fixture:dev-master", $sut);
+    $this->fixtures->runComposer("require --no-ansi fixtures/scaffold-override-fixture:dev-master", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
 
     // Delete one scaffold file, just for test purposes, then run
     // 'composer update' and see if the scaffold file is replaced.
     @unlink($sut . '/sites/default/default.settings.php');
-    $this->runComposer("update --no-ansi", $sut);
+    $this->fixtures->runComposer("update --no-ansi", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
 
     // Delete the same test scaffold file again, then run
     // 'composer composer:scaffold' and see if the scaffold file is replaced.
     @unlink($sut . '/sites/default/default.settings.php');
-    $this->runComposer("composer:scaffold --no-ansi", $sut);
+    $this->fixtures->runComposer("composer:scaffold --no-ansi", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
   }
 

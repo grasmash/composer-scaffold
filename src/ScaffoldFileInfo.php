@@ -69,23 +69,13 @@ class ScaffoldFileInfo {
   }
 
   /**
-   * Get the relative path to the destination.
+   * Get the destination.
    *
-   * @return string
-   *   The relative path to the destination file.
+   * @return ScaffoldFilePath
+   *   The scaffold path to the destination file.
    */
-  public function getDestinationRelativePath() : string {
-    return $this->destination->relativePath();
-  }
-
-  /**
-   * Get the full path to the destination.
-   *
-   * @return string
-   *   The full path to the destination file.
-   */
-  public function getDestinationFullPath() : string {
-    return $this->destination->fullPath();
+  public function destination() : ScaffoldFilePath {
+    return $this->destination;
   }
 
   /**

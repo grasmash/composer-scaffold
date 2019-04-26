@@ -6,7 +6,6 @@ use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
-use Grasmash\ComposerScaffold\Tests\RunCommandTrait;
 use Grasmash\ComposerScaffold\Tests\AssertUtilsTrait;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
@@ -19,7 +18,6 @@ use Symfony\Component\Process\Process;
  */
 class ScaffoldTest extends TestCase {
 
-  use RunCommandTrait;
   use AssertUtilsTrait;
 
   const FIXTURE_DIR = 'SCAFFOLD_FIXTURE_DIR';
@@ -116,7 +114,7 @@ class ScaffoldTest extends TestCase {
     ]);
 
     // Run composer install to get the dependencies we need to test.
-    $this->runComposer("install --no-ansi --no-scripts", $this->sut);
+    $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
 
     // Test scaffold. Expect an error.
     $this->expectException(\Exception::class);
@@ -168,7 +166,7 @@ class ScaffoldTest extends TestCase {
     ]);
 
     // Run composer install to get the dependencies we need to test.
-    $this->runComposer("install --no-ansi --no-scripts", $this->sut);
+    $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
 
     // Test composer:scaffold.
     $scaffoldOutput = $this->fixtures->runScaffold($sut);

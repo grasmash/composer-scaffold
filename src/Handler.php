@@ -194,24 +194,6 @@ class Handler {
   }
 
   /**
-   * Retrieve a package from the current composer process. Throw if it does not exist.
-   *
-   * @param string $name
-   *   Name of the package to get from the current composer installation.
-   *
-   * @return \Composer\Package\PackageInterface
-   *   The Composer package.
-   */
-  protected function requirePackage(string $name) : PackageInterface {
-    $package = $this->getPackage($name);
-    if (is_null($package)) {
-      throw new \Exception("Composer Scaffold could not find installed package `$name`.");
-    }
-
-    return $package;
-  }
-
-  /**
    * Retrieve options from optional "extra" configuration.
    *
    * @return array
@@ -308,6 +290,7 @@ class Handler {
 
     // Add root package at the end so that it overrides all the preceding package.
     $root_package = $this->composer->getPackage();
+    unset($allowed_packages[$root_package->getName()]);
     $allowed_packages[$root_package->getName()] = $root_package;
 
     return $allowed_packages;
@@ -338,9 +321,6 @@ class Handler {
   protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) {
     $root_package = $this->composer->getPackage();
     foreach ($packages_to_allow as $name) {
-      if ($root_package->getName() === $name) {
-        continue;
-      }
       $package = $this->getPackage($name);
       if ($package && $package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
         $allowed_packages[$name] = $package;

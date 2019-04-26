@@ -67,10 +67,10 @@ class OperationCollection {
   public function findProvidingPackage(ScaffoldFileInfo $scaffold_file): string {
     // The scaffold file should always be in our list, but we will check
     // just to be sure that it really is.
-    if (!array_key_exists($scaffold_file->getDestinationRelativePath(), $this->listOfScaffoldFiles)) {
+    if (!array_key_exists($scaffold_file->destination()->relativePath(), $this->listOfScaffoldFiles)) {
       throw new \Exception("Scaffold file not found in list of all scaffold files.");
     }
-    $overridden_scaffold_file = $this->listOfScaffoldFiles[$scaffold_file->getDestinationRelativePath()];
+    $overridden_scaffold_file = $this->listOfScaffoldFiles[$scaffold_file->destination()->relativePath()];
     return $overridden_scaffold_file->packageName();
   }
 

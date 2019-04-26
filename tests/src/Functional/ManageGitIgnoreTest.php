@@ -7,7 +7,7 @@ use Grasmash\ComposerScaffold\Handler;
 use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\Tests\Fixtures;
 use Grasmash\ComposerScaffold\Tests\AssertUtilsTrait;
-use Grasmash\ComposerScaffold\Tests\RunCommandTrait;
+use Grasmash\ComposerScaffold\Tests\ExecTrait;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
@@ -20,7 +20,7 @@ use Symfony\Component\Process\Process;
  */
 class ManageGitIgnoreTest extends TestCase {
 
-  use RunCommandTrait;
+  use ExecTrait;
   use AssertUtilsTrait;
 
   /**
@@ -64,11 +64,7 @@ class ManageGitIgnoreTest extends TestCase {
     $this->fixtures->tearDown();
   }
 
-  /**
-   * Test to see if scaffold operation runs at the correct times.
-   */
-  public function testManageGitIgnore() {
-    $topLevelProjectDir = 'drupal-composer-drupal-project';
+  protected function createSutWithGit($topLevelProjectDir) {
     $is_link = FALSE;
     $this->fixturesDir = $this->fixtures->tmpDir($this->getName());
     $sut = $this->fixturesDir . '/' . $topLevelProjectDir;
@@ -80,20 +76,31 @@ class ManageGitIgnoreTest extends TestCase {
     $this->fixtures->cloneFixtureProjects($this->fixturesDir, $replacements);
 
     // .gitignore files will not be managed unless there is a git repository.
-    $this->runCommand('git init', $sut);
-    $this->runCommand('git add .', $sut);
-    $this->runCommand('git commit -m "Initial commit."', $sut);
+    $this->mustExec('git init', $sut);
+    $this->mustExec('git add .', $sut);
+    $this->mustExec('git commit -m "Initial commit."', $sut);
 
     // Run composer install, but supress scaffolding.
-    $this->runComposer("install --no-ansi --no-scripts", $sut);
+    $this->fixtures->runComposer("install --no-ansi --no-scripts", $sut);
+
+    return $sut;
+  }
+
+  /**
+   * Test to see if scaffold operation runs at the correct times.
+   */
+  public function testManageGitIgnore() {
+    $sut = $this->createSutWithGit('drupal-composer-drupal-project');
+
     $this->assertFileNotExists($sut . '/docroot/index.php');
-    $this->assertFileNotExists($sut . '/docroot/.gitignore');
+    $this->assertFileNotExists($sut . '/docroot/sites/.gitignore');
 
     // Run the scaffold command.
     $this->fixtures->runScaffold($sut);
     $this->assertFileExists($sut . '/docroot/index.php');
 
     $expected = <<<EOT
+build
 .csslintrc
 .editorconfig
 .eslintignore
@@ -115,15 +122,29 @@ EOT;
     $this->assertScaffoldedFile($sut . '/docroot/sites/default/.gitignore', FALSE, '#default.services.yml#');
 
     $expected = <<<EOT
-?? docroot/.gitignore
+M docroot/.gitignore
 ?? docroot/sites/.gitignore
 ?? docroot/sites/default/.gitignore
 EOT;
 
     // Check to see whether there are any untracked files. We expect that
     // only the .gitignore files themselves should be untracked.
-    list($stdout, $stderr) = $this->runCommand('git status --porcelain', $sut);
+    list($stdout, $stderr) = $this->mustExec('git status --porcelain', $sut);
     $this->assertEquals(trim($expected), trim($stdout));
+
+  }
+
+  /**
+   * Test to see if scaffold operation runs at the correct times.
+   */
+  public function testUnmanagedGitIgnore() {
+    $sut = $this->createSutWithGit('drupal-drupal');
+    $this->assertFileNotExists($sut . '/docroot/index.php');
+
+    // Run the scaffold command.
+    $this->fixtures->runScaffold($sut);
+    $this->assertFileExists($sut . '/index.php');
+    $this->assertFileNotExists($sut . '/.gitignore');
   }
 
 }
