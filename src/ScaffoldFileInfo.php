@@ -71,7 +71,7 @@ class ScaffoldFileInfo {
   /**
    * Get the destination.
    *
-   * @return ScaffoldFilePath
+   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The scaffold path to the destination file.
    */
   public function destination() : ScaffoldFilePath {

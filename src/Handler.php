@@ -113,14 +113,17 @@ class Handler {
    * Copies all scaffold files from source to destination.
    */
   public function scaffold() {
-    // Call any pre-scaffold scripts that may be defined.
-    $dispatcher = new EventDispatcher($this->composer, $this->io);
-    $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
-
     // Recursively get the list of allowed packages. Only allowed packages
     // may declare scaffold files. Note that the top-level composer.json file
     // is implicitly allowed.
     $allowedPackages = $this->getAllowedPackages();
+    if (empty($allowedPackages)) {
+      return;
+    }
+
+    // Call any pre-scaffold scripts that may be defined.
+    $dispatcher = new EventDispatcher($this->composer, $this->io);
+    $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
 
     // Fetch the list of file mappings from each allowed package and
     // normalize them.
@@ -288,10 +291,14 @@ class Handler {
     ];
     $allowed_packages = $this->recursiveGetAllowedPackages($options['allowed-packages']);
 
-    // Add root package at the end so that it overrides all the preceding package.
-    $root_package = $this->composer->getPackage();
-    unset($allowed_packages[$root_package->getName()]);
-    $allowed_packages[$root_package->getName()] = $root_package;
+    // If the root package defines any file mappings, then implicitly add it
+    // to the list of allowed packages. Add it at the end so that it overrides
+    // all the preceding packages.
+    if (!empty($options['file-mapping'])) {
+      $root_package = $this->composer->getPackage();
+      unset($allowed_packages[$root_package->getName()]);
+      $allowed_packages[$root_package->getName()] = $root_package;
+    }
 
     return $allowed_packages;
   }
@@ -319,7 +326,6 @@ class Handler {
    *   Mapping of package names to PackageInterface in priority order.
    */
   protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) {
-    $root_package = $this->composer->getPackage();
     foreach ($packages_to_allow as $name) {
       $package = $this->getPackage($name);
       if ($package && $package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {

@@ -69,12 +69,6 @@ class OperationFactory {
     if (!isset($value['mode'])) {
       $value['mode'] = 'replace';
     }
-    // If the mode is 'append' or 'prepend', then allow 'path' as
-    // a shortcut for 'append-path' / 'prepend-path'.
-    if (isset($value['path']) && ($value['mode'] == 'append') || ($value['mode'] == 'prepend')) {
-      $value[$value['mode'] . '-path'] = $value['path'];
-      unset($value['path']);
-    }
     // Accept 'true' or 'always' for the 'overwrite' property. Any other value
     // is treated as 'false'.
     if (isset($value['overwrite'])) {
@@ -169,8 +163,7 @@ class OperationFactory {
 
     // If this op does not provide an 'overwrite' value, then fill in the default.
     $metadata += ['overwrite' => $this->getDefaultOverwrite($options)];
-
-    if (empty($metadata['path'])) {
+    if (!isset($metadata['path'])) {
       throw new \Exception("'path' component required for 'replace' operations.");
     }
 

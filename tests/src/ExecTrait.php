@@ -16,8 +16,6 @@ trait ExecTrait {
    *   The command to execute (escaped as required)
    * @param string $cwd
    *   The current working directory to run the command from.
-   * @param int $expectedExitCode
-   *   The expected exit code; will throw if a different exit code is returned.
    *
    * @return array
    *   Standard output and standard error from the command

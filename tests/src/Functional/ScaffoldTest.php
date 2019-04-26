@@ -97,7 +97,7 @@ class ScaffoldTest extends TestCase {
     return [
       [
         'drupal-drupal-missing-scaffold-file',
-        'Scaffold file <info>assets/missing-robots-default.txt</info> not found in package <comment>fixtures/drupal-drupal-missing-scaffold-file</comment>.',
+        'Scaffold file assets/missing-robots-default.txt not found in package fixtures/drupal-drupal-missing-scaffold-file.',
         TRUE,
       ],
     ];
@@ -172,6 +172,79 @@ class ScaffoldTest extends TestCase {
     $scaffoldOutput = $this->fixtures->runScaffold($sut);
     // @todo We could assert that $scaffoldOutput must contain some expected text
     call_user_func([$this, $scaffoldAssertions], $sut, $is_link, $topLevelProjectDir);
+  }
+
+  /**
+   * Try to scaffold a project that does not scaffold anything.
+   */
+  public function testEmptyProject() {
+    $topLevelProjectDir = 'empty-fixture';
+    $sut = $this->createSut($topLevelProjectDir, [
+      'SYMLINK' => 'false',
+    ]);
+
+    // Run composer install to get the dependencies we need to test.
+    $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
+
+    // Test composer:scaffold.
+    $scaffoldOutput = $this->fixtures->runScaffold($sut);
+    $this->assertEquals('', $scaffoldOutput);
+  }
+
+  /**
+   * Try to scaffold a project that allows a project with no scaffold files.
+   */
+  public function testProjectThatScaffoldsEmptyProject() {
+    $topLevelProjectDir = 'project-allowing-empty-fixture';
+    $sut = $this->createSut($topLevelProjectDir, [
+      'SYMLINK' => 'false',
+    ]);
+
+    // Run composer install to get the dependencies we need to test.
+    $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
+
+    // Test composer:scaffold.
+    $scaffoldOutput = $this->fixtures->runScaffold($sut);
+    $this->assertContains('The allowed package fixtures/empty-fixture does not provide a file mapping for Composer Scaffold', $scaffoldOutput);
+
+    $docroot = $sut;
+    $this->assertCommonDrupalAssetsWereScaffolded($docroot, FALSE, $topLevelProjectDir);
+  }
+
+  /**
+   * Try to scaffold a project that attempts to scaffold a file with no path.
+   */
+  public function testProjectWithEmptyScaffoldPath() {
+    $topLevelProjectDir = 'project-with-empty-scaffold-path';
+    $sut = $this->createSut($topLevelProjectDir, [
+      'SYMLINK' => 'false',
+    ]);
+
+    // Run composer install to get the dependencies we need to test.
+    $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
+
+    // Test composer:scaffold.
+    $this->expectException(\Exception::class);
+    $this->expectExceptionMessage('No scaffold file path given for [web-root]/my-error in package fixtures/project-with-empty-scaffold-path');
+    $this->fixtures->runScaffold($sut);
+  }
+
+  /**
+   * Try to scaffold a project that attempts to scaffold a directory.
+   */
+  public function testProjectWithIllegalDirScaffold() {
+    $topLevelProjectDir = 'project-with-illegal-dir-scaffold';
+    $sut = $this->createSut($topLevelProjectDir, [
+      'SYMLINK' => 'false',
+    ]);
+
+    // Run composer install to get the dependencies we need to test.
+    $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
+
+    // Test composer:scaffold.
+    $this->expectException(\Exception::class);
+    $this->expectExceptionMessage('Scaffold file assets in package fixtures/project-with-illegal-dir-scaffold is a directory; only files may be scaffolded');
+    $this->fixtures->runScaffold($sut);
   }
 
   /**

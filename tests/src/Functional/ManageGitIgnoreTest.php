@@ -64,6 +64,9 @@ class ManageGitIgnoreTest extends TestCase {
     $this->fixtures->tearDown();
   }
 
+  /**
+   * Create a system-under-test and initialize a git repository for it.
+   */
   protected function createSutWithGit($topLevelProjectDir) {
     $is_link = FALSE;
     $this->fixturesDir = $this->fixtures->tmpDir($this->getName());

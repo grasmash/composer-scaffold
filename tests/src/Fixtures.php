@@ -319,7 +319,7 @@ class Fixtures {
     $input = new StringInput($cmd);
     $output = new BufferedOutput();
     $application = new Application();
-    $application->setAutoExit(false);
+    $application->setAutoExit(FALSE);
     try {
       $exitCode = $application->run($input, $output);
     }

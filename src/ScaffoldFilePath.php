@@ -95,17 +95,17 @@ class ScaffoldFilePath {
   public static function sourcePath(string $package_name, string $package_path, string $destination, string $source) : self {
     // Complain if there is no source path.
     if (empty($source)) {
-      throw new \Exception("No scaffold file path given for <info>$destination</info> in package <comment>$package_name</comment>.");
+      throw new \Exception("No scaffold file path given for $destination in package $package_name.");
     }
 
     // Calculate the full path to the source scaffold file.
     $source_full_path = $package_path . '/' . $source;
 
     if (!file_exists($source_full_path)) {
-      throw new \Exception("Scaffold file <info>$source</info> not found in package <comment>$package_name</comment>.");
+      throw new \Exception("Scaffold file $source not found in package $package_name.");
     }
     if (is_dir($source_full_path)) {
-      throw new \Exception("Scaffold file <info>$source</info> in package <comment>$package_name</comment> is a directory; only files may be scaffolded.");
+      throw new \Exception("Scaffold file $source in package $package_name is a directory; only files may be scaffolded.");
     }
 
     return new self('src', $package_name, $source, $source_full_path);

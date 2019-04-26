@@ -35,16 +35,6 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   }
 
   /**
-   * Get the prepend file.
-   *
-   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
-   *   The prepend file reference object.
-   */
-  public function getPrepend() : ScaffoldFilePath {
-    return $this->prepend;
-  }
-
-  /**
    * Set the relative path to the append file.
    *
    * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $appendPath
@@ -55,16 +45,6 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   public function setAppendFile(ScaffoldFilePath $appendPath) : self {
     $this->append = $appendPath;
     return $this;
-  }
-
-  /**
-   * Get the append file.
-   *
-   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
-   *   The append file reference object.
-   */
-  public function getAppend() : ScaffoldFilePath {
-    return $this->append;
   }
 
   /**
