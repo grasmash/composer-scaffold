@@ -107,6 +107,8 @@ The example below shows a project that appends additional entries onto the end o
     }
   }
 ``` 
+It is also possible to prepend to a scaffold file instead of, or in addition to appending by including a "prepend" entry that provides the relative path to the file to prepend to the scaffold file.
+
 The example below demonstrates the use of the `post-composer-scaffold-cmd` hook to patch the `.htaccess` file using a patch.
 ```
   "name": "my/project",
@@ -201,6 +203,7 @@ The short-form of the above example would be:
   "[web-root]/.htaccess": false
 }
 ```
+Note that there is no distinct "prepend" mode; "append" mode is used to both append and prepend to scaffold files. The reason for this is that scaffold file entries are identified in the file-mapping section keyed by their destination path, and it is not possible for multiple entries to have the same key. If "prepend" were a separate mode, then it would not be possible to both prepend and append to the same file.
 
 ### locations
 
