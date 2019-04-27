@@ -57,11 +57,11 @@ class OperationFactory {
     if (is_string($value)) {
       $value = ['path' => $value];
     }
-    // If there is no 'mode', but there is an 'append-path' or a 'prepend-path',
-    // then the mode is 'append-prepend'.
+    // If there is no 'mode', but there is an 'append' or a 'prepend' path,
+    // then the mode is 'append' (append + prepend).
     if (
       !isset($value['mode']) &&
-      (isset($value['append-path']) || isset($value['prepend-path']))
+      (isset($value['append']) || isset($value['prepend']))
     ) {
       $value['mode'] = 'append';
     }
@@ -208,13 +208,13 @@ class OperationFactory {
     $package_name = $package->getName();
     $package_path = $this->getPackagePath($package);
 
-    if (isset($metadata['prepend-path'])) {
-      $prepend_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['prepend-path']);
+    if (isset($metadata['prepend'])) {
+      $prepend_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['prepend']);
       $op->setPrependFile($prepend_source_file);
     }
 
-    if (isset($metadata['append-path'])) {
-      $append_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['append-path']);
+    if (isset($metadata['append'])) {
+      $append_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['append']);
       $op->setAppendFile($append_source_file);
     }
 

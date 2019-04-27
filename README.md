@@ -101,7 +101,7 @@ The example below shows a project that appends additional entries onto the end o
     "composer-scaffold": {
       "file-mapping": {
         "[web-root]/robots.txt": {
-          "append-path": "assets/my-robots-additions.txt",
+          "append": "assets/my-robots-additions.txt",
         }
       }
     }
@@ -155,14 +155,14 @@ The available properties are as follows:
 
 - mode: One of "replace", "append" or "skip". 
 - path: The path to the source file to write over the destination file.
-- prepend-path: The path to the source file to prepend to the destination file, which must always be a scaffold file provided by some other project.
-- append-path: Like `prepend-path`, but appends content rather than prepends.
+- prepend: The path to the source file to prepend to the destination file, which must always be a scaffold file provided by some other project.
+- append: Like `prepend`, but appends content rather than prepends.
 - overwrite: If `false`, prevents a `replace` from happening if the destination already exists.
 
 The mode may be inferred from the other properties. If the mode is not specified, then the following defaults will be supplied:
 
 - replace: Selected if a `path` property is present, or if the entry's value is a string rather than a property set.
-- append: Selected if a `prepend-path` or `append-path` property is present.
+- append: Selected if a `prepend` or `append` property is present.
 - skip: Selected if the entry's value is a boolean `false`.
 
 Examples:
@@ -180,8 +180,8 @@ Examples:
   },
   "[web-root]/robots.txt": {
     "mode": "append",
-    "prepend-path": "assets/robots-prequel.txt",
-    "append-path": "assets/robots-append.txt"
+    "prepend": "assets/robots-prequel.txt",
+    "append": "assets/robots-append.txt"
   },
   "[web-root]/.htaccess": {
     "mode": "skip",
@@ -197,8 +197,8 @@ The short-form of the above example would be:
     "overwrite": false
   },
   "[web-root]/robots.txt": {
-    "prepend-path": "assets/robots-prequel.txt",
-    "append-path": "assets/robots-append.txt"
+    "prepend": "assets/robots-prequel.txt",
+    "append": "assets/robots-append.txt"
   },
   "[web-root]/.htaccess": false
 }
@@ -337,7 +337,7 @@ Append to robots.txt:
     "composer-scaffold": {
       "file-mapping": {
         "[web-root]/robots.txt": {
-          "append-path": "assets/my-robots-additions.txt",
+          "append": "assets/my-robots-additions.txt",
         }
       }
     }
