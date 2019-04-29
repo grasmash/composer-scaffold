@@ -35,16 +35,6 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   }
 
   /**
-   * Get the prepend file.
-   *
-   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
-   *   The prepend file reference object.
-   */
-  public function getPrepend() : ScaffoldFilePath {
-    return $this->prepend;
-  }
-
-  /**
    * Set the relative path to the append file.
    *
    * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $appendPath
@@ -55,16 +45,6 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
   public function setAppendFile(ScaffoldFilePath $appendPath) : self {
     $this->append = $appendPath;
     return $this;
-  }
-
-  /**
-   * Get the append file.
-   *
-   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
-   *   The append file reference object.
-   */
-  public function getAppend() : ScaffoldFilePath {
-    return $this->append;
   }
 
   /**
@@ -87,7 +67,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
     $interpolator = $destination->getInterpolator();
     $this->addInterpolationData($interpolator);
     $destination_path = $destination->fullPath();
@@ -95,8 +75,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
     // It is not possible to append / prepend unless the destination path
     // is the same as some scaffold file provided by an earlier package.
     if (!$this->hasOriginalOp()) {
-      $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info>: Cannot append/prepend because no prior package provided a scaffold file at that path."));
-      return;
+      throw new \Exception($interpolator->interpolate("Cannot append/prepend because no prior package provided a scaffold file at that [dest-rel-path]."));
     }
 
     // First, scaffold the original file. Disable symlinking, because we
@@ -117,6 +96,24 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
       $appendContents = "\n" . file_get_contents($this->append->fullPath());
       $io->write($interpolator->interpolate("  - Append to <info>[dest-rel-path]</info> from <info>[append-rel-path]</info>"));
     }
+
+    $this->append($destination, $prependContents, $appendContents);
+    return (new ScaffoldResult($destination))->setManaged();
+  }
+
+  /**
+   * Do the actuall append / prepend operation for the provided scaffold file.
+   *
+   * @param \Grasmash\ComposerScaffold\ScaffoldFilePath $destination
+   *   The scaffold file to append / prepend to.
+   * @param string $prependContents
+   *   The contents to add to the beginning of the file.
+   * @param string $appendContents
+   *   The contents to add to the end of the file.
+   */
+  protected function append(ScaffoldFilePath $destination, string $prependContents, string $appendContents) {
+    $interpolator = $destination->getInterpolator();
+    $destination_path = $destination->fullPath();
 
     // Exit early if there is no append / prepend data.
     if (empty(trim($prependContents)) && empty(trim($appendContents))) {

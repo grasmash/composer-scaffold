@@ -27,16 +27,6 @@ class Interpolator {
   }
 
   /**
-   * GetData fetches the data set used by this interpolator.
-   *
-   * @return array
-   *   Interplation data.
-   */
-  public function getData() : array {
-    return $this->data;
-  }
-
-  /**
    * SetData allows the client to associate a standard data set to use when interpolating.
    *
    * @param array $data
@@ -88,26 +78,6 @@ class Interpolator {
   }
 
   /**
-   * Throw if any tokens remain after interpolation.
-   *
-   * @param string $message
-   *   Message containing tokens to be replaced.
-   * @param mixed|array $extra
-   *   Data to use for interpolation in addition to whatever was provided by self::setData().
-   *
-   * @return string
-   *   The message after replacements have been made.
-   */
-  public function mustInterpolate(string $message, array $extra = []) : string {
-    $result = $this->interpolate($message, $extra, FALSE);
-    $tokens = $this->findTokens($result);
-    if (!empty($tokens)) {
-      throw new \Exception('The following required keys were not found in configuration: ' . implode(',', $tokens));
-    }
-    return $result;
-  }
-
-  /**
    * FindTokens finds all of the tokens in the provided message.
    *
    * @param string $message
@@ -152,13 +122,10 @@ class Interpolator {
   }
 
   /**
-   * Get a value from an array. Throw if the type is wrong.
+   * Get a value from an array.
    */
   protected function get(string $key, $data, $default) {
-    if (is_array($data)) {
-      return array_key_exists($key, $data) ? $data[$key] : $default;
-    }
-    throw new \Exception('Bad data type provided to Interpolator');
+    return array_key_exists($key, $data) ? $data[$key] : $default;
   }
 
 }

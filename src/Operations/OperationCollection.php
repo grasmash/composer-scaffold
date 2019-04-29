@@ -67,10 +67,12 @@ class OperationCollection {
   public function findProvidingPackage(ScaffoldFileInfo $scaffold_file): string {
     // The scaffold file should always be in our list, but we will check
     // just to be sure that it really is.
-    if (!array_key_exists($scaffold_file->getDestinationRelativePath(), $this->listOfScaffoldFiles)) {
+    $scaffoldList = $this->scaffoldList();
+    $dest_rel_path = $scaffold_file->destination()->relativePath();
+    if (!array_key_exists($dest_rel_path, $scaffoldList)) {
       throw new \Exception("Scaffold file not found in list of all scaffold files.");
     }
-    $overridden_scaffold_file = $this->listOfScaffoldFiles[$scaffold_file->getDestinationRelativePath()];
+    $overridden_scaffold_file = $scaffoldList[$dest_rel_path];
     return $overridden_scaffold_file->packageName();
   }
 
@@ -86,6 +88,7 @@ class OperationCollection {
   public function coalateScaffoldFiles(array $file_mappings, Interpolator $locationReplacements) {
     $resolved_file_mappings = [];
     $resolved_package_file_list = [];
+    $list_of_scaffold_files = [];
     foreach ($file_mappings as $package_name => $package_file_mappings) {
       foreach ($package_file_mappings as $destination_rel_path => $op) {
 
@@ -114,9 +117,12 @@ class OperationCollection {
    *
    * @param array $options
    *   Configuration options from the top-level composer.json file.
+   *
+   * @return ScaffoldResult[]
+   *   Associative array of destination path : scaffold result for each scaffolded file.
    */
   public function processScaffoldFiles(array $options) {
-
+    $result = [];
     // We could simply scaffold all of the files from $list_of_scaffold_files,
     // which contain only the list of files to be processed. We iterate over
     // $resolved_file_mappings instead so that we can print out all of the
@@ -131,10 +137,11 @@ class OperationCollection {
           $this->io->write($scaffold_file->interpolate("  - Skip <info>[dest-rel-path]</info>: overridden in <comment>$overriding_package</comment>"));
         }
         else {
-          $scaffold_file->process($this->io, $options);
+          $result[$dest_rel_path] = $scaffold_file->process($this->io, $options);
         }
       }
     }
+    return $result;
   }
 
 }

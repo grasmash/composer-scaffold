@@ -69,23 +69,13 @@ class ScaffoldFileInfo {
   }
 
   /**
-   * Get the relative path to the destination.
+   * Get the destination.
    *
-   * @return string
-   *   The relative path to the destination file.
+   * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
+   *   The scaffold path to the destination file.
    */
-  public function getDestinationRelativePath() : string {
-    return $this->destination->relativePath();
-  }
-
-  /**
-   * Get the full path to the destination.
-   *
-   * @return string
-   *   The full path to the destination file.
-   */
-  public function getDestinationFullPath() : string {
-    return $this->destination->fullPath();
+  public function destination() : ScaffoldFilePath {
+    return $this->destination;
   }
 
   /**
@@ -141,7 +131,7 @@ class ScaffoldFileInfo {
    * @throws \Exception
    */
   public function process(IOInterface $io, array $options) {
-    $this->op()->process($this->destination, $io, $options);
+    return $this->op()->process($this->destination, $io, $options);
   }
 
 }

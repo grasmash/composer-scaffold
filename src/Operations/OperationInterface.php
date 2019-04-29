@@ -21,7 +21,10 @@ interface OperationInterface {
    *   IOInterface to writing to.
    * @param array $options
    *   Various options that may alter the behavior of the operation.
+   *
+   * @return ScaffoldResult
+   *   Result of the scaffolding operation (is this file managed or unmanaged, etc.)
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options);
+  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult;
 
 }
