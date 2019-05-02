@@ -108,6 +108,22 @@ class Fixtures {
   }
 
   /**
+   * Return the path to one particular bin path.
+   *
+   * @return string
+   *   Path to project fixture
+   */
+  public function binFixtureDir($bin_name) {
+    $dir = $this->allFixturesDir() . '/scripts/' . $bin_name;
+
+    if (!is_dir($dir)) {
+      throw new \Exception("Requested fixture bin dir $bin_name that does not exist.");
+    }
+
+    return $dir;
+  }
+
+  /**
    * Use in place of ScaffoldFilePath::sourcePath to get a path to a source scaffold fixture.
    *
    * @param string $project_name
