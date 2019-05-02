@@ -107,6 +107,17 @@ class ComposerHookTest extends TestCase {
     @unlink($sut . '/sites/default/default.settings.php');
     $this->execComposer("composer:scaffold --no-ansi", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
+
+    // Run 'composer create-project' to create a new test project called
+    // 'create-project-test', which is a copy of 'fixtures/drupal-drupal'.
+    $packages = $this->fixturesDir . '/packages.json';
+    $sut = $this->fixturesDir . '/create-project-test';
+    $filesystem = new Filesystem();
+    $filesystem->remove($sut);
+    list($stdout, $stderr) = $this->execComposer("create-project --repository=packages.json fixtures/drupal-drupal $sut", $this->fixturesDir, ['COMPOSER_MIRROR_PATH_REPOS' => 1]);
+    $this->assertDirectoryExists($sut);
+    $this->assertContains('Scaffolding files for fixtures/drupal-drupal', $stdout);
+    $this->assertScaffoldedFile($sut . '/index.php', FALSE, '#Test version of index.php from drupal/core#');
   }
 
   /**
@@ -116,12 +127,14 @@ class ComposerHookTest extends TestCase {
    *   The Composer command to execute (escaped as required)
    * @param string $cwd
    *   The current working directory to run the command from.
+   * @param array $env
+   *   Environment variables to define for the subprocess.
    *
    * @return array
    *   Standard output and standard error from the command
    */
-  protected function execComposer(string $cmd, string $cwd) {
-    return $this->mustExec("composer $cmd", $cwd);
+  protected function execComposer(string $cmd, string $cwd, array $env = []) {
+    return $this->mustExec("composer $cmd", $cwd, $env);
   }
 
 }
