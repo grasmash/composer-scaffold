@@ -135,6 +135,26 @@ Sometimes, a project might prefer to entirely replace a scaffold file provided b
   }
 ``` 
 
+### Sanitizing Vendor Test Directories
+
+Ideally, every Composer project published on Packagist would exclude its development files from export, as these files are unnecessary to clients, and take up extra space on disk. In practice, though, many projects do not exclude dependency files. This can have a negative impact on clients, particularly in instances where these files are exposed, e.g. via a web browser. To guard against any potential security issues this could cause, Composer Scaffold will allow projects to sanitize the contents of their vendor directories.
+
+```
+  "name": "drupal/assets",
+  ...
+  "extra": {
+    "composer-scaffold": {
+      "vendor-sanitization": {
+        "behat/mink": ["tests", "driver-testsuite"],
+        "behat/mink-browserkit-driver": ["tests"],
+        "behat/mink-goutte-driver": ["tests"],
+        "drupal/coder": ["coder_sniffer/Drupal/Test", "coder_sniffer/DrupalPractice/Test"],
+        ...
+      }
+    }
+  }
+```
+
 ## Specifications
 
 Reference section for the configuration directives for the "composer-scaffold" section of the "extra" section of a `composer.json` file appear below.
@@ -232,6 +252,20 @@ The top-level `overwrite` property defines the defaults value for the `overwrite
 The `symlink` property causes `replace` operations to make a symlink to the source file rather than copying it. This is useful when doing core development, as the symlink files themselves should not be edited. Note that `append` operations override the `symlink` option, to prevent the original scaffold assets from being altered.
 ```
 "symlink": true,
+```
+### vendor-sanitization
+
+The "vendor-sanitization" section lists dependencies in the project's `vendor` directory to sanitize. Each entry names the organzation and project to sanitize as the key, and a list of directories inside that project to remove.
+
+Example:
+```
+"vendor-sanitization": {
+  "behat/mink": ["tests", "driver-testsuite"],
+  "behat/mink-browserkit-driver": ["tests"],
+  "behat/mink-goutte-driver": ["tests"],
+  "drupal/coder": ["coder_sniffer/Drupal/Test", "coder_sniffer/DrupalPractice/Test"],
+  ...
+}
 ```
 ## Managing Scaffold Files
 

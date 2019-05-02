@@ -86,6 +86,20 @@ class Handler {
   }
 
   /**
+   * Get the sanitizations for the specified package.
+   *
+   * @param \Composer\Package\PackageInterface $package
+   *   The Composer package from which to get the sanitization list.
+   *
+   * @return array
+   *   An array of sanitization paths.
+   */
+  public function getPackageSanitizations(PackageInterface $package) : array {
+    $packageOptions = $this->getOptionsForPackage($package);
+    return $packageOptions['vendor-sanitization'];
+  }
+
+  /**
    * Create scaffold operation objects for all items in the file mappings.
    *
    * @param \Composer\Package\PackageInterface $package
@@ -147,6 +161,10 @@ class Handler {
     // Add the managed scaffold files to .gitignore if applicable.
     $manager = new ManageGitIgnore(getcwd());
     $manager->manageIgnored($scaffoldResults, $this->getOptions());
+
+    // Sanitize the vendor directory.
+    $sanitizer = new VendorSanitizer($this->getVendorPath(), $this->getSanitizations($allowedPackages));
+    $sanitizer->sanitize();
 
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
@@ -223,7 +241,27 @@ class Handler {
       "locations" => [],
       "symlink" => FALSE,
       "file-mapping" => [],
+      "vendor-sanitization" => [],
     ];
+  }
+
+  /**
+   * Gets a consolidated list of sanitizations from all allowed packages.
+   *
+   * @param \Composer\Package\Package[] $allowed_packages
+   *   A multidimensional array of file mappings, as returned by
+   *   self::getAllowedPackages().
+   *
+   * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
+   *   An array of package name => sanitization lists.
+   */
+  protected function getSanitizations(array $allowed_packages) : array {
+    $sanitizations = [];
+    foreach ($allowed_packages as $package_name => $package) {
+      $package_sanitizations = $this->getPackageSanitizations($package);
+      $sanitizations[$package_name] = $package_sanitizations;
+    }
+    return $sanitizations;
   }
 
   /**
