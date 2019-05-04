@@ -90,9 +90,11 @@ class ManageGitIgnoreTest extends TestCase {
   }
 
   /**
-   * Test to see if scaffold operation runs at the correct times.
+   * Test to see if the scaffold operation correctly manages the .gitignore file.
    */
   public function testManageGitIgnore() {
+    // Note that the drupal-composer-drupal-project fixture does not
+    // have any configuration settings related to .gitignore management.
     $sut = $this->createSutWithGit('drupal-composer-drupal-project');
 
     $this->assertFileNotExists($sut . '/docroot/index.php');
@@ -138,9 +140,11 @@ EOT;
   }
 
   /**
-   * Test to see if scaffold operation runs at the correct times.
+   * Test to see if scaffold operation does not manage the .gitignore file when disabled.
    */
-  public function testUnmanagedGitIgnore() {
+  public function testUnmanagedGitIgnoreWhenDisabled() {
+    // Note that the drupal-drupal fixture has a configuration setting
+    // `"gitignore": false,` which disables .gitignore file handling.
     $sut = $this->createSutWithGit('drupal-drupal');
     $this->assertFileNotExists($sut . '/docroot/index.php');
 
@@ -148,6 +152,41 @@ EOT;
     $this->fixtures->runScaffold($sut);
     $this->assertFileExists($sut . '/index.php');
     $this->assertFileNotExists($sut . '/.gitignore');
+    $this->assertFileNotExists($sut . '/docroot/sites/default/.gitignore');
+  }
+
+  /**
+   * Test to see if the scaffold operation disables .gitignore management when git not present.
+   *
+   * The scaffold operation should still succeed if there is no 'git' executable.
+   */
+  public function testUnmanagedGitIgnoreWhenGitNotAvailable() {
+    // Note that the drupal-composer-drupal-project fixture does not
+    // have any configuration settings related to .gitignore management.
+    $sut = $this->createSutWithGit('drupal-composer-drupal-project');
+
+    $this->assertFileNotExists($sut . '/docroot/index.php');
+    $this->assertFileNotExists($sut . '/docroot/sites/.gitignore');
+
+    // Confirm that 'git' is available (n.b. if it were not, createSutWithGit() would fail).
+    exec('git --help', $output, $status);
+    $this->assertEquals(0, $status);
+
+    // Modify our $PATH so that it begins with a path that contains an executable
+    // script named 'git' that always exits with 127, as if git were not found.
+    // Note that we run our tests using process isolation, so we do not need to
+    // restore the PATH when we are done.
+    $unavailableGitPath = $this->fixtures->binFixtureDir('disable-git-bin');
+    putenv('PATH=' . $unavailableGitPath . ':' . getenv('PATH'));
+
+    // Confirm that 'git' is no longer available.
+    exec('git --help', $output, $status);
+    $this->assertEquals(127, $status);
+
+    // Run the scaffold command.
+    $this->fixtures->runScaffold($sut);
+    $this->assertFileExists($sut . '/docroot/index.php');
+    $this->assertFileNotExists($sut . '/docroot/sites/default/.gitignore');
   }
 
 }
