@@ -118,6 +118,9 @@ class AllowedPackages {
       if (!array_key_exists($name, $allowed_packages)) {
         $this->io->write("Package <comment>$name</comment> has scaffold operations, but it is not allowed in the root-level composer.json file.");
       }
+      else {
+        $this->io->write("Package <comment>$name</comment> has scaffold operations, and is already allowed in the root-level composer.json file.");
+      }
     }
 
     // In the future, we will allow this method to add more allowed packages.

@@ -73,16 +73,17 @@ class ComposerHookTest extends TestCase {
    * Test to see if scaffold operation runs at the correct times.
    */
   public function testComposerHooks() {
-    $topLevelProjectDir = 'composer-hooks-fixture';
-    $is_link = FALSE;
     $this->fixturesDir = $this->fixtures->tmpDir($this->getName());
-    $sut = $this->fixturesDir . '/' . $topLevelProjectDir;
+    $is_link = FALSE;
 
     $replacements = [
       'SYMLINK' => $is_link ? 'true' : 'false',
       'PROJECT_ROOT' => $this->projectRoot,
     ];
     $this->fixtures->cloneFixtureProjects($this->fixturesDir, $replacements);
+
+    $topLevelProjectDir = 'composer-hooks-fixture';
+    $sut = $this->fixturesDir . '/' . $topLevelProjectDir;
 
     // First test: run composer install. This is the same as composer update
     // since there is no lock file. Ensure that scaffold operation ran.
@@ -93,8 +94,11 @@ class ComposerHookTest extends TestCase {
     // project is "allowed" in our main fixture project, but not required.
     // We expect that requiring this library should re-scaffold, resulting
     // in a changed default.settings.php file.
-    $this->execComposer("require --no-ansi fixtures/scaffold-override-fixture:dev-master", $sut);
+    list($stdout, $stderr) = $this->execComposer("require --no-ansi --no-interaction fixtures/scaffold-override-fixture:dev-master", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
+    // Make sure that the appropriate notice informing us that scaffolding
+    // is allowed was printed.
+    $this->assertContains('Package fixtures/scaffold-override-fixture has scaffold operations, and is already allowed in the root-level composer.json file.', $stdout);
 
     // Delete one scaffold file, just for test purposes, then run
     // 'composer update' and see if the scaffold file is replaced.
@@ -118,6 +122,18 @@ class ComposerHookTest extends TestCase {
     $this->assertDirectoryExists($sut);
     $this->assertContains('Scaffolding files for fixtures/drupal-drupal', $stdout);
     $this->assertScaffoldedFile($sut . '/index.php', FALSE, '#Test version of index.php from drupal/core#');
+
+    $topLevelProjectDir = 'composer-hooks-nothing-allowed-fixture';
+    $sut = $this->fixturesDir . '/' . $topLevelProjectDir;
+
+    // Run composer install on an empty project.
+    $this->execComposer("install --no-ansi", $sut);
+
+    // Require a project that is not allowed to scaffold and confirm that we
+    // get a warning, and it does not scaffold.
+    list($stdout, $stderr) = $this->execComposer("require --no-ansi --no-interaction fixtures/scaffold-override-fixture:dev-master", $sut);
+    $this->assertFileNotExists($sut . '/sites/default/default.settings.php');
+    $this->assertContains('Package fixtures/scaffold-override-fixture has scaffold operations, but it is not allowed in the root-level composer.json file.', $stdout);
   }
 
   /**

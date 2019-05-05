@@ -164,6 +164,7 @@ EOT;
     // Note that the drupal-composer-drupal-project fixture does not
     // have any configuration settings related to .gitignore management.
     $sut = $this->createSutWithGit('drupal-composer-drupal-project');
+    $this->assertFileNotExists($sut . '/docroot/sites/default/.gitignore');
 
     $this->assertFileNotExists($sut . '/docroot/index.php');
     $this->assertFileNotExists($sut . '/docroot/sites/.gitignore');
@@ -183,8 +184,15 @@ EOT;
     exec('git --help', $output, $status);
     $this->assertEquals(127, $status);
 
+    $process = new Process('git --help');
+    $process->run();
+    if (127 != $process->getExitCode()) {
+      $this->markTestSkipped('For some reason, Symfony/Process is not passing the PATH environment variable.');
+    }
+
     // Run the scaffold command.
-    $this->fixtures->runScaffold($sut);
+    $output = $this->fixtures->runScaffold($sut);
+    $this->assertEquals('', $output);
     $this->assertFileExists($sut . '/docroot/index.php');
     $this->assertFileNotExists($sut . '/docroot/sites/default/.gitignore');
   }
