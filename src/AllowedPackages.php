@@ -25,21 +25,27 @@ class AllowedPackages {
    */
   protected $composer;
 
+  protected $io;
+
   protected $manageOptions;
+
+  protected $newPackages;
 
   /**
    * ManageOptions constructor.
    */
-  public function __construct($composer, $manageOptions) {
+  public function __construct(Composer $composer, IOInterface $io, $manageOptions) {
     $this->composer = $composer;
+    $this->io = $io;
     $this->manageOptions = $manageOptions;
+    $this->newPackages = [];
   }
 
   /**
    * Called when a newly-added package is discovered to contian scaffolding instructions.
    */
   public function addedPackageWithScaffolding(PackageInterface $package) {
-    // @todo remember that we saw the package
+    $this->newPackages[$package->getName()] = $package;
   }
 
   /**
@@ -66,7 +72,8 @@ class AllowedPackages {
       $allowed_packages[$root_package->getName()] = $root_package;
     }
 
-    // @todo handle any newly-added packages that are not already allowed.
+    // Handle any newly-added packages that are not already allowed.
+    $allowed_packages = $this->evaluateNewPackages($allowed_packages);
 
     return $allowed_packages;
   }
@@ -79,10 +86,10 @@ class AllowedPackages {
    * @param array $allowed_packages
    *   Mapping of package names to PackageInterface of packages already accumulated.
    *
-   * @return array
+   * @return \Composer\Package\PackageInterface[]
    *   Mapping of package names to PackageInterface in priority order.
    */
-  protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) {
+  protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) : array {
     foreach ($packages_to_allow as $name) {
       $package = $this->getPackage($name);
       if ($package && $package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
@@ -92,6 +99,28 @@ class AllowedPackages {
         $allowed_packages = $this->recursiveGetAllowedPackages($packageOptions->allowedPackages(), $allowed_packages);
       }
     }
+    return $allowed_packages;
+  }
+
+  /**
+   * Evaluate newly-added packages and see if they are already allowed.
+   *
+   * For now we will only emit warnings if they are not.
+   *
+   * @param array $allowed_packages
+   *   Mapping of package names to PackageInterface of packages already accumulated.
+   *
+   * @return \Composer\Package\PackageInterface[]
+   *   Mapping of package names to PackageInterface in priority order.
+   */
+  protected function evaluateNewPackages(array $allowed_packages) {
+    foreach ($this->newPackages as $name => $newPackage) {
+      if (!array_key_exists($name, $allowed_packages)) {
+        $this->io->write("Package <comment>$name</comment> has scaffold operations, but it is not allowed in the root-level composer.json file.");
+      }
+    }
+
+    // In the future, we will allow this method to add more allowed packages.
     return $allowed_packages;
   }
 

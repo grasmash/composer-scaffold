@@ -58,7 +58,7 @@ class Handler {
     $this->composer = $composer;
     $this->io = $io;
     $this->manageOptions = new ManageOptions($composer);
-    $this->manageAllowedPackages = new AllowedPackages($composer, $this->manageOptions);
+    $this->manageAllowedPackages = new AllowedPackages($composer, $io, $this->manageOptions);
     $this->postPackageListeners = [];
   }
 
