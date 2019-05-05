@@ -184,15 +184,8 @@ EOT;
     exec('git --help', $output, $status);
     $this->assertEquals(127, $status);
 
-    $process = new Process('git --help');
-    $process->run();
-    if (127 != $process->getExitCode()) {
-      $this->markTestSkipped('For some reason, Symfony/Process is not passing the PATH environment variable.');
-    }
-
     // Run the scaffold command.
-    $output = $this->fixtures->runScaffold($sut);
-    $this->assertEquals('', $output);
+    exec('composer composer:scaffold', $output, $status);
     $this->assertFileExists($sut . '/docroot/index.php');
     $this->assertFileNotExists($sut . '/docroot/sites/default/.gitignore');
   }
