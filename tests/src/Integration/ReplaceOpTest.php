@@ -6,9 +6,10 @@ use Composer\Composer;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Grasmash\ComposerScaffold\Handler;
-use PHPUnit\Framework\TestCase;
-use Grasmash\ComposerScaffold\Tests\Fixtures;
 use Grasmash\ComposerScaffold\Operations\ReplaceOp;
+use Grasmash\ComposerScaffold\ScaffoldOptions;
+use Grasmash\ComposerScaffold\Tests\Fixtures;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @coversDefaultClass \Grasmash\ComposerScaffold\Operations\ReplaceOp
@@ -24,7 +25,7 @@ class ReplaceOpTest extends TestCase {
     $destination = $fixtures->destinationPath('[web-root]/robots.txt');
     $source = $fixtures->sourcePath('drupal-assets-fixture', 'robots.txt');
 
-    $options = [];
+    $options = ScaffoldOptions::default();
 
     $sut = new ReplaceOp();
     $sut->setSource($source);

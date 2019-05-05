@@ -9,6 +9,10 @@ use Composer\IO\IOInterface;
 use Composer\Plugin\Capable;
 use Composer\Plugin\PluginInterface;
 use Composer\Script\ScriptEvents;
+use Composer\Installer\PackageEvent;
+use Composer\Installer\PackageEvents;
+use Composer\Plugin\PluginEvents;
+use Composer\Plugin\CommandEvent;
 
 /**
  * Composer plugin for handling drupal scaffold.
@@ -48,6 +52,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
   public static function getSubscribedEvents() {
     return [
       ScriptEvents::POST_UPDATE_CMD => 'postCmd',
+      PackageEvents::POST_PACKAGE_INSTALL => 'postPackage',
+      PluginEvents::COMMAND => 'onCommand',
     ];
   }
 
@@ -59,6 +65,28 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
    */
   public function postCmd(Event $event) {
     $this->handler->onPostCmdEvent($event);
+  }
+
+  /**
+   * Post package event behaviour.
+   *
+   * @param \Composer\Installer\PackageEvent $event
+   *   Composer package event sent on install/update/remove.
+   */
+  public function postPackage(PackageEvent $event) {
+    $this->handler->onPostPackageEvent($event);
+  }
+
+  /**
+   * Pre command event callback.
+   *
+   * @param \Composer\Plugin\CommandEvent $event
+   *   The Composer command event.
+   */
+  public function onCommand(CommandEvent $event) {
+    if ($event->getCommandName() == 'require') {
+      $this->handler->beforeRequire($event);
+    }
   }
 
 }

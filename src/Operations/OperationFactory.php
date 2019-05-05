@@ -7,8 +7,9 @@ namespace Grasmash\ComposerScaffold\Operations;
 use Composer\Composer;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
-use Grasmash\ComposerScaffold\ScaffoldFilePath;
 use Grasmash\ComposerScaffold\ScaffoldFileInfo;
+use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\ScaffoldOptions;
 
 /**
  * Create Scaffold operation objects based on provided metadata.
@@ -69,46 +70,7 @@ class OperationFactory {
     if (!isset($value['mode'])) {
       $value['mode'] = 'replace';
     }
-    // Accept 'true' or 'always' for the 'overwrite' property. Any other value
-    // is treated as 'false'.
-    if (isset($value['overwrite'])) {
-      $value['overwrite'] = $this->normalizeOverwrite($value['overwrite']);
-    }
     return $value;
-  }
-
-  /**
-   * Convert overwrite value from one of the allowed values to a boolean.
-   *
-   * Any value not recognized as 'true' is interpreted as 'false'.
-   *
-   * @param mixed $overwrite
-   *   Overwrite value as specified by user.
-   *
-   * @return bool
-   *   Normalized overwrite value expressed as a boolean.
-   */
-  protected function normalizeOverwrite($overwrite) : bool {
-    return ($overwrite === TRUE) ||
-      ($overwrite == 'true') ||
-      ($overwrite == 'always');
-  }
-
-  /**
-   * Determine whether we should default to 'overwrite' true, or 'overwrite' false.
-   *
-   * @param array $options
-   *   Global settings from extras.composer-scaffold.
-   *
-   * @return bool
-   *   The default value for the overwrite option.
-   */
-  protected function getDefaultOverwrite(array $options) : bool {
-    if (isset($options['overwrite'])) {
-      return $this->normalizeOverwrite($options['overwrite']);
-    }
-
-    return TRUE;
   }
 
   /**
@@ -120,13 +82,13 @@ class OperationFactory {
    *   The destination path for the scaffold file. Used only for error messages.
    * @param mixed $value
    *   The metadata for this operation object, which varies by operation type.
-   * @param array $options
+   * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Configuration options from the top-level composer.json file.
    *
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   The scaffolding operation object (skip, replace, etc.)
    */
-  public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, array $options) : OperationInterface {
+  public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, ScaffoldOptions $options) : OperationInterface {
     switch ($value['mode']) {
       case 'skip':
         return new SkipOp();
@@ -152,17 +114,17 @@ class OperationFactory {
    *   The destination path for the scaffold file. Used only for error messages.
    * @param array $metadata
    *   The metadata for this operation object, i.e. the relative 'path'.
-   * @param array $options
+   * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Configuration options from the top-level composer.json file.
    *
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) : OperationInterface {
+  protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, ScaffoldOptions $options) : OperationInterface {
     $op = new ReplaceOp();
 
     // If this op does not provide an 'overwrite' value, then fill in the default.
-    $metadata += ['overwrite' => $this->getDefaultOverwrite($options)];
+    $metadata += ['overwrite' => $options->overwrite()];
     if (!isset($metadata['path'])) {
       throw new \Exception("'path' component required for 'replace' operations.");
     }
@@ -188,13 +150,13 @@ class OperationFactory {
    *   The destination path for the scaffold file. Used only for error messages.
    * @param array $metadata
    *   The metadata for this operation object, i.e. the relative 'path'.
-   * @param array $options
+   * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Configuration options from the top-level composer.json file.
    *
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, array $options) : OperationInterface {
+  protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, ScaffoldOptions $options) : OperationInterface {
 
     $op = new AppendOp();
 

@@ -6,6 +6,7 @@ namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\IO\IOInterface;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\ScaffoldOptions;
 
 /**
  * Data file that keeps track of one scaffold file's source, destination, and package.
@@ -19,12 +20,12 @@ interface OperationInterface {
    *   Scaffold file's destination path.
    * @param \Composer\IO\IOInterface $io
    *   IOInterface to writing to.
-   * @param array $options
+   * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Various options that may alter the behavior of the operation.
    *
    * @return ScaffoldResult
    *   Result of the scaffolding operation (is this file managed or unmanaged, etc.)
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult;
+  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult;
 
 }

@@ -5,9 +5,10 @@ declare(strict_types = 1);
 namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\IO\IOInterface;
-use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Grasmash\ComposerScaffold\Interpolator;
+use Grasmash\ComposerScaffold\ScaffoldFileInfo;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\ScaffoldOptions;
 
 /**
  * OperationCollection keeps track of the collection of files to be scaffolded.
@@ -115,13 +116,13 @@ class OperationCollection {
   /**
    * Scaffolds the files in our scaffold collection, package-by-package.
    *
-   * @param array $options
+   * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Configuration options from the top-level composer.json file.
    *
    * @return ScaffoldResult[]
    *   Associative array of destination path : scaffold result for each scaffolded file.
    */
-  public function processScaffoldFiles(array $options) {
+  public function processScaffoldFiles(ScaffoldOptions $options) {
     $result = [];
     // We could simply scaffold all of the files from $list_of_scaffold_files,
     // which contain only the list of files to be processed. We iterate over

@@ -125,12 +125,12 @@ class ScaffoldFileInfo {
    *
    * @param \Composer\IO\IOInterface $io
    *   The scaffold file to be processed.
-   * @param array $options
+   * @param ScaffoldOptions $options
    *   Assorted operational options, e.g. whether the destination should be a symlink.
    *
    * @throws \Exception
    */
-  public function process(IOInterface $io, array $options) {
+  public function process(IOInterface $io, ScaffoldOptions $options) {
     return $this->op()->process($this->destination, $io, $options);
   }
 

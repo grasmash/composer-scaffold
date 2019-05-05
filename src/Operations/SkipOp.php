@@ -6,6 +6,7 @@ namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\IO\IOInterface;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\ScaffoldOptions;
 
 /**
  * Scaffold operation to skip a scaffold file (do nothing).
@@ -17,7 +18,7 @@ class SkipOp implements OperationInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
     $interpolator = $destination->getInterpolator();
     $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info>: disabled"));
 
