@@ -36,6 +36,13 @@ class AllowedPackages {
   }
 
   /**
+   * Called when a newly-added package is discovered to contian scaffolding instructions.
+   */
+  public function addedPackageWithScaffolding(PackageInterface $package) {
+    // @todo remember that we saw the package
+  }
+
+  /**
    * Gets a list of all packages that are allowed to copy scaffold files.
    *
    * Configuration for packages specified later will override configuration
@@ -58,6 +65,8 @@ class AllowedPackages {
       unset($allowed_packages[$root_package->getName()]);
       $allowed_packages[$root_package->getName()] = $root_package;
     }
+
+    // @todo handle any newly-added packages that are not already allowed.
 
     return $allowed_packages;
   }

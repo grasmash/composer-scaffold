@@ -44,6 +44,8 @@ class Handler {
 
   protected $manageAllowedPackages;
 
+  protected $postPackageListeners;
+
   /**
    * Handler constructor.
    *
@@ -57,6 +59,7 @@ class Handler {
     $this->io = $io;
     $this->manageOptions = new ManageOptions($composer);
     $this->manageAllowedPackages = new AllowedPackages($composer, $this->manageOptions);
+    $this->postPackageListeners = [];
   }
 
   /**
@@ -76,8 +79,10 @@ class Handler {
    *   The Composer Command event.
    */
   public function beforeRequire(CommandEvent $event) {
-    // @todo: add a post-package processor
-    $this->io->write("Before require event!");
+    // In order to differentiate between post-package events called after
+    // 'composer require' vs. the same events called at other times, we will
+    // only install our handler when a 'require' event is detected.
+    $this->postPackageListeners[] = new DetectAddingPackagesWithScaffolding($this->manageAllowedPackages);
   }
 
   /**
@@ -90,21 +95,9 @@ class Handler {
    *   Composer package event sent on install/update/remove.
    */
   public function onPostPackageEvent(PackageEvent $event) {
-    $operation = $event->getOperation();
-    $jobType = $operation->getJobType();
-    $reason = $operation->getReason();
-
-    // Get the package.
-    $package = ($operation->getJobType() == 'update') ?
-      $operation->getTargetPackage() :
-      $operation->getPackage();
-
-    $package_extra = $package->getExtra();
-    $hasScaffoldData = array_key_exists('composer-scaffold', $package_extra);
-
-    $hasMsg = $hasScaffoldData ? 'has' : 'does not have';
-
-    $this->io->write("Event for <comment>$jobType</comment>. Package is {$package->getName()} and it $hasMsg scaffold data.");
+    foreach ($this->postPackageListeners as $listener) {
+      $listener->event($event);
+    }
   }
 
   /**
