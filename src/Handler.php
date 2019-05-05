@@ -169,7 +169,7 @@ class Handler {
 
     // Analyze the list of file mappings, and determine which take priority.
     $scaffoldCollection = new OperationCollection($this->io);
-    $locationReplacements = $this->getLocationReplacements();
+    $locationReplacements = $this->manageOptions->getLocationReplacements();
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
     // Write the collected scaffold files to the designated location on disk.
@@ -218,21 +218,6 @@ class Handler {
     $filesystem = new Filesystem();
     $filesystem->ensureDirectoryExists($vendorDir);
     return $filesystem->normalizePath(realpath($vendorDir));
-  }
-
-  /**
-   * GetLocationReplacements creates an interpolator for the 'locations' element.
-   *
-   * The interpolator returned will replace a path string with the tokens
-   * defined in the 'locations' element.
-   *
-   * Note that only the root package may define locations.
-   *
-   * @return Interpolator
-   *   Object that will do replacements in a string using tokens in 'locations' element.
-   */
-  public function getLocationReplacements() : Interpolator {
-    return (new Interpolator())->setData($this->manageOptions->getOptions()->ensureLocations());
   }
 
   /**
