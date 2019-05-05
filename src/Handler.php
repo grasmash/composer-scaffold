@@ -40,6 +40,10 @@ class Handler {
    */
   protected $io;
 
+  protected $manageOptions;
+
+  protected $manageAllowedPackages;
+
   /**
    * Handler constructor.
    *
@@ -52,6 +56,7 @@ class Handler {
     $this->composer = $composer;
     $this->io = $io;
     $this->manageOptions = new ManageOptions($composer);
+    $this->manageAllowedPackages = new AllowedPackages($composer, $this->manageOptions);
   }
 
   /**
@@ -156,7 +161,7 @@ class Handler {
     // Recursively get the list of allowed packages. Only allowed packages
     // may declare scaffold files. Note that the top-level composer.json file
     // is implicitly allowed.
-    $allowedPackages = $this->getAllowedPackages();
+    $allowedPackages = $this->manageAllowedPackages->getAllowedPackages();
     if (empty($allowedPackages)) {
       return;
     }
@@ -223,19 +228,6 @@ class Handler {
   }
 
   /**
-   * Retrieve a package from the current composer process.
-   *
-   * @param string $name
-   *   Name of the package to get from the current composer installation.
-   *
-   * @return \Composer\Package\PackageInterface|null
-   *   The Composer package.
-   */
-  protected function getPackage(string $name) {
-    return $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
-  }
-
-  /**
    * GetLocationReplacements creates an interpolator for the 'locations' element.
    *
    * The interpolator returned will replace a path string with the tokens
@@ -270,33 +262,6 @@ class Handler {
   }
 
   /**
-   * Gets a list of all packages that are allowed to copy scaffold files.
-   *
-   * Configuration for packages specified later will override configuration
-   * specified by packages listed earlier. In other words, the last listed
-   * package has the highest priority. The root package will always be returned
-   * at the end of the list.
-   *
-   * @return \Composer\Package\PackageInterface[]
-   *   An array of allowed Composer packages.
-   */
-  protected function getAllowedPackages(): array {
-    $options = $this->manageOptions->getOptions();
-    $allowed_packages = $this->recursiveGetAllowedPackages($options->allowedPackages());
-
-    // If the root package defines any file mappings, then implicitly add it
-    // to the list of allowed packages. Add it at the end so that it overrides
-    // all the preceding packages.
-    if ($options->hasFileMapping()) {
-      $root_package = $this->composer->getPackage();
-      unset($allowed_packages[$root_package->getName()]);
-      $allowed_packages[$root_package->getName()] = $root_package;
-    }
-
-    return $allowed_packages;
-  }
-
-  /**
    * Get the root package name.
    *
    * @return string
@@ -305,30 +270,6 @@ class Handler {
   protected function rootPackageName() : string {
     $root_package = $this->composer->getPackage();
     return $root_package->getName();
-  }
-
-  /**
-   * Recursivly build a name-to-package mapping from a list of package names.
-   *
-   * @param string[] $packages_to_allow
-   *   List of package names to allow.
-   * @param array $allowed_packages
-   *   Mapping of package names to PackageInterface of packages already accumulated.
-   *
-   * @return array
-   *   Mapping of package names to PackageInterface in priority order.
-   */
-  protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) {
-    foreach ($packages_to_allow as $name) {
-      $package = $this->getPackage($name);
-      if ($package && $package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
-        $allowed_packages[$name] = $package;
-
-        $packageOptions = $this->manageOptions->packageOptions($package);
-        $allowed_packages = $this->recursiveGetAllowedPackages($packageOptions->allowedPackages(), $allowed_packages);
-      }
-    }
-    return $allowed_packages;
   }
 
 }
