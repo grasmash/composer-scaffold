@@ -164,6 +164,7 @@ EOT;
     // Note that the drupal-composer-drupal-project fixture does not
     // have any configuration settings related to .gitignore management.
     $sut = $this->createSutWithGit('drupal-composer-drupal-project');
+    $this->assertFileNotExists($sut . '/docroot/sites/default/.gitignore');
 
     $this->assertFileNotExists($sut . '/docroot/index.php');
     $this->assertFileNotExists($sut . '/docroot/sites/.gitignore');
@@ -184,7 +185,7 @@ EOT;
     $this->assertEquals(127, $status);
 
     // Run the scaffold command.
-    $this->fixtures->runScaffold($sut);
+    exec('composer composer:scaffold', $output, $status);
     $this->assertFileExists($sut . '/docroot/index.php');
     $this->assertFileNotExists($sut . '/docroot/sites/default/.gitignore');
   }

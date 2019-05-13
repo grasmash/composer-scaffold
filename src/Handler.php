@@ -6,8 +6,10 @@ namespace Grasmash\ComposerScaffold;
 
 use Composer\Composer;
 use Composer\EventDispatcher\EventDispatcher;
+use Composer\Installer\PackageEvent;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
+use Composer\Plugin\CommandEvent;
 use Composer\Script\Event;
 use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\Operations\OperationCollection;
@@ -38,6 +40,12 @@ class Handler {
    */
   protected $io;
 
+  protected $manageOptions;
+
+  protected $manageAllowedPackages;
+
+  protected $postPackageListeners;
+
   /**
    * Handler constructor.
    *
@@ -49,6 +57,9 @@ class Handler {
   public function __construct(Composer $composer, IOInterface $io) {
     $this->composer = $composer;
     $this->io = $io;
+    $this->manageOptions = new ManageOptions($composer);
+    $this->manageAllowedPackages = new AllowedPackages($composer, $io, $this->manageOptions);
+    $this->postPackageListeners = [];
   }
 
   /**
@@ -62,6 +73,34 @@ class Handler {
   }
 
   /**
+   * The beforeRequire method is called before any 'require' event runs.
+   *
+   * @param \Composer\Plugin\CommandEvent $event
+   *   The Composer Command event.
+   */
+  public function beforeRequire(CommandEvent $event) {
+    // In order to differentiate between post-package events called after
+    // 'composer require' vs. the same events called at other times, we will
+    // only install our handler when a 'require' event is detected.
+    $this->postPackageListeners[] = new DetectAddingPackagesWithScaffolding($this->manageAllowedPackages);
+  }
+
+  /**
+   * Post package command event.
+   *
+   * We want to detect packages 'require'd that have scaffold files, but are
+   * not yet allowed in the top-level composer.json file.
+   *
+   * @param \Composer\Installer\PackageEvent $event
+   *   Composer package event sent on install/update/remove.
+   */
+  public function onPostPackageEvent(PackageEvent $event) {
+    foreach ($this->postPackageListeners as $listener) {
+      $listener->event($event);
+    }
+  }
+
+  /**
    * Gets the array of file mappings provided by a given package.
    *
    * @param \Composer\Package\PackageInterface $package
@@ -71,14 +110,13 @@ class Handler {
    *   An array of destination paths => scaffold operation objects.
    */
   public function getPackageFileMappings(PackageInterface $package) : array {
-    $package_extra = $package->getExtra();
+    $options = $this->manageOptions->packageOptions($package);
 
-    if (isset($package_extra['composer-scaffold']['file-mapping'])) {
-      $package_file_mappings = $package_extra['composer-scaffold']['file-mapping'];
-      return $this->createScaffoldOperations($package, $package_file_mappings);
+    if ($options->hasFileMapping()) {
+      return $this->createScaffoldOperations($package, $options->fileMapping());
     }
     else {
-      if (!isset($package_extra['composer-scaffold']['allowed-packages'])) {
+      if (!$options->hasAllowedPackages()) {
         $this->io->writeError("The allowed package {$package->getName()} does not provide a file mapping for Composer Scaffold.");
       }
       return [];
@@ -97,7 +135,7 @@ class Handler {
    *   A list of scaffolding operation objects
    */
   protected function createScaffoldOperations(PackageInterface $package, array $package_file_mappings) : array {
-    $options = $this->getOptions();
+    $options = $this->manageOptions->getOptions();
     $scaffoldOpFactory = new OperationFactory($this->composer);
     $scaffoldOps = [];
 
@@ -116,7 +154,7 @@ class Handler {
     // Recursively get the list of allowed packages. Only allowed packages
     // may declare scaffold files. Note that the top-level composer.json file
     // is implicitly allowed.
-    $allowedPackages = $this->getAllowedPackages();
+    $allowedPackages = $this->manageAllowedPackages->getAllowedPackages();
     if (empty($allowedPackages)) {
       return;
     }
@@ -131,11 +169,11 @@ class Handler {
 
     // Analyze the list of file mappings, and determine which take priority.
     $scaffoldCollection = new OperationCollection($this->io);
-    $locationReplacements = $this->getLocationReplacements();
+    $locationReplacements = $this->manageOptions->getLocationReplacements();
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
 
     // Write the collected scaffold files to the designated location on disk.
-    $scaffoldResults = $scaffoldCollection->processScaffoldFiles($this->getOptions());
+    $scaffoldResults = $scaffoldCollection->processScaffoldFiles($this->manageOptions->getOptions());
 
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
@@ -146,7 +184,7 @@ class Handler {
 
     // Add the managed scaffold files to .gitignore if applicable.
     $manager = new ManageGitIgnore(getcwd());
-    $manager->manageIgnored($scaffoldResults, $this->getOptions());
+    $manager->manageIgnored($scaffoldResults, $this->manageOptions->getOptions());
 
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
@@ -163,11 +201,10 @@ class Handler {
    * @throws \Exception
    */
   public function getWebRoot() : string {
-    $options = $this->getOptions();
-    if (empty($options['locations']['web-root'])) {
-      throw new \Exception("The extra.composer-scaffold.location.web-root is not set in composer.json.");
-    }
-    return $options['locations']['web-root'];
+    return $this->manageOptions->getOptions()->requiredLocation(
+      'web-root',
+      "The extra.composer-scaffold.location.web-root is not set in composer.json."
+    );
   }
 
   /**
@@ -181,78 +218,6 @@ class Handler {
     $filesystem = new Filesystem();
     $filesystem->ensureDirectoryExists($vendorDir);
     return $filesystem->normalizePath(realpath($vendorDir));
-  }
-
-  /**
-   * Retrieve a package from the current composer process.
-   *
-   * @param string $name
-   *   Name of the package to get from the current composer installation.
-   *
-   * @return \Composer\Package\PackageInterface|null
-   *   The Composer package.
-   */
-  protected function getPackage(string $name) {
-    return $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
-  }
-
-  /**
-   * Retrieve options from optional "extra" configuration.
-   *
-   * @return array
-   *   The composer-scaffold configuration array.
-   */
-  protected function getOptions() : array {
-    return $this->getOptionsForPackage($this->composer->getPackage());
-  }
-
-  /**
-   * Retrieve options from optional "extra" configuration for a package.
-   *
-   * @param \Composer\Package\PackageInterface $package
-   *   The package to pull configuration options from.
-   *
-   * @return array
-   *   The composer-scaffold configuration array for the given package.
-   */
-  protected function getOptionsForPackage(PackageInterface $package) : array {
-    $extra = $package->getExtra() + ['composer-scaffold' => []];
-
-    return $extra['composer-scaffold'] + [
-      "allowed-packages" => [],
-      "locations" => [],
-      "symlink" => FALSE,
-      "file-mapping" => [],
-    ];
-  }
-
-  /**
-   * GetLocationReplacements creates an interpolator for the 'locations' element.
-   *
-   * The interpolator returned will replace a path string with the tokens
-   * defined in the 'locations' element.
-   *
-   * Note that only the root package may define locations.
-   *
-   * @return Interpolator
-   *   Object that will do replacements in a string using tokens in 'locations' element.
-   */
-  public function getLocationReplacements() : Interpolator {
-    $interpolator = new Interpolator();
-
-    $fs = new Filesystem();
-    $options = $this->getOptions();
-    $locations = $options['locations'] + ['web_root' => './'];
-    $locations = array_map(
-      function ($location) use ($fs) {
-        $fs->ensureDirectoryExists($location);
-        $location = realpath($location);
-        return $location;
-      },
-      $locations
-    );
-
-    return $interpolator->setData($locations);
   }
 
   /**
@@ -275,35 +240,6 @@ class Handler {
   }
 
   /**
-   * Gets a list of all packages that are allowed to copy scaffold files.
-   *
-   * Configuration for packages specified later will override configuration
-   * specified by packages listed earlier. In other words, the last listed
-   * package has the highest priority. The root package will always be returned
-   * at the end of the list.
-   *
-   * @return \Composer\Package\PackageInterface[]
-   *   An array of allowed Composer packages.
-   */
-  protected function getAllowedPackages(): array {
-    $options = $this->getOptions() + [
-      'allowed-packages' => [],
-    ];
-    $allowed_packages = $this->recursiveGetAllowedPackages($options['allowed-packages']);
-
-    // If the root package defines any file mappings, then implicitly add it
-    // to the list of allowed packages. Add it at the end so that it overrides
-    // all the preceding packages.
-    if (!empty($options['file-mapping'])) {
-      $root_package = $this->composer->getPackage();
-      unset($allowed_packages[$root_package->getName()]);
-      $allowed_packages[$root_package->getName()] = $root_package;
-    }
-
-    return $allowed_packages;
-  }
-
-  /**
    * Get the root package name.
    *
    * @return string
@@ -312,30 +248,6 @@ class Handler {
   protected function rootPackageName() : string {
     $root_package = $this->composer->getPackage();
     return $root_package->getName();
-  }
-
-  /**
-   * Recursivly build a name-to-package mapping from a list of package names.
-   *
-   * @param string[] $packages_to_allow
-   *   List of package names to allow.
-   * @param array $allowed_packages
-   *   Mapping of package names to PackageInterface of packages already accumulated.
-   *
-   * @return array
-   *   Mapping of package names to PackageInterface in priority order.
-   */
-  protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) {
-    foreach ($packages_to_allow as $name) {
-      $package = $this->getPackage($name);
-      if ($package && $package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
-        $allowed_packages[$name] = $package;
-
-        $packageOptions = $this->getOptionsForPackage($package);
-        $allowed_packages = $this->recursiveGetAllowedPackages($packageOptions['allowed-packages'], $allowed_packages);
-      }
-    }
-    return $allowed_packages;
   }
 
 }

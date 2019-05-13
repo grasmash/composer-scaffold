@@ -9,6 +9,7 @@ use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Grasmash\ComposerScaffold\Interpolator;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\ScaffoldOptions;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
 /**
@@ -67,7 +68,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
     $interpolator = $destination->getInterpolator();
     $this->addInterpolationData($interpolator);
     $destination_path = $destination->fullPath();
@@ -81,7 +82,7 @@ class AppendOp implements OperationInterface, OriginalOpAwareInterface {
     // First, scaffold the original file. Disable symlinking, because we
     // need a copy of the file if we're going to append / prepend to it.
     @unlink($destination_path);
-    $this->originalOp()->process($destination, $io, ['symlink' => FALSE] + $options);
+    $this->originalOp()->process($destination, $io, $options->overrideSymlink(FALSE));
 
     // Fetch the prepend contents, if provided.
     $prependContents = '';

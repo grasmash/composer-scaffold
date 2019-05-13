@@ -7,8 +7,9 @@ namespace Grasmash\ComposerScaffold\Operations;
 use Composer\Composer;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
-use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
+use Grasmash\ComposerScaffold\ScaffoldOptions;
+use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 
 /**
  * Scaffold operation to copy or symlink from source to destination.
@@ -69,9 +70,8 @@ class ReplaceOp implements OperationInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
     $fs = new Filesystem();
-    $options += ['symlink' => FALSE];
 
     $destination_path = $destination->fullPath();
 
@@ -87,7 +87,7 @@ class ReplaceOp implements OperationInterface {
     @unlink($destination_path);
     $fs->ensureDirectoryExists(dirname($destination_path));
 
-    if ($options['symlink'] == TRUE) {
+    if ($options->symlink() == TRUE) {
       return $this->symlinkScaffold($destination, $io, $options);
     }
     return $this->copyScaffold($destination, $io, $options);
@@ -100,10 +100,10 @@ class ReplaceOp implements OperationInterface {
    *   Scaffold file to process.
    * @param \Composer\IO\IOInterface $io
    *   IOInterface to writing to.
-   * @param array $options
+   * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function copyScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
+  public function copyScaffold(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
     $interpolator = $destination->getInterpolator();
     $this->getSource()->addInterpolationData($interpolator);
 
@@ -124,10 +124,10 @@ class ReplaceOp implements OperationInterface {
    *   Scaffold file to process.
    * @param \Composer\IO\IOInterface $io
    *   IOInterface to writing to.
-   * @param array $options
+   * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function symlinkScaffold(ScaffoldFilePath $destination, IOInterface $io, array $options) : ScaffoldResult {
+  public function symlinkScaffold(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
     $interpolator = $destination->getInterpolator();
     $source_path = $this->getSource()->fullPath();
     $destination_path = $destination->fullPath();

@@ -1,5 +1,5 @@
 {
-  "name": "fixtures/drupal-drupal-test-overwrite",
+  "name": "fixtures/drupal-drupal",
   "type": "project",
   "minimum-stability": "dev",
   "prefer-stable": true,
@@ -35,34 +35,17 @@
   },
   "require": {
     "grasmash/composer-scaffold": "*",
-    "fixtures/drupal-core-fixture": "*",
-    "fixtures/scaffold-override-fixture": "*"
+    "fixtures/drupal-core-fixture": "*"
   },
   "extra": {
     "composer-scaffold": {
-      "allowed-packages": [
-        "fixtures/drupal-core-fixture",
-        "fixtures/scaffold-override-fixture"
-      ],
       "locations": {
         "web-root": "./"
       },
       "symlink": __SYMLINK__,
       "file-mapping": {
         "[web-root]/.htaccess": false,
-        "[web-root]/robots.txt": "assets/robots-default.txt",
-        "make-me.txt": {
-          "path": "assets/replacement.txt",
-          "overwrite": false
-        },
-        "keep-me.txt": {
-          "path": "assets/replacement.txt",
-          "overwrite": false
-        },
-        "replace-me.txt": {
-          "path": "assets/replacement.txt",
-          "overwrite": true
-        }
+        "[web-root]/robots.txt": "assets/robots-default.txt"
       }
     },
     "installer-paths": {

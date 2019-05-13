@@ -39,7 +39,6 @@ class HandlerTest extends TestCase {
 
   /**
    * @covers ::getWebRoot
-   * @covers ::getOptions
    */
   public function testGetWebRoot() {
     $expected = './build/docroot';

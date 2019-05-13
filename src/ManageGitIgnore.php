@@ -84,17 +84,17 @@ class ManageGitIgnore {
   /**
    * Determine whether we should manage gitignore files.
    *
-   * @param array $options
+   * @param ScaffoldOptions $options
    *   Configuration options from the composer.json extras section.
    *
    * @return bool
    *   Whether or not gitignore files should be managed.
    */
-  public function managementOfGitIgnoreEnabled(array $options) {
+  public function managementOfGitIgnoreEnabled(ScaffoldOptions $options) {
     // If the composer.json stipulates whether gitignore is managed or not,
     // then follow its recommendation.
-    if (isset($options['gitignore'])) {
-      return $options['gitignore'];
+    if ($options->hasGitIgnore()) {
+      return $options->gitIgnore();
     }
     // Do not manage .gitignore if there is no repository here.
     if (!$this->isRepository()) {
@@ -111,10 +111,10 @@ class ManageGitIgnore {
    * @param array $files
    *   A list of scaffold results, each of which holds a path and whether
    *   or not that file is managed.
-   * @param array $options
+   * @param ScaffoldOptions $options
    *   Configuration options from the composer.json extras section.
    */
-  public function manageIgnored(array $files, array $options) {
+  public function manageIgnored(array $files, ScaffoldOptions $options) {
     if (!$this->managementOfGitIgnoreEnabled($options)) {
       return;
     }

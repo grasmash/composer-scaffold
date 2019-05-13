@@ -27,7 +27,7 @@ trait ExecTrait {
     $process->setTimeout(300)->setIdleTimeout(300)->run();
     $exitCode = $process->getExitCode();
     if (0 != $exitCode) {
-      throw new \Exception("Exit code: $exitCode\n\n" . $process->getErrorOutput());
+      throw new \Exception("Exit code: $exitCode\n\n" . $process->getErrorOutput() . "\n\n" . $process->getOutput());
     }
     return [$process->getOutput(), $process->getErrorOutput()];
   }
