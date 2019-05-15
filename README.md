@@ -8,7 +8,7 @@ Note that the dependencies of a Drupal site are only able to scaffold files if e
 
 ## Usage
 
-Composer-scaffold is used by requiring `grasmash/composer-scaffold` in your project, and providing configuration settings in the `extra` section of your project's composer.json file. Additional configuration from the composer.jon file of your project's dependencies is also consulted in order to scaffold the files a project needs.
+Composer-scaffold is used by requiring `grasmash/composer-scaffold` in your project, and providing configuration settings in the `extra` section of your project's composer.json file. Additional configuration from the composer.jon file of your project's dependencies is also consulted in order to scaffold the files a project needs. Additional information may be added to the beginning or end of scaffold files, as is commonly done to `.htaccess` and `robots.txt` files. See [altering scaffold files](#altering-scaffold-files) for more information.
 
 ### Allowed Packages
 
@@ -38,24 +38,6 @@ It is possible for a project to obtain scaffold files from multiple projects. Fo
 
 Each project allowed to scaffold by the top-level project will be used in turn, with projects declared later in the `allowed-packages` list taking precidence over the projects named before. The top-level composer.json itself is always implicitly allowed to scaffold files, and its scaffold files have highest priority.
 
-### Defining Scaffold Files
-
-The placement of scaffold assets is under the control of the project that provides them, but the location is always relative to some directory defined by the root project -- usually the web root. For example, the scaffold file `robots.txt` is copied from its source location, `assets/robots.txt` into the web root in the snippet below.
-```
-{
-  "name": "drupal/assets",
-  ...
-  "extra": {
-    "composer-scaffold": {
-      "file-mapping": {
-        "[web-root]/robots.txt": "assets/robots.txt",
-        ...
-      }
-    }
-  }
-}
-```
-
 ### Defining Project Locations
 
 The top-level project in turn must define where the web root is located. It does so via the `locations` mapping, as shown below:
@@ -73,25 +55,7 @@ The top-level project in turn must define where the web root is located. It does
 ``` 
 This makes it possible to configure a project with different file layouts; for example, either the `drupal/drupal` file layout or the `drupal-composer/drupal-project` file layout could be used to set up a project.
 
-### Overwrite
-
-By default, scaffold files overwrite whatever content exists at the target location. Sometimes a project may wish to provide the initial contents for a file that will not be changed in subsequent updates. This can be done by setting the `overwrite` flag to `false`, as shown in the example below:
-```
-{
-  "name": "service-provider/d8-scaffold-files",
-  "extra": {
-    "composer-scaffold": {
-      "file-mapping": {
-        "[web-root]/sites/default/settings.php": {
-          "mode": "replace",
-          "path": "assets/sites/default/settings.php",
-          "overwrite": false
-        }
-      }
-    }
-  }
-}
-```
+If a web-root is not explicitly defined, then it will default to `./`.
 
 ### Altering Scaffold Files
 
@@ -124,6 +88,24 @@ The example below demonstrates the use of the `post-composer-scaffold-cmd` hook 
   }
 ``` 
 
+### Defining Scaffold Files
+
+The placement of scaffold assets is under the control of the project that provides them, but the location is always relative to some directory defined by the root project -- usually the web root. For example, the scaffold file `robots.txt` is copied from its source location, `assets/robots.txt` into the web root in the snippet below.
+```
+{
+  "name": "drupal/assets",
+  ...
+  "extra": {
+    "composer-scaffold": {
+      "file-mapping": {
+        "[web-root]/robots.txt": "assets/robots.txt",
+        ...
+      }
+    }
+  }
+}
+```
+
 ### Excluding Scaffold Files
 
 Sometimes, a project might prefer to entirely replace a scaffold file provided by a dependency, and receive no further updates for it. This can be done by setting the value for the scaffold file to exclude to `false`:
@@ -138,6 +120,28 @@ Sometimes, a project might prefer to entirely replace a scaffold file provided b
     }
   }
 ``` 
+If possible, use the `append` and `prepend` directives as explained in [altering scaffold files](#altering-scaffold-files), above. Excluding a file means that your project will not get any bug fixes or other updates to files that are modified locally.
+
+### Overwrite
+
+By default, scaffold files overwrite whatever content exists at the target location. Sometimes a project may wish to provide the initial contents for a file that will not be changed in subsequent updates. This can be done by setting the `overwrite` flag to `false`, as shown in the example below:
+```
+{
+  "name": "service-provider/d8-scaffold-files",
+  "extra": {
+    "composer-scaffold": {
+      "file-mapping": {
+        "[web-root]/sites/default/settings.php": {
+          "mode": "replace",
+          "path": "assets/sites/default/settings.php",
+          "overwrite": false
+        }
+      }
+    }
+  }
+}
+```
+Note that the `overwrite` directive is intended to be used by starter kits, service providers, and so on. Individual Drupal sites should [exclude the file by setting its value to false](https://github.com/grasmash/composer-scaffold#excluding-scaffold-files) instead.
 
 ## Specifications
 
