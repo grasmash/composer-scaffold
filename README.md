@@ -225,12 +225,6 @@ The `locations` configuration setting contains a list of named locations that ma
   "web-root": "./docroot"
 },
 ```
-### overwrite
-
-The top-level `overwrite` property defines the defaults value for the `overwrite` property of `file-mapping` elements. It defaults to `true`; a project may set it to `false` to disable updating scaffold files. Note that `append` operations override the `overwrite` option, and force a fresh copy every time.
-```
-"overwrite": true,
-```
 ### symlink
 
 The `symlink` property causes `replace` operations to make a symlink to the source file rather than copying it. This is useful when doing core development, as the symlink files themselves should not be edited. Note that `append` operations override the `symlink` option, to prevent the original scaffold assets from being altered.
