@@ -25,7 +25,7 @@ class SkipOpTest extends TestCase {
     $destination = $fixtures->destinationPath('[web-root]/robots.txt');
     $source = $fixtures->sourcePath('drupal-assets-fixture', 'robots.txt');
 
-    $options = ScaffoldOptions::default();
+    $options = ScaffoldOptions::defaultOptions();
 
     $sut = new SkipOp();
 
