@@ -4,7 +4,7 @@
   "type": "composer-plugin",
   "license": "GPL-2.0-or-later",
   "require": {
-    "php": ">=7.0.8",
+    "php": ">=5.6",
     "composer-plugin-api": "^1.0.0"
   },
   "autoload": {
@@ -38,10 +38,7 @@
   },
   "config": {
     "optimize-autoloader": true,
-    "sort-packages": true,
-    "platform": {
-      "php": "7.0.8"
-    }
+    "sort-packages": true
   },
   "require-dev": {
     "composer/composer": "dev-master",
