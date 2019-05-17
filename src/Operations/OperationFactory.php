@@ -123,8 +123,8 @@ class OperationFactory {
   protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, ScaffoldOptions $options) : OperationInterface {
     $op = new ReplaceOp();
 
-    // If this op does not provide an 'overwrite' value, then fill in the default.
-    $metadata += ['overwrite' => $options->overwrite()];
+    // If this op does not provide an 'overwrite' value, default it to true.
+    $metadata += ['overwrite' => TRUE];
     if (!isset($metadata['path'])) {
       throw new \Exception("'path' component required for 'replace' operations.");
     }

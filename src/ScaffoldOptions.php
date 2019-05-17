@@ -30,7 +30,6 @@ class ScaffoldOptions {
       "allowed-packages" => [],
       "locations" => [],
       "symlink" => FALSE,
-      "overwrite" => TRUE,
       "file-mapping" => [],
     ];
   }
@@ -197,16 +196,6 @@ class ScaffoldOptions {
    */
   public function fileMapping() : array {
     return $this->options['file-mapping'];
-  }
-
-  /**
-   * Whether the options have the global overwrite preference.
-   *
-   * @return bool
-   *   The global the overwrite option
-   */
-  public function overwrite() : bool {
-    return $this->options['overwrite'];
   }
 
   /**
