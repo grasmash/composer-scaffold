@@ -59,7 +59,7 @@ class ScaffoldOptions {
    * @return self
    *   A scaffold options object with default values
    */
-  public static function default() {
+  public static function defaultOptions() {
     return new self([]);
   }
 

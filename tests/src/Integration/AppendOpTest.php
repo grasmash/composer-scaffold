@@ -24,7 +24,7 @@ class AppendOpTest extends TestCase {
     $fixtures = new Fixtures();
     $destination = $fixtures->destinationPath('[web-root]/robots.txt');
     $source = $fixtures->sourcePath('drupal-assets-fixture', 'robots.txt');
-    $options = ScaffoldOptions::default();
+    $options = ScaffoldOptions::defaultOptions();
     $originalOp = new ReplaceOp();
     $originalOp->setSource($source);
     $originalOp->setOverwrite(TRUE);

@@ -23,7 +23,7 @@ class SkipOpTest extends TestCase {
     $fixtures = new Fixtures();
     $destination = $fixtures->destinationPath('[web-root]/robots.txt');
     $source = $fixtures->sourcePath('drupal-assets-fixture', 'robots.txt');
-    $options = ScaffoldOptions::default();
+    $options = ScaffoldOptions::defaultOptions();
     $sut = new SkipOp();
     // Assert that there is no target file before we run our test.
     $this->assertFileNotExists($destination->fullPath());
