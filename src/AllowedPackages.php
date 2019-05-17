@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Composer\Composer;
@@ -17,18 +15,14 @@ use Grasmash\ComposerScaffold\ScaffoldFilePath;
  * drupal/assets, then the later package will also implicitly be allowed.
  */
 class AllowedPackages {
-
   /**
    * The Composer service.
    *
    * @var \Composer\Composer
    */
   protected $composer;
-
   protected $io;
-
   protected $manageOptions;
-
   protected $newPackages;
 
   /**
@@ -59,10 +53,9 @@ class AllowedPackages {
    * @return \Composer\Package\PackageInterface[]
    *   An array of allowed Composer packages.
    */
-  public function getAllowedPackages(): array {
+  public function getAllowedPackages() {
     $options = $this->manageOptions->getOptions();
     $allowed_packages = $this->recursiveGetAllowedPackages($options->allowedPackages());
-
     // If the root package defines any file mappings, then implicitly add it
     // to the list of allowed packages. Add it at the end so that it overrides
     // all the preceding packages.
@@ -71,10 +64,8 @@ class AllowedPackages {
       unset($allowed_packages[$root_package->getName()]);
       $allowed_packages[$root_package->getName()] = $root_package;
     }
-
     // Handle any newly-added packages that are not already allowed.
     $allowed_packages = $this->evaluateNewPackages($allowed_packages);
-
     return $allowed_packages;
   }
 
@@ -89,12 +80,11 @@ class AllowedPackages {
    * @return \Composer\Package\PackageInterface[]
    *   Mapping of package names to PackageInterface in priority order.
    */
-  protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) : array {
+  protected function recursiveGetAllowedPackages(array $packages_to_allow, array $allowed_packages = []) {
     foreach ($packages_to_allow as $name) {
       $package = $this->getPackage($name);
       if ($package && $package instanceof PackageInterface && !array_key_exists($name, $allowed_packages)) {
         $allowed_packages[$name] = $package;
-
         $packageOptions = $this->manageOptions->packageOptions($package);
         $allowed_packages = $this->recursiveGetAllowedPackages($packageOptions->allowedPackages(), $allowed_packages);
       }
@@ -116,13 +106,12 @@ class AllowedPackages {
   protected function evaluateNewPackages(array $allowed_packages) {
     foreach ($this->newPackages as $name => $newPackage) {
       if (!array_key_exists($name, $allowed_packages)) {
-        $this->io->write("Package <comment>$name</comment> has scaffold operations, but it is not allowed in the root-level composer.json file.");
+        $this->io->write("Package <comment>{$name}</comment> has scaffold operations, but it is not allowed in the root-level composer.json file.");
       }
       else {
-        $this->io->write("Package <comment>$name</comment> has scaffold operations, and is already allowed in the root-level composer.json file.");
+        $this->io->write("Package <comment>{$name}</comment> has scaffold operations, and is already allowed in the root-level composer.json file.");
       }
     }
-
     // In the future, we will allow this method to add more allowed packages.
     return $allowed_packages;
   }
@@ -136,7 +125,7 @@ class AllowedPackages {
    * @return \Composer\Package\PackageInterface|null
    *   The Composer package.
    */
-  protected function getPackage(string $name) {
+  protected function getPackage($name) {
     return $this->composer->getRepositoryManager()->getLocalRepository()->findPackage($name, '*');
   }
 

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\IO\IOInterface;
@@ -14,7 +12,6 @@ use Grasmash\ComposerScaffold\ScaffoldOptions;
  * OperationCollection keeps track of the collection of files to be scaffolded.
  */
 class OperationCollection {
-
   protected $listOfScaffoldFiles;
   protected $resolvedFileMappings;
   protected $io;
@@ -36,7 +33,7 @@ class OperationCollection {
    * @return array
    *   Associative array containing package name => file mappings
    */
-  public function fileMappings() : array {
+  public function fileMappings() {
     return $this->resolvedFileMappings;
   }
 
@@ -46,7 +43,7 @@ class OperationCollection {
    * @return array
    *   Associative array containing destination => operation mappings
    */
-  public function scaffoldList() : array {
+  public function scaffoldList() {
     return $this->listOfScaffoldFiles;
   }
 
@@ -65,7 +62,7 @@ class OperationCollection {
    * @return string
    *   The name of the package that provided the scaffold file information.
    */
-  public function findProvidingPackage(ScaffoldFileInfo $scaffold_file): string {
+  public function findProvidingPackage(ScaffoldFileInfo $scaffold_file) {
     // The scaffold file should always be in our list, but we will check
     // just to be sure that it really is.
     $scaffoldList = $this->scaffoldList();
@@ -92,19 +89,13 @@ class OperationCollection {
     $list_of_scaffold_files = [];
     foreach ($file_mappings as $package_name => $package_file_mappings) {
       foreach ($package_file_mappings as $destination_rel_path => $op) {
-
         $destination = ScaffoldFilePath::destinationPath($package_name, $destination_rel_path, $locationReplacements);
-
-        $scaffold_file = (new ScaffoldFileInfo())
-          ->setDestination($destination)
-          ->setOp($op);
-
+        $scaffold_file = (new ScaffoldFileInfo())->setDestination($destination)->setOp($op);
         // If there was already a scaffolding operation happening at this
         // path, then pass it along to the new scaffold op, if it cares.
-        if (isset($list_of_scaffold_files[$destination_rel_path]) && ($op instanceof OriginalOpAwareInterface)) {
+        if (isset($list_of_scaffold_files[$destination_rel_path]) && $op instanceof OriginalOpAwareInterface) {
           $op->setOriginalOp($list_of_scaffold_files[$destination_rel_path]->op());
         }
-
         $list_of_scaffold_files[$destination_rel_path] = $scaffold_file;
         $resolved_file_mappings[$package_name][$destination_rel_path] = $scaffold_file;
       }
@@ -131,11 +122,11 @@ class OperationCollection {
     // those not being scaffolded (because they were overridden or removed
     // by some later package).
     foreach ($this->fileMappings() as $package_name => $package_scaffold_files) {
-      $this->io->write("Scaffolding files for <comment>$package_name</comment>:");
+      $this->io->write("Scaffolding files for <comment>{$package_name}</comment>:");
       foreach ($package_scaffold_files as $dest_rel_path => $scaffold_file) {
         $overriding_package = $this->findProvidingPackage($scaffold_file);
         if ($scaffold_file->overridden($overriding_package)) {
-          $this->io->write($scaffold_file->interpolate("  - Skip <info>[dest-rel-path]</info>: overridden in <comment>$overriding_package</comment>"));
+          $this->io->write($scaffold_file->interpolate("  - Skip <info>[dest-rel-path]</info>: overridden in <comment>{$overriding_package}</comment>"));
         }
         else {
           $result[$dest_rel_path] = $scaffold_file->process($this->io, $options);

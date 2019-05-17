@@ -11,7 +11,6 @@ use Grasmash\ComposerScaffold\Operations\ScaffoldResult;
  * Generates an 'autoload.php' that includes the autoloader created by Composer.
  */
 class GenerateAutoloadReferenceFile {
-
   protected $vendorPath;
 
   /**
@@ -20,7 +19,7 @@ class GenerateAutoloadReferenceFile {
    * @param string $vendorPath
    *   Path to the vendor directory.
    */
-  public function __construct(string $vendorPath) {
+  public function __construct($vendorPath) {
     $this->vendorPath = $vendorPath;
   }
 
@@ -37,15 +36,13 @@ class GenerateAutoloadReferenceFile {
    * @return \Grasmash\ComposerScaffold\Operations\ScaffoldResult
    *   The result of the autoload file generation
    */
-  public function generateAutoload(ScaffoldFilePath $autoloadPath) : ScaffoldResult {
+  public function generateAutoload(ScaffoldFilePath $autoloadPath) {
     $location = dirname($autoloadPath->fullPath());
     // Calculate the relative path from the webroot (location of the project
     // autoload.php) to the vendor directory.
     $fs = new SymfonyFilesystem();
     $relativeVendorPath = $fs->makePathRelative($this->vendorPath, realpath($location));
-
     $fs->dumpFile($autoloadPath->fullPath(), $this->autoLoadContents($relativeVendorPath));
-
     return (new ScaffoldResult($autoloadPath))->setManaged();
   }
 
@@ -55,9 +52,8 @@ class GenerateAutoloadReferenceFile {
    * @return string
    *   Return the contents for the autoload.php.
    */
-  protected function autoLoadContents(string $relativeVendorPath) : string {
+  protected function autoLoadContents($relativeVendorPath) {
     $relativeVendorPath = rtrim($relativeVendorPath, '/');
-
     return <<<EOF
 <?php
 
@@ -74,7 +70,7 @@ class GenerateAutoloadReferenceFile {
  * @see core/modules/statistics/statistics.php
  */
 
-return require __DIR__ . '/$relativeVendorPath/autoload.php';
+return require __DIR__ . '/{$relativeVendorPath}/autoload.php';
 
 EOF;
   }

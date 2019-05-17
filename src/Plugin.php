@@ -18,7 +18,6 @@ use Composer\Plugin\CommandEvent;
  * Composer plugin for handling drupal scaffold.
  */
 class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
-
   /**
    * The Composer Scaffold handler.
    *
@@ -41,20 +40,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable {
    * {@inheritdoc}
    */
   public function getCapabilities() {
-    return [
-      'Composer\Plugin\Capability\CommandProvider' => 'Grasmash\ComposerScaffold\CommandProvider',
-    ];
+    return ['Composer\\Plugin\\Capability\\CommandProvider' => 'Grasmash\\ComposerScaffold\\CommandProvider'];
   }
 
   /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    return [
-      ScriptEvents::POST_UPDATE_CMD => 'postCmd',
-      PackageEvents::POST_PACKAGE_INSTALL => 'postPackage',
-      PluginEvents::COMMAND => 'onCommand',
-    ];
+    return [ScriptEvents::POST_UPDATE_CMD => 'postCmd', PackageEvents::POST_PACKAGE_INSTALL => 'postPackage', PluginEvents::COMMAND => 'onCommand'];
   }
 
   /**
