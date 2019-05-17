@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\Composer;
@@ -15,7 +13,6 @@ use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
  * Scaffold operation to copy or symlink from source to destination.
  */
 class ReplaceOp implements OperationInterface {
-
   protected $source;
   protected $overwrite;
 
@@ -27,7 +24,7 @@ class ReplaceOp implements OperationInterface {
    *
    * @return $this
    */
-  public function setSource(ScaffoldFilePath $sourcePath) : self {
+  public function setSource(ScaffoldFilePath $sourcePath) {
     $this->source = $sourcePath;
     return $this;
   }
@@ -38,7 +35,7 @@ class ReplaceOp implements OperationInterface {
    * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The source file reference object.
    */
-  public function getSource() : ScaffoldFilePath {
+  public function getSource() {
     return $this->source;
   }
 
@@ -50,7 +47,7 @@ class ReplaceOp implements OperationInterface {
    *
    * @return $this
    */
-  public function setOverwrite(bool $overwrite) : self {
+  public function setOverwrite($overwrite) {
     $this->overwrite = $overwrite;
     return $this;
   }
@@ -61,7 +58,7 @@ class ReplaceOp implements OperationInterface {
    * @return bool
    *   Value of the 'overwrite' option.
    */
-  public function getOverwrite() : bool {
+  public function getOverwrite() {
     return $this->overwrite;
   }
 
@@ -70,23 +67,19 @@ class ReplaceOp implements OperationInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) {
     $fs = new Filesystem();
-
     $destination_path = $destination->fullPath();
-
     // Do nothing if overwrite is 'false' and a file already exists at the destination.
-    if (($this->getOverwrite() === FALSE) && file_exists($destination_path)) {
+    if ($this->getOverwrite() === FALSE && file_exists($destination_path)) {
       $interpolator = $destination->getInterpolator();
       $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info> because it already exists and overwrite is <comment>false</comment>."));
       return (new ScaffoldResult($destination))->setManaged(FALSE);
     }
-
     // Get rid of the destination if it exists, and make sure that
     // the directory where it's going to be placed exists.
     @unlink($destination_path);
     $fs->ensureDirectoryExists(dirname($destination_path));
-
     if ($options->symlink() == TRUE) {
       return $this->symlinkScaffold($destination, $io, $options);
     }
@@ -103,17 +96,14 @@ class ReplaceOp implements OperationInterface {
    * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function copyScaffold(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
+  public function copyScaffold(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) {
     $interpolator = $destination->getInterpolator();
     $this->getSource()->addInterpolationData($interpolator);
-
     $success = copy($this->getSource()->fullPath(), $destination->fullPath());
     if (!$success) {
       throw new \Exception($interpolator->interpolate("Could not copy source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>!"));
     }
-
     $io->write($interpolator->interpolate("  - Copy <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>"));
-
     return (new ScaffoldResult($destination))->setManaged($this->getOverwrite());
   }
 
@@ -127,11 +117,10 @@ class ReplaceOp implements OperationInterface {
    * @param \Grasmash\ComposerScaffold\ScaffoldOptions $options
    *   Various options that may alter the behavior of the operation.
    */
-  public function symlinkScaffold(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
+  public function symlinkScaffold(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) {
     $interpolator = $destination->getInterpolator();
     $source_path = $this->getSource()->fullPath();
     $destination_path = $destination->fullPath();
-
     try {
       $fs = new Filesystem();
       $fs->relativeSymlink($this->getSource()->fullPath(), $destination->fullPath());
@@ -139,9 +128,7 @@ class ReplaceOp implements OperationInterface {
     catch (\Exception $e) {
       throw new \Exception($interpolator->interpolate("Could not symlink source file <info>[src-rel-path]</info> to <info>[dest-rel-path]</info>! "), 1, $e);
     }
-
     $io->write($interpolator->interpolate("  - Link <info>[dest-rel-path]</info> from <info>[src-rel-path]</info>"));
-
     return (new ScaffoldResult($destination))->setManaged($this->getOverwrite());
   }
 

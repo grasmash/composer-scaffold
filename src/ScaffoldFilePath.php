@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Grasmash\ComposerScaffold\Interpolator;
@@ -20,7 +18,6 @@ use Grasmash\ComposerScaffold\Interpolator;
  * ScafoldFilePath objects.
  */
 class ScaffoldFilePath {
-
   protected $type;
   protected $packageName;
   protected $relPath;
@@ -38,7 +35,7 @@ class ScaffoldFilePath {
    * @param string $full_path
    *   The full path to the file.
    */
-  public function __construct(string $path_type, string $package_name, string $rel_path, string $full_path) {
+  public function __construct($path_type, $package_name, $rel_path, $full_path) {
     $this->type = $path_type;
     $this->packageName = $package_name;
     $this->relPath = $rel_path;
@@ -51,7 +48,7 @@ class ScaffoldFilePath {
    * @return string
    *   Name of package.
    */
-  public function packageName() : string {
+  public function packageName() {
     return $this->packageName;
   }
 
@@ -61,7 +58,7 @@ class ScaffoldFilePath {
    * @return string
    *   Relative path to file.
    */
-  public function relativePath() : string {
+  public function relativePath() {
     return $this->relPath;
   }
 
@@ -71,7 +68,7 @@ class ScaffoldFilePath {
    * @return string
    *   Full path to file.
    */
-  public function fullPath() : string {
+  public function fullPath() {
     return $this->fullPath;
   }
 
@@ -92,22 +89,19 @@ class ScaffoldFilePath {
    * @return self
    *   Object wrapping the relative and absolute path to the source file.
    */
-  public static function sourcePath(string $package_name, string $package_path, string $destination, string $source) : self {
+  public static function sourcePath($package_name, $package_path, $destination, $source) {
     // Complain if there is no source path.
     if (empty($source)) {
-      throw new \Exception("No scaffold file path given for $destination in package $package_name.");
+      throw new \Exception("No scaffold file path given for {$destination} in package {$package_name}.");
     }
-
     // Calculate the full path to the source scaffold file.
     $source_full_path = $package_path . '/' . $source;
-
     if (!file_exists($source_full_path)) {
-      throw new \Exception("Scaffold file $source not found in package $package_name.");
+      throw new \Exception("Scaffold file {$source} not found in package {$package_name}.");
     }
     if (is_dir($source_full_path)) {
-      throw new \Exception("Scaffold file $source in package $package_name is a directory; only files may be scaffolded.");
+      throw new \Exception("Scaffold file {$source} in package {$package_name} is a directory; only files may be scaffolded.");
     }
-
     return new self('src', $package_name, $source, $source_full_path);
   }
 
@@ -128,9 +122,8 @@ class ScaffoldFilePath {
    * @return self
    *   Object wrapping the relative and absolute path to the destination file.
    */
-  public static function destinationPath(string $package_name, string $destination, Interpolator $locationReplacements) : self {
+  public static function destinationPath($package_name, $destination, Interpolator $locationReplacements) {
     $dest_full_path = $locationReplacements->interpolate($destination);
-
     return new self('dest', $package_name, $destination, $dest_full_path);
   }
 
@@ -145,7 +138,7 @@ class ScaffoldFilePath {
    * @return self
    *   Object wrapping the relative and absolute path to the destination file.
    */
-  public static function autoloadPath(string $package_name, string $web_root) : self {
+  public static function autoloadPath($package_name, $web_root) {
     $rel_path = 'autoload.php';
     $dest_rel_path = '[web-root]/' . $rel_path;
     $dest_full_path = $web_root . '/' . $rel_path;
@@ -160,14 +153,14 @@ class ScaffoldFilePath {
    * @param string $namePrefix
    *   Prefix to add before -rel-path and -full-path item names. Defaults to path type.
    */
-  public function addInterpolationData(Interpolator $interpolator, string $namePrefix = '') {
+  public function addInterpolationData(Interpolator $interpolator, $namePrefix = '') {
     if (empty($namePrefix)) {
       $namePrefix = $this->type;
     }
     $data = [
       'package-name' => $this->packageName(),
       "{$namePrefix}-rel-path" => $this->relativePath(),
-      "{$namePrefix}-full-path" => $this->fullPath(),
+      "{$namePrefix}-full-path" => $this->fullPath()
     ];
     $interpolator->addData($data);
   }
@@ -181,7 +174,7 @@ class ScaffoldFilePath {
    * @return \Grasmash\ComposerScaffold\Interpolator
    *   An interpolator for making string replacements.
    */
-  public function getInterpolator($namePrefix = '') : Interpolator {
+  public function getInterpolator($namePrefix = '') {
     $interpolator = new Interpolator();
     $this->addInterpolationData($interpolator, $namePrefix);
     return $interpolator;

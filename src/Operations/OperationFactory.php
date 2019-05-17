@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\Composer;
@@ -15,7 +13,6 @@ use Grasmash\ComposerScaffold\ScaffoldOptions;
  * Create Scaffold operation objects based on provided metadata.
  */
 class OperationFactory {
-
   protected $composer;
 
   /**
@@ -45,25 +42,22 @@ class OperationFactory {
    * @return array
    *   Normalized scaffold metadata.
    */
-  public function normalizeScaffoldMetadata(string $key, $value) : array {
+  public function normalizeScaffoldMetadata($key, $value) {
     if (is_bool($value)) {
       if (!$value) {
         return ['mode' => 'skip'];
       }
-      throw new \Exception("File mapping $key cannot be given the value 'true'.");
+      throw new \Exception("File mapping {$key} cannot be given the value 'true'.");
     }
     if (empty($value)) {
-      throw new \Exception("File mapping $key cannot be empty.");
+      throw new \Exception("File mapping {$key} cannot be empty.");
     }
     if (is_string($value)) {
       $value = ['path' => $value];
     }
     // If there is no 'mode', but there is an 'append' or a 'prepend' path,
     // then the mode is 'append' (append + prepend).
-    if (
-      !isset($value['mode']) &&
-      (isset($value['append']) || isset($value['prepend']))
-    ) {
+    if (!isset($value['mode']) && (isset($value['append']) || isset($value['prepend']))) {
       $value['mode'] = 'append';
     }
     // If there is no 'mode', then the default is 'replace'.
@@ -88,7 +82,7 @@ class OperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   The scaffolding operation object (skip, replace, etc.)
    */
-  public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, ScaffoldOptions $options) : OperationInterface {
+  public function createScaffoldOp(PackageInterface $package, $dest_rel_path, $value, ScaffoldOptions $options) {
     switch ($value['mode']) {
       case 'skip':
         return new SkipOp();
@@ -99,7 +93,6 @@ class OperationFactory {
       case 'append':
         return $this->createAppendOp($package, $dest_rel_path, $value, $options);
     }
-
     throw new \Exception("Unknown scaffold opperation mode <comment>{$value['mode']}</comment>.");
   }
 
@@ -120,24 +113,17 @@ class OperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createReplaceOp(PackageInterface $package, string $dest_rel_path, array $metadata, ScaffoldOptions $options) : OperationInterface {
+  protected function createReplaceOp(PackageInterface $package, $dest_rel_path, array $metadata, ScaffoldOptions $options) {
     $op = new ReplaceOp();
-
     // If this op does not provide an 'overwrite' value, default it to true.
     $metadata += ['overwrite' => TRUE];
     if (!isset($metadata['path'])) {
       throw new \Exception("'path' component required for 'replace' operations.");
     }
-
     $package_name = $package->getName();
     $package_path = $this->getPackagePath($package);
-
     $source = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['path']);
-
-    $op
-      ->setSource($source)
-      ->setOverwrite($metadata['overwrite']);
-
+    $op->setSource($source)->setOverwrite($metadata['overwrite']);
     return $op;
   }
 
@@ -156,23 +142,18 @@ class OperationFactory {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   A scaffold replace operation obejct.
    */
-  protected function createAppendOp(PackageInterface $package, string $dest_rel_path, array $metadata, ScaffoldOptions $options) : OperationInterface {
-
+  protected function createAppendOp(PackageInterface $package, $dest_rel_path, array $metadata, ScaffoldOptions $options) {
     $op = new AppendOp();
-
     $package_name = $package->getName();
     $package_path = $this->getPackagePath($package);
-
     if (isset($metadata['prepend'])) {
       $prepend_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['prepend']);
       $op->setPrependFile($prepend_source_file);
     }
-
     if (isset($metadata['append'])) {
       $append_source_file = ScaffoldFilePath::sourcePath($package_name, $package_path, $dest_rel_path, $metadata['append']);
       $op->setAppendFile($append_source_file);
     }
-
     return $op;
   }
 
@@ -189,7 +170,7 @@ class OperationFactory {
    * @return string
    *   The file path.
    */
-  protected function getPackagePath(PackageInterface $package) : string {
+  protected function getPackagePath(PackageInterface $package) {
     if ($package->getName() == $this->composer->getPackage()->getName()) {
       // This will respect the --working-dir option if Composer is invoked with
       // it. There is no API or method to determine the filesystem path of

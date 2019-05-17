@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 use Grasmash\ComposerScaffold\ScaffoldFilePath;
@@ -10,7 +8,6 @@ use Grasmash\ComposerScaffold\ScaffoldFilePath;
  * Record the result of a scaffold operation.
  */
 class ScaffoldResult {
-
   protected $destination;
   protected $managed;
 
@@ -31,7 +28,7 @@ class ScaffoldResult {
    * @return bool
    *   Whether the scaffold file was managed by this plugin (scaffolded) or not (skipped).
    */
-  public function isManaged() : bool {
+  public function isManaged() {
     return $this->managed;
   }
 
@@ -43,7 +40,7 @@ class ScaffoldResult {
    *
    * @return $this
    */
-  public function setManaged(bool $isManaged = TRUE) {
+  public function setManaged($isManaged = TRUE) {
     $this->managed = $isManaged;
     return $this;
   }
@@ -54,7 +51,7 @@ class ScaffoldResult {
    * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The destination path for the scaffold result.
    */
-  public function destination() : ScaffoldFilePath {
+  public function destination() {
     return $this->destination;
   }
 

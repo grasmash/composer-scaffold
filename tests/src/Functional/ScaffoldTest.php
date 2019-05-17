@@ -17,11 +17,8 @@ use Symfony\Component\Process\Process;
  * scaffold operations: copy, symlinks, skips and so on.
  */
 class ScaffoldTest extends TestCase {
-
   use AssertUtilsTrait;
-
   const FIXTURE_DIR = 'SCAFFOLD_FIXTURE_DIR';
-
   /**
    * The root of this project.
    *
@@ -31,21 +28,18 @@ class ScaffoldTest extends TestCase {
    * @var string
    */
   protected $projectRoot;
-
   /**
    * Directory to perform the tests in.
    *
    * @var string
    */
   protected $fixturesDir;
-
   /**
    * The file path to the system under test.
    *
    * @var string
    */
   protected $sut;
-
   /**
    * The Symfony FileSystem component.
    *
@@ -59,7 +53,6 @@ class ScaffoldTest extends TestCase {
   protected function setUp() {
     $this->fileSystem = new Filesystem();
     $this->fixtures = new Fixtures();
-
     $this->projectRoot = $this->fixtures->projectRoot();
     $this->fixturesDir = getenv(self::FIXTURE_DIR);
     if (!$this->fixturesDir) {
@@ -80,13 +73,10 @@ class ScaffoldTest extends TestCase {
    */
   protected function createSut($topLevelProjectDir, $replacements = []) {
     $this->sut = $this->fixturesDir . '/' . $topLevelProjectDir;
-
     // Erase just our sut, to ensure it is clean. Recopy all of the fixtures.
     $this->fileSystem->remove($this->sut);
-
     $replacements += ['PROJECT_ROOT' => $this->projectRoot];
     $this->fixtures->cloneFixtureProjects($this->fixturesDir, $replacements);
-
     return $this->sut;
   }
 
@@ -98,8 +88,8 @@ class ScaffoldTest extends TestCase {
       [
         'drupal-drupal-missing-scaffold-file',
         'Scaffold file assets/missing-robots-default.txt not found in package fixtures/drupal-drupal-missing-scaffold-file.',
-        TRUE,
-      ],
+        TRUE
+      ]
     ];
   }
 
@@ -109,13 +99,9 @@ class ScaffoldTest extends TestCase {
    * @dataProvider scaffoldFixturesWithErrorConditionsTestValues
    */
   public function testScaffoldFixturesWithErrorConditions($topLevelProjectDir, $expectedExceptionMessage, $is_link) {
-    $sut = $this->createSut($topLevelProjectDir, [
-      'SYMLINK' => $is_link ? 'true' : 'false',
-    ]);
-
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => $is_link ? 'true' : 'false']);
     // Run composer install to get the dependencies we need to test.
     $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
-
     // Test scaffold. Expect an error.
     $this->expectException(\Exception::class);
     $this->expectExceptionMessage($expectedExceptionMessage);
@@ -129,29 +115,28 @@ class ScaffoldTest extends TestCase {
     return [
       [
         'drupal-composer-drupal-project',
-        'assertDrupalProjectSutWasScaffolded',
-        TRUE,
+        'assertDrupalProjectSutWasScaffolded', TRUE
       ],
       [
         'drupal-drupal',
         'assertDrupalDrupalSutWasScaffolded',
-        FALSE,
+        FALSE
       ],
       [
         'drupal-drupal-test-overwrite',
         'assertDrupalDrupalFileWasReplaced',
-        FALSE,
+        FALSE
       ],
       [
         'drupal-drupal-test-append',
         'assertDrupalDrupalFileWasAppended',
-        FALSE,
+        FALSE
       ],
       [
         'drupal-drupal-test-append',
         'assertDrupalDrupalFileWasAppended',
-        TRUE,
-      ],
+        TRUE
+      ]
     ];
   }
 
@@ -161,13 +146,9 @@ class ScaffoldTest extends TestCase {
    * @dataProvider scaffoldTestValues
    */
   public function testScaffold($topLevelProjectDir, $scaffoldAssertions, $is_link) {
-    $sut = $this->createSut($topLevelProjectDir, [
-      'SYMLINK' => $is_link ? 'true' : 'false',
-    ]);
-
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => $is_link ? 'true' : 'false']);
     // Run composer install to get the dependencies we need to test.
     $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
-
     // Test composer:scaffold.
     $scaffoldOutput = $this->fixtures->runScaffold($sut);
     // @todo We could assert that $scaffoldOutput must contain some expected text
@@ -179,13 +160,9 @@ class ScaffoldTest extends TestCase {
    */
   public function testEmptyProject() {
     $topLevelProjectDir = 'empty-fixture';
-    $sut = $this->createSut($topLevelProjectDir, [
-      'SYMLINK' => 'false',
-    ]);
-
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => 'false']);
     // Run composer install to get the dependencies we need to test.
     $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
-
     // Test composer:scaffold.
     $scaffoldOutput = $this->fixtures->runScaffold($sut);
     $this->assertEquals('', $scaffoldOutput);
@@ -196,17 +173,12 @@ class ScaffoldTest extends TestCase {
    */
   public function testProjectThatScaffoldsEmptyProject() {
     $topLevelProjectDir = 'project-allowing-empty-fixture';
-    $sut = $this->createSut($topLevelProjectDir, [
-      'SYMLINK' => 'false',
-    ]);
-
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => 'false']);
     // Run composer install to get the dependencies we need to test.
     $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
-
     // Test composer:scaffold.
     $scaffoldOutput = $this->fixtures->runScaffold($sut);
     $this->assertContains('The allowed package fixtures/empty-fixture does not provide a file mapping for Composer Scaffold', $scaffoldOutput);
-
     $docroot = $sut;
     $this->assertCommonDrupalAssetsWereScaffolded($docroot, FALSE, $topLevelProjectDir);
   }
@@ -216,13 +188,9 @@ class ScaffoldTest extends TestCase {
    */
   public function testProjectWithEmptyScaffoldPath() {
     $topLevelProjectDir = 'project-with-empty-scaffold-path';
-    $sut = $this->createSut($topLevelProjectDir, [
-      'SYMLINK' => 'false',
-    ]);
-
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => 'false']);
     // Run composer install to get the dependencies we need to test.
     $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
-
     // Test composer:scaffold.
     $this->expectException(\Exception::class);
     $this->expectExceptionMessage('No scaffold file path given for [web-root]/my-error in package fixtures/project-with-empty-scaffold-path');
@@ -234,13 +202,9 @@ class ScaffoldTest extends TestCase {
    */
   public function testProjectWithIllegalDirScaffold() {
     $topLevelProjectDir = 'project-with-illegal-dir-scaffold';
-    $sut = $this->createSut($topLevelProjectDir, [
-      'SYMLINK' => 'false',
-    ]);
-
+    $sut = $this->createSut($topLevelProjectDir, ['SYMLINK' => 'false']);
     // Run composer install to get the dependencies we need to test.
     $this->fixtures->runComposer("install --no-ansi --no-scripts", $this->sut);
-
     // Test composer:scaffold.
     $this->expectException(\Exception::class);
     $this->expectExceptionMessage('Scaffold file assets in package fixtures/project-with-illegal-dir-scaffold is a directory; only files may be scaffolded');
@@ -252,7 +216,6 @@ class ScaffoldTest extends TestCase {
    */
   protected function assertDrupalProjectSutWasScaffolded($sut, $is_link, $project_name) {
     $docroot = $sut . '/docroot';
-
     $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
     $this->assertDefaultSettingsFromScaffoldOverride($docroot, $is_link);
     $this->assertHtaccessExcluded($docroot);
@@ -263,7 +226,6 @@ class ScaffoldTest extends TestCase {
    */
   protected function assertDrupalDrupalSutWasScaffolded($sut, $is_link, $project_name) {
     $docroot = $sut;
-
     $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
     $this->assertDefaultSettingsFromScaffoldOverride($docroot, $is_link);
     $this->assertHtaccessExcluded($docroot);
@@ -294,13 +256,11 @@ class ScaffoldTest extends TestCase {
    */
   protected function assertDrupalDrupalFileWasReplaced($sut, $is_link, $project_name) {
     $docroot = $sut;
-
     $this->assertScaffoldedFile($docroot . '/replace-me.txt', $is_link, '#from assets that replaces file#');
     $this->assertScaffoldedFile($docroot . '/keep-me.txt', $is_link, '#File in drupal-drupal-test-overwrite that is not replaced#');
     $this->assertScaffoldedFile($docroot . '/make-me.txt', $is_link, '#from assets that replaces file#');
-
     $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
-    $this->assertScaffoldedFile($docroot . '/robots.txt', $is_link, "#$project_name#");
+    $this->assertScaffoldedFile($docroot . '/robots.txt', $is_link, "#{$project_name}#");
   }
 
   /**
@@ -308,9 +268,7 @@ class ScaffoldTest extends TestCase {
    */
   protected function assertDrupalDrupalFileWasAppended($sut, $is_link, $project_name) {
     $docroot = $sut;
-
     $this->assertScaffoldedFile($docroot . '/robots.txt', FALSE, '#in drupal-drupal-test-append composer.json fixture.*This content is prepended to the top of the existing robots.txt fixture.*Test version of robots.txt from drupal/core.*This content is appended to the bottom of the existing robots.txt fixture.*in drupal-drupal-test-append composer.json fixture#ms');
-
     $this->assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name);
   }
 
@@ -322,12 +280,10 @@ class ScaffoldTest extends TestCase {
    * in different ways in different tests.
    */
   protected function assertCommonDrupalAssetsWereScaffolded($docroot, $is_link, $project_name) {
-    $from_project = "#scaffolded from \"file-mappings\" in $project_name composer.json fixture#";
+    $from_project = "#scaffolded from \"file-mappings\" in {$project_name} composer.json fixture#";
     $from_core = '#from drupal/core#';
-
     // Ensure that the autoload.php file was written.
     $this->assertFileExists($docroot . '/autoload.php');
-
     // Assert other scaffold files are written in the correct locations.
     $this->assertScaffoldedFile($docroot . '/.csslintrc', $is_link, $from_core);
     $this->assertScaffoldedFile($docroot . '/.editorconfig', $is_link, $from_core);

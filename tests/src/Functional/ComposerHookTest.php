@@ -24,10 +24,8 @@ use Symfony\Component\Process\Process;
  * information.
  */
 class ComposerHookTest extends TestCase {
-
   use ExecTrait;
   use AssertUtilsTrait;
-
   /**
    * The root of this project.
    *
@@ -37,14 +35,12 @@ class ComposerHookTest extends TestCase {
    * @var string
    */
   protected $projectRoot;
-
   /**
    * Directory to perform the tests in.
    *
    * @var string
    */
   protected $fixturesDir;
-
   /**
    * The Symfony FileSystem component.
    *
@@ -75,21 +71,14 @@ class ComposerHookTest extends TestCase {
   public function testComposerHooks() {
     $this->fixturesDir = $this->fixtures->tmpDir($this->getName());
     $is_link = FALSE;
-
-    $replacements = [
-      'SYMLINK' => $is_link ? 'true' : 'false',
-      'PROJECT_ROOT' => $this->projectRoot,
-    ];
+    $replacements = ['SYMLINK' => $is_link ? 'true' : 'false', 'PROJECT_ROOT' => $this->projectRoot];
     $this->fixtures->cloneFixtureProjects($this->fixturesDir, $replacements);
-
     $topLevelProjectDir = 'composer-hooks-fixture';
     $sut = $this->fixturesDir . '/' . $topLevelProjectDir;
-
     // First test: run composer install. This is the same as composer update
     // since there is no lock file. Ensure that scaffold operation ran.
     $this->execComposer("install --no-ansi", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#Test version of default.settings.php from drupal/core#');
-
     // Run composer required to add in the scaffold-override-fixture. This
     // project is "allowed" in our main fixture project, but not required.
     // We expect that requiring this library should re-scaffold, resulting
@@ -99,36 +88,30 @@ class ComposerHookTest extends TestCase {
     // Make sure that the appropriate notice informing us that scaffolding
     // is allowed was printed.
     $this->assertContains('Package fixtures/scaffold-override-fixture has scaffold operations, and is already allowed in the root-level composer.json file.', $stdout);
-
     // Delete one scaffold file, just for test purposes, then run
     // 'composer update' and see if the scaffold file is replaced.
     @unlink($sut . '/sites/default/default.settings.php');
     $this->execComposer("update --no-ansi", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
-
     // Delete the same test scaffold file again, then run
     // 'composer composer:scaffold' and see if the scaffold file is replaced.
     @unlink($sut . '/sites/default/default.settings.php');
     $this->execComposer("composer:scaffold --no-ansi", $sut);
     $this->assertScaffoldedFile($sut . '/sites/default/default.settings.php', $is_link, '#scaffolded from the scaffold-override-fixture#');
-
     // Run 'composer create-project' to create a new test project called
     // 'create-project-test', which is a copy of 'fixtures/drupal-drupal'.
     $packages = $this->fixturesDir . '/packages.json';
     $sut = $this->fixturesDir . '/create-project-test';
     $filesystem = new Filesystem();
     $filesystem->remove($sut);
-    list($stdout, $stderr) = $this->execComposer("create-project --repository=packages.json fixtures/drupal-drupal $sut", $this->fixturesDir, ['COMPOSER_MIRROR_PATH_REPOS' => 1]);
+    list($stdout, $stderr) = $this->execComposer("create-project --repository=packages.json fixtures/drupal-drupal {$sut}", $this->fixturesDir, ['COMPOSER_MIRROR_PATH_REPOS' => 1]);
     $this->assertDirectoryExists($sut);
     $this->assertContains('Scaffolding files for fixtures/drupal-drupal', $stdout);
     $this->assertScaffoldedFile($sut . '/index.php', FALSE, '#Test version of index.php from drupal/core#');
-
     $topLevelProjectDir = 'composer-hooks-nothing-allowed-fixture';
     $sut = $this->fixturesDir . '/' . $topLevelProjectDir;
-
     // Run composer install on an empty project.
     $this->execComposer("install --no-ansi", $sut);
-
     // Require a project that is not allowed to scaffold and confirm that we
     // get a warning, and it does not scaffold.
     list($stdout, $stderr) = $this->execComposer("require --no-ansi --no-interaction fixtures/scaffold-override-fixture:dev-master", $sut);
@@ -149,8 +132,8 @@ class ComposerHookTest extends TestCase {
    * @return array
    *   Standard output and standard error from the command
    */
-  protected function execComposer(string $cmd, string $cwd, array $env = []) {
-    return $this->mustExec("composer $cmd", $cwd, $env);
+  protected function execComposer($cmd, $cwd, array $env = []) {
+    return $this->mustExec("composer {$cmd}", $cwd, $env);
   }
 
 }

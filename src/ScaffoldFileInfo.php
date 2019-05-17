@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Composer\IO\IOInterface;
@@ -18,7 +16,6 @@ use Grasmash\ComposerScaffold\ScaffoldFilePath;
  * source files.
  */
 class ScaffoldFileInfo {
-
   protected $destination;
   protected $op;
 
@@ -30,7 +27,7 @@ class ScaffoldFileInfo {
    *
    * @return $this
    */
-  public function setOp(OperationInterface $op) : self {
+  public function setOp(OperationInterface $op) {
     $this->op = $op;
     return $this;
   }
@@ -41,7 +38,7 @@ class ScaffoldFileInfo {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface
    *   Operations object that handles scaffolding (copy, make symlink, etc).
    */
-  public function op() : OperationInterface {
+  public function op() {
     return $this->op;
   }
 
@@ -51,7 +48,7 @@ class ScaffoldFileInfo {
    * @return string
    *   The name of the package this scaffold file info was collected from.
    */
-  public function packageName() : string {
+  public function packageName() {
     return $this->destination->packageName();
   }
 
@@ -63,7 +60,7 @@ class ScaffoldFileInfo {
    *
    * @return $this
    */
-  public function setDestination(ScaffoldFilePath $destination) : self {
+  public function setDestination(ScaffoldFilePath $destination) {
     $this->destination = $destination;
     return $this;
   }
@@ -74,7 +71,7 @@ class ScaffoldFileInfo {
    * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The scaffold path to the destination file.
    */
-  public function destination() : ScaffoldFilePath {
+  public function destination() {
     return $this->destination;
   }
 
@@ -88,7 +85,7 @@ class ScaffoldFileInfo {
    * @return bool
    *   Whether this scaffold file if overridden or removed.
    */
-  public function overridden(string $providing_package) : bool {
+  public function overridden($providing_package) {
     return $this->packageName() !== $providing_package;
   }
 
@@ -98,7 +95,7 @@ class ScaffoldFileInfo {
    * @return Interpolator
    *   An interpolator for making string replacements.
    */
-  public function getInterpolator() : Interpolator {
+  public function getInterpolator() {
     return $this->destination->getInterpolator();
   }
 
@@ -115,7 +112,7 @@ class ScaffoldFileInfo {
    * @return string
    *   Interpolated string with placeholders replaced.
    */
-  public function interpolate(string $message, array $extra = [], $default = FALSE) : string {
+  public function interpolate($message, array $extra = [], $default = FALSE) {
     $interpolator = $this->getInterpolator();
     return $interpolator->interpolate($message, $extra, $default);
   }

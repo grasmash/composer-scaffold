@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\IO\IOInterface;
@@ -18,10 +16,9 @@ class SkipOp implements OperationInterface {
    *
    * {@inheritdoc}
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult {
+  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) {
     $interpolator = $destination->getInterpolator();
     $io->write($interpolator->interpolate("  - Skip <info>[dest-rel-path]</info>: disabled"));
-
     return (new ScaffoldResult($destination))->setManaged(FALSE);
   }
 

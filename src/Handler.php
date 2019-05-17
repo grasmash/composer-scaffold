@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Composer\Composer;
@@ -22,28 +20,22 @@ use Grasmash\ComposerScaffold\Operations\OperationInterface;
  * Contains the primary logic which determines the files to be fetched and processed.
  */
 class Handler {
-
   const PRE_COMPOSER_SCAFFOLD_CMD = 'pre-composer-scaffold-cmd';
   const POST_COMPOSER_SCAFFOLD_CMD = 'post-composer-scaffold-cmd';
-
   /**
    * The Composer service.
    *
    * @var \Composer\Composer
    */
   protected $composer;
-
   /**
    * Composer's I/O service.
    *
    * @var \Composer\IO\IOInterface
    */
   protected $io;
-
   protected $manageOptions;
-
   protected $manageAllowedPackages;
-
   protected $postPackageListeners;
 
   /**
@@ -109,9 +101,8 @@ class Handler {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
    *   An array of destination paths => scaffold operation objects.
    */
-  public function getPackageFileMappings(PackageInterface $package) : array {
+  public function getPackageFileMappings(PackageInterface $package) {
     $options = $this->manageOptions->packageOptions($package);
-
     if ($options->hasFileMapping()) {
       return $this->createScaffoldOperations($package, $options->fileMapping());
     }
@@ -134,16 +125,14 @@ class Handler {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
    *   A list of scaffolding operation objects
    */
-  protected function createScaffoldOperations(PackageInterface $package, array $package_file_mappings) : array {
+  protected function createScaffoldOperations(PackageInterface $package, array $package_file_mappings) {
     $options = $this->manageOptions->getOptions();
     $scaffoldOpFactory = new OperationFactory($this->composer);
     $scaffoldOps = [];
-
     foreach ($package_file_mappings as $key => $value) {
       $metadata = $scaffoldOpFactory->normalizeScaffoldMetadata($key, $value);
       $scaffoldOps[$key] = $scaffoldOpFactory->createScaffoldOp($package, $key, $metadata, $options);
     }
-
     return $scaffoldOps;
   }
 
@@ -158,34 +147,27 @@ class Handler {
     if (empty($allowedPackages)) {
       return;
     }
-
     // Call any pre-scaffold scripts that may be defined.
     $dispatcher = new EventDispatcher($this->composer, $this->io);
     $dispatcher->dispatch(self::PRE_COMPOSER_SCAFFOLD_CMD);
-
     // Fetch the list of file mappings from each allowed package and
     // normalize them.
     $file_mappings = $this->getFileMappingsFromPackages($allowedPackages);
-
     // Analyze the list of file mappings, and determine which take priority.
     $scaffoldCollection = new OperationCollection($this->io);
     $locationReplacements = $this->manageOptions->getLocationReplacements();
     $scaffoldCollection->coalateScaffoldFiles($file_mappings, $locationReplacements);
-
     // Write the collected scaffold files to the designated location on disk.
     $scaffoldResults = $scaffoldCollection->processScaffoldFiles($this->manageOptions->getOptions());
-
     // Generate an autoload file in the document root that includes
     // the autoload.php file in the vendor directory, wherever that is.
     // Drupal requires this in order to easily locate relocated vendor dirs.
     $autoloadPath = ScaffoldFilePath::autoloadPath($this->rootPackageName(), $this->getWebRoot());
     $generator = new GenerateAutoloadReferenceFile($this->getVendorPath());
     $scaffoldResults[] = $generator->generateAutoload($autoloadPath);
-
     // Add the managed scaffold files to .gitignore if applicable.
     $manager = new ManageGitIgnore(getcwd());
     $manager->manageIgnored($scaffoldResults, $this->manageOptions->getOptions());
-
     // Call post-scaffold scripts.
     $dispatcher->dispatch(self::POST_COMPOSER_SCAFFOLD_CMD);
   }
@@ -200,11 +182,8 @@ class Handler {
    *
    * @throws \Exception
    */
-  public function getWebRoot() : string {
-    return $this->manageOptions->getOptions()->requiredLocation(
-      'web-root',
-      "The extra.composer-scaffold.location.web-root is not set in composer.json."
-    );
+  public function getWebRoot() {
+    return $this->manageOptions->getOptions()->requiredLocation('web-root', "The extra.composer-scaffold.location.web-root is not set in composer.json.");
   }
 
   /**
@@ -213,7 +192,7 @@ class Handler {
    * @return string
    *   The file path of the vendor directory.
    */
-  public function getVendorPath() : string {
+  public function getVendorPath() {
     $vendorDir = $this->composer->getConfig()->get('vendor-dir');
     $filesystem = new Filesystem();
     $filesystem->ensureDirectoryExists($vendorDir);
@@ -230,7 +209,7 @@ class Handler {
    * @return \Grasmash\ComposerScaffold\Operations\OperationInterface[]
    *   An array of destination paths => scaffold operation objects.
    */
-  protected function getFileMappingsFromPackages(array $allowed_packages) : array {
+  protected function getFileMappingsFromPackages(array $allowed_packages) {
     $file_mappings = [];
     foreach ($allowed_packages as $package_name => $package) {
       $package_file_mappings = $this->getPackageFileMappings($package);
@@ -245,7 +224,7 @@ class Handler {
    * @return string
    *   The package name of the root project
    */
-  protected function rootPackageName() : string {
+  protected function rootPackageName() {
     $root_package = $this->composer->getPackage();
     return $root_package->getName();
   }

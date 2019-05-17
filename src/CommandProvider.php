@@ -13,9 +13,7 @@ class CommandProvider implements CommandProviderCapability {
    * {@inheritdoc}
    */
   public function getCommands() {
-    return [
-      new ComposerScaffoldCommand(),
-    ];
+    return [new ComposerScaffoldCommand()];
   }
 
 }

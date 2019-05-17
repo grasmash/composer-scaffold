@@ -22,12 +22,12 @@ trait ExecTrait {
    * @return array
    *   Standard output and standard error from the command
    */
-  protected function mustExec(string $cmd, string $cwd, array $env = []) {
+  protected function mustExec($cmd, $cwd, array $env = []) {
     $process = new Process($cmd, $cwd, $env + ['PATH' => getenv('PATH'), 'HOME' => getenv('HOME')]);
     $process->setTimeout(300)->setIdleTimeout(300)->run();
     $exitCode = $process->getExitCode();
     if (0 != $exitCode) {
-      throw new \Exception("Exit code: $exitCode\n\n" . $process->getErrorOutput() . "\n\n" . $process->getOutput());
+      throw new \Exception("Exit code: {$exitCode}\n\n" . $process->getErrorOutput() . "\n\n" . $process->getOutput());
     }
     return [$process->getOutput(), $process->getErrorOutput()];
   }
