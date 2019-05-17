@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Symfony\Component\Process\Process;
@@ -10,7 +8,6 @@ use Symfony\Component\Process\Process;
  * Manage the .gitignore file.
  */
 class ManageGitIgnore {
-
   protected $dir;
 
   /**
@@ -19,7 +16,7 @@ class ManageGitIgnore {
    * @param string $dir
    *   The directory where the project is located.
    */
-  public function __construct(string $dir) {
+  public function __construct($dir) {
     $this->dir = $dir;
   }
 
@@ -32,11 +29,10 @@ class ManageGitIgnore {
    * @return bool
    *   Whether the specified file is already ignored or not (TRUE if ignored).
    */
-  public function checkIgnore(string $path) {
+  public function checkIgnore($path) {
     $process = new Process('git check-ignore ' . $path, $this->dir);
     $process->run();
-    $isIgnored = ($process->getExitCode() == 0);
-
+    $isIgnored = $process->getExitCode() == 0;
     return $isIgnored;
   }
 
@@ -49,11 +45,10 @@ class ManageGitIgnore {
    * @return bool
    *   Whether the specified file is already tracked or not (TRUE if tracked).
    */
-  public function checkTracked(string $path) {
+  public function checkTracked($path) {
     $process = new Process('git ls-files --error-unmatch ' . $path, $this->dir);
     $process->run();
-    $isTracked = ($process->getExitCode() == 0);
-
+    $isTracked = $process->getExitCode() == 0;
     return $isTracked;
   }
 
@@ -66,8 +61,7 @@ class ManageGitIgnore {
   public function isRepository() {
     $process = new Process('git rev-parse --show-toplevel', $this->dir);
     $process->run();
-    $isRepository = ($process->getExitCode() == 0);
-
+    $isRepository = $process->getExitCode() == 0;
     return $isRepository;
   }
 
@@ -145,11 +139,9 @@ class ManageGitIgnore {
    * @param string[] $entries
    *   Entries to write to .gitignore file.
    */
-  public function addToGitIgnore(string $dir, array $entries) {
+  public function addToGitIgnore($dir, array $entries) {
     sort($entries);
-
     $gitIgnorePath = $dir . '/.gitignore';
-
     $contents = $this->gitIgnoreContents($gitIgnorePath);
     $contents .= implode("\n", $entries);
     file_put_contents($gitIgnorePath, $contents);
@@ -169,7 +161,7 @@ class ManageGitIgnore {
       return '';
     }
     $contents = file_get_contents($gitIgnorePath);
-    if (!empty($contents) && (substr($contents, -1) != "\n")) {
+    if (!empty($contents) && substr($contents, -1) != "\n") {
       $contents .= "\n";
     }
     return $contents;

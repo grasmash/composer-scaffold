@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 use Composer\IO\IOInterface;
@@ -26,6 +24,6 @@ interface OperationInterface {
    * @return ScaffoldResult
    *   Result of the scaffolding operation (is this file managed or unmanaged, etc.)
    */
-  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options) : ScaffoldResult;
+  public function process(ScaffoldFilePath $destination, IOInterface $io, ScaffoldOptions $options);
 
 }

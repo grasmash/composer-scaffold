@@ -18,9 +18,7 @@ class ComposerScaffoldCommand extends BaseCommand {
    */
   protected function configure() {
     parent::configure();
-    $this
-      ->setName('composer:scaffold')
-      ->setDescription('Update the Composer scaffold files.');
+    $this->setName('composer:scaffold')->setDescription('Update the Composer scaffold files.');
   }
 
   /**

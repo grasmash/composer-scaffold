@@ -24,14 +24,12 @@ use Symfony\Component\Console\Output\BufferedOutput;
  * Convenience class for creating fixtures.
  */
 class Fixtures {
-
   /**
    * Directories to delete when we are done.
    *
    * @var string[]
    */
   protected $tmpDirs = [];
-
   protected $io;
   protected $composer;
 
@@ -41,7 +39,7 @@ class Fixtures {
    * @return \Composer\IO\IOInterface
    *   A Composer IOInterface to write to; output may be retrieved via Fixtures::getOutput()
    */
-  public function io() : IOInterface {
+  public function io() {
     if (!$this->io) {
       $this->io = new BufferIO();
     }
@@ -54,7 +52,7 @@ class Fixtures {
    * @return \Composer\Composer
    *   The main Composer object, needed by the scaffold Handler, etc.
    */
-  public function getComposer() : Composer {
+  public function getComposer() {
     if (!$this->composer) {
       $this->composer = Factory::create($this->io(), NULL, TRUE);
     }
@@ -99,11 +97,9 @@ class Fixtures {
    */
   public function projectFixtureDir($project_name) {
     $dir = $this->allFixturesDir() . '/' . $project_name;
-
     if (!is_dir($dir)) {
-      throw new \Exception("Requested fixture project $project_name that does not exist.");
+      throw new \Exception("Requested fixture project {$project_name} that does not exist.");
     }
-
     return $dir;
   }
 
@@ -115,11 +111,9 @@ class Fixtures {
    */
   public function binFixtureDir($bin_name) {
     $dir = $this->allFixturesDir() . '/scripts/' . $bin_name;
-
     if (!is_dir($dir)) {
-      throw new \Exception("Requested fixture bin dir $bin_name that does not exist.");
+      throw new \Exception("Requested fixture bin dir {$bin_name} that does not exist.");
     }
-
     return $dir;
   }
 
@@ -136,12 +130,11 @@ class Fixtures {
    * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   The full and relative path to the desired asset
    */
-  public function sourcePath(string $project_name, string $source, string $destination = 'unknown') : ScaffoldFilePath {
-    $package_name = "fixtures/$project_name";
-    $source_rel_path = "assets/$source";
+  public function sourcePath($project_name, $source, $destination = 'unknown') {
+    $package_name = "fixtures/{$project_name}";
+    $source_rel_path = "assets/{$source}";
     $package_path = $this->projectFixtureDir($project_name);
     $destination = 'unknown';
-
     return ScaffoldFilePath::sourcePath($package_name, $package_path, $destination, $source_rel_path);
   }
 
@@ -151,14 +144,10 @@ class Fixtures {
    * @return \Grasmash\ComposerScaffold\Interpolator
    *   An interpolator with location replacements, including 'web-root'.
    */
-  public function getLocationReplacements() : Interpolator {
+  public function getLocationReplacements() {
     $destinationTmpDir = $this->mkTmpDir();
     $interpolator = new Interpolator();
-    $interpolator->setData([
-      'web-root' => $destinationTmpDir,
-      'package-name' => 'fixtures/tmp-destination',
-    ]);
-
+    $interpolator->setData(['web-root' => $destinationTmpDir, 'package-name' => 'fixtures/tmp-destination']);
     return $interpolator;
   }
 
@@ -173,7 +162,7 @@ class Fixtures {
    * @return \Grasmash\ComposerScaffold\Operations\ReplaceOp
    *   A replace operation object.
    */
-  public function replaceOp(string $project_name, string $source) : ReplaceOp {
+  public function replaceOp($project_name, $source) {
     $source_path = $this->sourcePath($project_name, $source);
     return (new ReplaceOp())->setSource($source_path);
   }
@@ -189,7 +178,7 @@ class Fixtures {
    * @return \Grasmash\ComposerScaffold\Operations\AppendOp
    *   An append opperation object.
    */
-  public function appendOp(string $project_name, string $source) : AppendOp {
+  public function appendOp($project_name, $source) {
     $source_path = $this->sourcePath($project_name, $source);
     return (new AppendOp())->setAppendFile($source_path);
   }
@@ -211,10 +200,9 @@ class Fixtures {
    * @return \Grasmash\ComposerScaffold\ScaffoldFilePath
    *   A destination scaffold file backed by temporary storage.
    */
-  public function destinationPath(string $destination, Interpolator $interpolator = NULL, string $package_name = NULL) {
+  public function destinationPath($destination, Interpolator $interpolator = NULL, $package_name = NULL) {
     $interpolator = $interpolator ?: $this->getLocationReplacements();
     $package_name = $package_name ?: $interpolator->interpolate('[package-name]');
-
     return ScaffoldFilePath::destinationPath($package_name, $destination, $interpolator);
   }
 
@@ -230,7 +218,6 @@ class Fixtures {
   public function tmpDir($extraSalt = '') {
     $tmpDir = sys_get_temp_dir() . '/composer-scaffold-test-' . md5($extraSalt . microtime());
     $this->tmpDirs[] = $tmpDir;
-
     return $tmpDir;
   }
 
@@ -247,7 +234,6 @@ class Fixtures {
     $tmpDir = $this->tmpDir($extraSalt);
     $filesystem = new Filesystem();
     $filesystem->ensureDirectoryExists($tmpDir);
-
     return $tmpDir;
   }
 
@@ -280,16 +266,12 @@ class Fixtures {
    * @param array $replacements
    *   Key : value mappings for placeholders to replace in composer.json templates.
    */
-  public function cloneFixtureProjects(string $fixturesDir, array $replacements = []) {
+  public function cloneFixtureProjects($fixturesDir, array $replacements = []) {
     $filesystem = new Filesystem();
-    $replacements += [
-      'SYMLINK' => 'true',
-    ];
+    $replacements += ['SYMLINK' => 'true'];
     $interpolator = new Interpolator('__', '__', TRUE);
     $interpolator->setData($replacements);
-
     $filesystem->copy($this->allFixturesDir(), $fixturesDir);
-
     $composer_json_templates = glob($fixturesDir . "/*/composer.json.tmpl");
     foreach ($composer_json_templates as $composer_json_tmpl) {
       // Inject replacements into composer.json.
@@ -330,7 +312,7 @@ class Fixtures {
    * @return array
    *   Standard output and standard error from the command
    */
-  public function runComposer(string $cmd, string $cwd, int $expectedExitCode = 0) {
+  public function runComposer($cmd, $cwd, $expectedExitCode = 0) {
     chdir($cwd);
     $input = new StringInput($cmd);
     $output = new BufferedOutput();
@@ -343,7 +325,7 @@ class Fixtures {
       print "Exception: " . $e->getMessage() . "\n";
     }
     if ($exitCode != $expectedExitCode) {
-      print("Command '$cmd' - Expected exit code: $expectedExitCode, actual exit code: $exitCode\n");
+      print "Command '{$cmd}' - Expected exit code: {$expectedExitCode}, actual exit code: {$exitCode}\n";
     }
     $output = $output->fetch();
     return $output;

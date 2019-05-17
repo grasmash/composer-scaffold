@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Composer\Composer;
@@ -19,7 +17,6 @@ use Grasmash\ComposerScaffold\ScaffoldFilePath;
  * section of the project data.
  */
 class ManageOptions {
-
   /**
    * The Composer service.
    *
@@ -40,7 +37,7 @@ class ManageOptions {
    * @return ScaffoldOptions
    *   The scaffold otpions object
    */
-  public function getOptions() : ScaffoldOptions {
+  public function getOptions() {
     return $this->packageOptions($this->composer->getPackage());
   }
 
@@ -53,7 +50,7 @@ class ManageOptions {
    * @return ScaffoldOptions
    *   The scaffold otpions object
    */
-  public function packageOptions(PackageInterface $package) : ScaffoldOptions {
+  public function packageOptions(PackageInterface $package) {
     return ScaffoldOptions::create($package->getExtra());
   }
 
@@ -68,7 +65,7 @@ class ManageOptions {
    * @return Interpolator
    *   Object that will do replacements in a string using tokens in 'locations' element.
    */
-  public function getLocationReplacements() : Interpolator {
+  public function getLocationReplacements() {
     return (new Interpolator())->setData($this->ensureLocations());
   }
 
@@ -77,17 +74,14 @@ class ManageOptions {
    *
    * Create them on the filesystem if they do not.
    */
-  public function ensureLocations() : array {
+  public function ensureLocations() {
     $fs = new Filesystem();
     $locations = $this->getOptions()->locations() + ['web_root' => './'];
-    $locations = array_map(
-      function ($location) use ($fs) {
-        $fs->ensureDirectoryExists($location);
-        $location = realpath($location);
-        return $location;
-      },
-      $locations
-    );
+    $locations = array_map(function ($location) use ($fs) {
+      $fs->ensureDirectoryExists($location);
+      $location = realpath($location);
+      return $location;
+    }, $locations);
     return $locations;
   }
 

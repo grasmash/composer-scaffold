@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 /**
@@ -25,7 +23,7 @@ interface OriginalOpAwareInterface {
    * @return bool
    *   Whether or not an original operation was provided.
    */
-  public function hasOriginalOp() : bool;
+  public function hasOriginalOp();
 
   /**
    * Return the original operation that this op is overriding.
@@ -33,6 +31,6 @@ interface OriginalOpAwareInterface {
    * @return OperationInterface
    *   The original operation.
    */
-  public function originalOp() : OperationInterface;
+  public function originalOp();
 
 }

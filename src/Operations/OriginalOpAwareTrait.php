@@ -1,14 +1,11 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold\Operations;
 
 /**
  * Use OriginalOpAwareTrait to be informed of any op at the same destination path.
  */
 trait OriginalOpAwareTrait {
-
   /**
    * The original operation at the same destination path.
    *
@@ -28,14 +25,14 @@ trait OriginalOpAwareTrait {
   /**
    * {@inheritdoc}
    */
-  public function hasOriginalOp() : bool {
+  public function hasOriginalOp() {
     return isset($this->originalOp);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function originalOp() : OperationInterface {
+  public function originalOp() {
     return $this->originalOp;
   }
 

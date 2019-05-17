@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Composer\IO\IOInterface;
@@ -16,7 +14,6 @@ use Grasmash\ComposerScaffold\ScaffoldFilePath;
  * section of the project data.
  */
 class ScaffoldOptions {
-
   protected $options = [];
 
   /**
@@ -30,7 +27,7 @@ class ScaffoldOptions {
       "allowed-packages" => [],
       "locations" => [],
       "symlink" => FALSE,
-      "file-mapping" => [],
+      "file-mapping" => []
     ];
   }
 
@@ -43,7 +40,7 @@ class ScaffoldOptions {
    * @return bool
    *   True if scaffold options have been declared
    */
-  public static function hasOptions(array $extras) : bool {
+  public static function hasOptions(array $extras) {
     return array_key_exists('composer-scaffold', $extras);
   }
 
@@ -56,7 +53,7 @@ class ScaffoldOptions {
    * @return self
    *   The scaffold options object representing the provided scaffold options
    */
-  public static function create(array $extras) : self {
+  public static function create(array $extras) {
     $options = static::hasOptions($extras) ? $extras['composer-scaffold'] : [];
     return new self($options);
   }
@@ -67,7 +64,7 @@ class ScaffoldOptions {
    * @return self
    *   A scaffold options object with default values
    */
-  public static function defaultOptions() : self {
+  public static function defaultOptions() {
     return new self([]);
   }
 
@@ -90,7 +87,7 @@ class ScaffoldOptions {
    * @return self
    *   The scaffold options object representing the provided scaffold options
    */
-  public function overrideSymlink(bool $symlink) {
+  public function overrideSymlink($symlink) {
     return $this->override(['symlink' => $symlink]);
   }
 
@@ -100,7 +97,7 @@ class ScaffoldOptions {
    * @return bool
    *   Whether there are allowed packages
    */
-  public function hasAllowedPackages() : bool {
+  public function hasAllowedPackages() {
     return !empty($this->allowedPackages());
   }
 
@@ -110,7 +107,7 @@ class ScaffoldOptions {
    * @return array
    *   The list of allowed packages
    */
-  public function allowedPackages() : array {
+  public function allowedPackages() {
     return $this->options['allowed-packages'];
   }
 
@@ -120,7 +117,7 @@ class ScaffoldOptions {
    * @return array
    *   A map of name : location values
    */
-  public function locations() : array {
+  public function locations() {
     return $this->options['locations'];
   }
 
@@ -130,7 +127,7 @@ class ScaffoldOptions {
    * @return bool
    *   True if the specified named location exist.
    */
-  public function hasLocation(string $name) : bool {
+  public function hasLocation($name) {
     return array_key_exists($name, $this->locations());
   }
 
@@ -145,7 +142,7 @@ class ScaffoldOptions {
    * @return string
    *   The value of the provided named location
    */
-  public function getLocation(string $name, string $default = '') : string {
+  public function getLocation($name, $default = '') {
     return $this->hasLocation($name) ? $this->locations()[$name] : $default;
   }
 
@@ -161,7 +158,7 @@ class ScaffoldOptions {
    * @return string
    *   The value of the provided named location
    */
-  public function requiredLocation(string $name, string $message) : string {
+  public function requiredLocation($name, $message) {
     if (!$this->hasLocation($name)) {
       throw new \Exception($message);
     }
@@ -174,7 +171,7 @@ class ScaffoldOptions {
    * @return bool
    *   Whether or not 'symlink' mode
    */
-  public function symlink() : bool {
+  public function symlink() {
     return $this->options['symlink'];
   }
 
@@ -184,7 +181,7 @@ class ScaffoldOptions {
    * @return bool
    *   Whether or not the scaffold options contain any file mappings
    */
-  public function hasFileMapping() : bool {
+  public function hasFileMapping() {
     return !empty($this->fileMapping());
   }
 
@@ -194,7 +191,7 @@ class ScaffoldOptions {
    * @return array
    *   File mappings for just this config type.
    */
-  public function fileMapping() : array {
+  public function fileMapping() {
     return $this->options['file-mapping'];
   }
 
@@ -204,7 +201,7 @@ class ScaffoldOptions {
    * @return bool
    *   Whether or not there is a 'gitignore' option setting
    */
-  public function hasGitIgnore() : bool {
+  public function hasGitIgnore() {
     return isset($this->options['gitignore']);
   }
 
@@ -214,7 +211,7 @@ class ScaffoldOptions {
    * @return bool
    *   The 'gitignore' option, or TRUE if undefined.
    */
-  public function gitIgnore() : bool {
+  public function gitIgnore() {
     return $this->hasGitIgnore() ? $this->options['gitignore'] : TRUE;
   }
 

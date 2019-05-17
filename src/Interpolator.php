@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 /**
@@ -20,7 +18,7 @@ class Interpolator {
    * @param string $endToken
    *   The end marker for a token, e.g. ']'.
    */
-  public function __construct(string $startToken = '\[', string $endToken = '\]') {
+  public function __construct($startToken = '\\[', $endToken = '\\]') {
     $this->startToken = $startToken;
     $this->endToken = $endToken;
     $this->data = [];
@@ -71,7 +69,7 @@ class Interpolator {
    * @return string
    *   The message after replacements have been made.
    */
-  public function interpolate(string $message, $extra = [], $default = '') : string {
+  public function interpolate($message, $extra = [], $default = '') {
     $data = $extra + $this->data;
     $replacements = $this->replacements($message, $data, $default);
     return strtr($message, $replacements);
@@ -86,13 +84,11 @@ class Interpolator {
    * @return string[]
    *   map of token to key, e.g. {{key}} => key
    */
-  public function findTokens(string $message) : array {
+  public function findTokens($message) {
     $regEx = '#' . $this->startToken . '([a-zA-Z0-9._-]+)' . $this->endToken . '#';
-
     if (!preg_match_all($regEx, $message, $matches, PREG_SET_ORDER)) {
       return [];
     }
-
     $tokens = [];
     foreach ($matches as $matchSet) {
       list($sourceText, $key) = $matchSet;
@@ -108,9 +104,8 @@ class Interpolator {
    * keys from the provided message. Keys that do not exist in the configuration
    * are replaced with the default value.
    */
-  protected function replacements(string $message, $data, $default = '') : array {
+  protected function replacements($message, $data, $default = '') {
     $tokens = $this->findTokens($message);
-
     $replacements = [];
     foreach ($tokens as $sourceText => $key) {
       $replacementText = $this->get($key, $data, $default);
@@ -124,7 +119,7 @@ class Interpolator {
   /**
    * Get a value from an array.
    */
-  protected function get(string $key, $data, $default) {
+  protected function get($key, $data, $default) {
     return array_key_exists($key, $data) ? $data[$key] : $default;
   }
 

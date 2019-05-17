@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types = 1);
-
 namespace Grasmash\ComposerScaffold;
 
 use Composer\Installer\PackageEvent;
@@ -14,7 +12,6 @@ use Composer\Installer\PackageEvent;
  * contain scaffolding instructions.
  */
 class DetectAddingPackagesWithScaffolding {
-
   protected $manageAllowedPackages;
 
   /**
@@ -37,12 +34,8 @@ class DetectAddingPackagesWithScaffolding {
     $operation = $event->getOperation();
     $jobType = $operation->getJobType();
     $reason = $operation->getReason();
-
     // Get the package.
-    $package = ($operation->getJobType() == 'update') ?
-      $operation->getTargetPackage() :
-      $operation->getPackage();
-
+    $package = $operation->getJobType() == 'update' ? $operation->getTargetPackage() : $operation->getPackage();
     if (ScaffoldOptions::hasOptions($package->getExtra())) {
       $this->manageAllowedPackages->addedPackageWithScaffolding($package);
     }
