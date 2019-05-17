@@ -2,9 +2,10 @@ language: php
 
 php:
   - 7.0
+  - 5.6
 sudo: false
 
 before_script:
   - travis_retry composer install --prefer-source --no-interaction
 
-script: composer test
+script: composer unit
