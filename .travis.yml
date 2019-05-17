@@ -1,11 +1,17 @@
 language: php
 
-php:
-  - 7.0
-  - 5.6
+matrix:
+  fast_finish: true
+  include:
+  - php: 7.2
+    env: OP=install
+  - php: 5.6
+    env: OP=update
+
 sudo: false
 
 before_script:
-  - travis_retry composer install --prefer-source --no-interaction
+  - travis_retry composer $OP --prefer-source --no-interaction
 
-script: composer unit
+script:
+  - composer unit
