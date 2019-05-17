@@ -6,7 +6,7 @@ matrix:
   - php: 7.2
     env: OP=install
   - php: 5.6
-    env: OP=update
+    env: OP="update --prefer-lowest"
 
 sudo: false
 
